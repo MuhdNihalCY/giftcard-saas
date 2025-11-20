@@ -1,0 +1,41 @@
+export const USER_ROLES = {
+  ADMIN: 'ADMIN',
+  MERCHANT: 'MERCHANT',
+  CUSTOMER: 'CUSTOMER',
+} as const;
+
+export const GIFT_CARD_STATUS = {
+  ACTIVE: 'ACTIVE',
+  REDEEMED: 'REDEEMED',
+  EXPIRED: 'EXPIRED',
+  CANCELLED: 'CANCELLED',
+} as const;
+
+export const PAYMENT_METHODS = {
+  STRIPE: 'STRIPE',
+  PAYPAL: 'PAYPAL',
+  RAZORPAY: 'RAZORPAY',
+  UPI: 'UPI',
+} as const;
+
+export const PAYMENT_STATUS = {
+  PENDING: 'PENDING',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED',
+  REFUNDED: 'REFUNDED',
+} as const;
+
+export const REDEMPTION_METHODS = {
+  QR_CODE: 'QR_CODE',
+  CODE_ENTRY: 'CODE_ENTRY',
+  LINK: 'LINK',
+  API: 'API',
+} as const;
+
+export const TRANSACTION_TYPES = {
+  PURCHASE: 'PURCHASE',
+  REDEMPTION: 'REDEMPTION',
+  REFUND: 'REFUND',
+  EXPIRY: 'EXPIRY',
+} as const;
+

@@ -1,0 +1,228 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  MERCHANT
+  CUSTOMER
+}
+
+enum GiftCardStatus {
+  ACTIVE
+  REDEEMED
+  EXPIRED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  STRIPE
+  PAYPAL
+  RAZORPAY
+  UPI
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum RedemptionMethod {
+  QR_CODE
+  CODE_ENTRY
+  LINK
+  API
+}
+
+enum TransactionType {
+  PURCHASE
+  REDEMPTION
+  REFUND
+  EXPIRY
+}
+
+model User {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  passwordHash      String    @map("password_hash")
+  firstName         String?   @map("first_name")
+  lastName          String?   @map("last_name")
+  role              UserRole  @default(CUSTOMER)
+  businessName      String?   @map("business_name")
+  businessLogo      String?   @map("business_logo")
+  isEmailVerified   Boolean   @default(false) @map("is_email_verified")
+  isActive          Boolean   @default(true) @map("is_active")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  giftCards         GiftCard[]
+  giftCardTemplates GiftCardTemplate[]
+  payments          Payment[]
+  redemptions       Redemption[]
+  transactions      Transaction[]
+  apiKeys           ApiKey[]
+  webhooks          Webhook[]
+
+  @@map("users")
+}
+
+model GiftCardTemplate {
+  id          String    @id @default(uuid())
+  merchantId  String    @map("merchant_id")
+  name        String
+  description String?
+  designData  Json      @map("design_data") // Colors, images, layout
+  isPublic    Boolean   @default(false) @map("is_public")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  merchant    User      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  giftCards   GiftCard[]
+
+  @@map("gift_card_templates")
+}
+
+model GiftCard {
+  id                    String          @id @default(uuid())
+  merchantId            String          @map("merchant_id")
+  code                  String          @unique
+  qrCodeUrl             String?         @map("qr_code_url")
+  value                 Decimal         @db.Decimal(10, 2)
+  currency              String          @default("USD")
+  balance               Decimal         @db.Decimal(10, 2)
+  status                GiftCardStatus  @default(ACTIVE)
+  expiryDate            DateTime?       @map("expiry_date")
+  templateId            String?         @map("template_id")
+  customMessage         String?         @map("custom_message") @db.Text
+  recipientEmail        String?         @map("recipient_email")
+  recipientName         String?         @map("recipient_name")
+  allowPartialRedemption Boolean        @default(true) @map("allow_partial_redemption")
+  createdAt             DateTime        @default(now()) @map("created_at")
+  updatedAt             DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  merchant              User            @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  template              GiftCardTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  payments              Payment[]
+  redemptions           Redemption[]
+  transactions          Transaction[]
+
+  @@index([merchantId])
+  @@index([code])
+  @@index([status])
+  @@map("gift_cards")
+}
+
+model Payment {
+  id              String        @id @default(uuid())
+  giftCardId      String        @map("gift_card_id")
+  customerId      String?       @map("customer_id")
+  amount          Decimal       @db.Decimal(10, 2)
+  currency        String        @default("USD")
+  paymentMethod   PaymentMethod @map("payment_method")
+  paymentIntentId String        @map("payment_intent_id")
+  status          PaymentStatus @default(PENDING)
+  transactionId   String?       @map("transaction_id")
+  metadata        Json?
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  giftCard        GiftCard      @relation(fields: [giftCardId], references: [id], onDelete: Cascade)
+  customer        User?         @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  @@index([giftCardId])
+  @@index([customerId])
+  @@index([paymentIntentId])
+  @@map("payments")
+}
+
+model Redemption {
+  id                String            @id @default(uuid())
+  giftCardId        String            @map("gift_card_id")
+  merchantId        String            @map("merchant_id")
+  amount            Decimal           @db.Decimal(10, 2)
+  balanceBefore     Decimal           @map("balance_before") @db.Decimal(10, 2)
+  balanceAfter      Decimal           @map("balance_after") @db.Decimal(10, 2)
+  redemptionMethod  RedemptionMethod  @map("redemption_method")
+  location          String?
+  notes             String?           @db.Text
+  createdAt         DateTime          @default(now()) @map("created_at")
+
+  // Relations
+  giftCard          GiftCard          @relation(fields: [giftCardId], references: [id], onDelete: Cascade)
+  merchant          User              @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@index([giftCardId])
+  @@index([merchantId])
+  @@map("redemptions")
+}
+
+model Transaction {
+  id            String          @id @default(uuid())
+  giftCardId    String          @map("gift_card_id")
+  type          TransactionType
+  amount        Decimal         @db.Decimal(10, 2)
+  balanceBefore Decimal         @map("balance_before") @db.Decimal(10, 2)
+  balanceAfter  Decimal         @map("balance_after") @db.Decimal(10, 2)
+  userId        String?         @map("user_id")
+  metadata      Json?
+  createdAt     DateTime        @default(now()) @map("created_at")
+
+  // Relations
+  giftCard      GiftCard        @relation(fields: [giftCardId], references: [id], onDelete: Cascade)
+  user          User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([giftCardId])
+  @@index([userId])
+  @@index([type])
+  @@map("transactions")
+}
+
+model ApiKey {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  keyHash     String    @unique @map("key_hash")
+  name        String
+  permissions Json      // Array of permissions
+  lastUsedAt  DateTime? @map("last_used_at")
+  expiresAt   DateTime? @map("expires_at")
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("api_keys")
+}
+
+model Webhook {
+  id              String    @id @default(uuid())
+  userId          String    @map("user_id")
+  url             String
+  events          Json      // Array of event types
+  secret          String
+  isActive        Boolean   @default(true) @map("is_active")
+  lastTriggeredAt DateTime? @map("last_triggered_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("webhooks")
+}
+

@@ -1,0 +1,13 @@
+{
+  "/wallet/page": "app/wallet/page.js",
+  "/page": "app/page.js",
+  "/(dashboard)/dashboard/gift-cards/page": "app/(dashboard)/dashboard/gift-cards/page.js",
+  "/(dashboard)/dashboard/redeem/page": "app/(dashboard)/dashboard/redeem/page.js",
+  "/(dashboard)/dashboard/reports/sales/page": "app/(dashboard)/dashboard/reports/sales/page.js",
+  "/(dashboard)/dashboard/users/page": "app/(dashboard)/dashboard/users/page.js",
+  "/(dashboard)/dashboard/settings/page": "app/(dashboard)/dashboard/settings/page.js",
+  "/(dashboard)/dashboard/analytics/page": "app/(dashboard)/dashboard/analytics/page.js",
+  "/(dashboard)/dashboard/templates/page": "app/(dashboard)/dashboard/templates/page.js",
+  "/(dashboard)/dashboard/page": "app/(dashboard)/dashboard/page.js",
+  "/(auth)/login/page": "app/(auth)/login/page.js"
+}

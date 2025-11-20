@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 17, 24, 39; /* gray-900 */
+  --background-start-rgb: 249, 250, 251; /* gray-50 */
+  --background-end-rgb: 255, 255, 255;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-end-rgb));
+}
+
+/* Ensure all text is visible */
+* {
+  color: inherit;
+}
+
+/* Input fields should have dark text */
+input, textarea, select {
+  color: rgb(17, 24, 39) !important; /* gray-900 */
+  background-color: white !important;
+}
+
+input::placeholder, textarea::placeholder {
+  color: rgb(156, 163, 175) !important; /* gray-400 */
+}
+
+/* Links should be visible */
+a {
+  color: rgb(2, 132, 199); /* primary-600 */
+}
+
+a:hover {
+  color: rgb(3, 105, 161); /* primary-700 */
+}
+
