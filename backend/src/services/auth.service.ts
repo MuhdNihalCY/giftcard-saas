@@ -4,6 +4,7 @@ import { env } from '../config/env';
 import prisma from '../config/database';
 import { UnauthorizedError, ValidationError } from '../utils/errors';
 import { UserRole } from '@prisma/client';
+import logger from '../utils/logger';
 
 export interface RegisterData {
   email: string;
@@ -50,6 +51,7 @@ export class AuthService {
         lastName,
         businessName,
         role: role || 'CUSTOMER',
+        isEmailVerified: false, // Require email verification
       },
       select: {
         id: true,
@@ -63,6 +65,12 @@ export class AuthService {
       },
     });
 
+    // Send verification email (don't await to avoid blocking registration)
+    import emailVerificationService from './emailVerification.service';
+    emailVerificationService.sendVerificationEmail(user.id, user.email).catch((error) => {
+      logger.error('Failed to send verification email during registration', { userId: user.id, error });
+    });
+
     // Generate tokens
     const tokens = this.generateTokens({
       userId: user.id,
@@ -73,6 +81,7 @@ export class AuthService {
     return {
       user,
       ...tokens,
+      message: 'Registration successful. Please check your email to verify your account.',
     };
   }
 
@@ -88,6 +97,12 @@ export class AuthService {
       throw new UnauthorizedError('Invalid email or password');
     }
 
+    // Check if account is locked
+    if (user.lockedUntil && user.lockedUntil > new Date()) {
+      const minutesLeft = Math.ceil((user.lockedUntil.getTime() - Date.now()) / 60000);
+      throw new UnauthorizedError(`Account is locked. Please try again in ${minutesLeft} minute(s).`);
+    }
+
     // Check if user is active
     if (!user.isActive) {
       throw new UnauthorizedError('Account is deactivated');
@@ -97,7 +112,47 @@ export class AuthService {
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
     if (!isPasswordValid) {
-      throw new UnauthorizedError('Invalid email or password');
+      // Increment failed login attempts
+      const failedAttempts = (user.failedLoginAttempts || 0) + 1;
+      const maxAttempts = 5;
+      const lockoutDuration = 30; // 30 minutes
+
+      if (failedAttempts >= maxAttempts) {
+        // Lock account
+        const lockedUntil = new Date();
+        lockedUntil.setMinutes(lockedUntil.getMinutes() + lockoutDuration);
+
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            failedLoginAttempts: failedAttempts,
+            lockedUntil,
+          },
+        });
+
+        logger.warn('Account locked due to failed login attempts', { userId: user.id, email });
+        throw new UnauthorizedError(`Account locked due to ${maxAttempts} failed login attempts. Please try again in ${lockoutDuration} minutes.`);
+      } else {
+        // Update failed attempts
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { failedLoginAttempts: failedAttempts },
+        });
+
+        logger.warn('Failed login attempt', { userId: user.id, email, attempts: failedAttempts });
+        throw new UnauthorizedError(`Invalid email or password. ${maxAttempts - failedAttempts} attempt(s) remaining.`);
+      }
+    }
+
+    // Reset failed login attempts on successful login
+    if (user.failedLoginAttempts > 0 || user.lockedUntil) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          failedLoginAttempts: 0,
+          lockedUntil: null,
+        },
+      });
     }
 
     // Generate tokens
@@ -106,6 +161,8 @@ export class AuthService {
       email: user.email,
       role: user.role,
     });
+
+    logger.info('User logged in successfully', { userId: user.id, email });
 
     return {
       user: {

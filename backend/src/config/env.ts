@@ -36,16 +36,18 @@ export const env = {
   RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET || '',
 
   // Email
-  EMAIL_SERVICE: process.env.EMAIL_SERVICE || 'sendgrid',
+  EMAIL_SERVICE: process.env.EMAIL_SERVICE || 'sendgrid', // sendgrid, brevo, smtp
   SENDGRID_API_KEY: process.env.SENDGRID_API_KEY || '',
+  BREVO_API_KEY: process.env.BREVO_API_KEY || '',
   EMAIL_FROM: process.env.EMAIL_FROM || 'noreply@giftcard.com',
   EMAIL_FROM_NAME: process.env.EMAIL_FROM_NAME || 'Gift Card SaaS',
 
   // SMS
-  SMS_SERVICE: process.env.SMS_SERVICE || 'twilio',
+  SMS_SERVICE: process.env.SMS_SERVICE || 'twilio', // twilio, brevo
   TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID || '',
   TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN || '',
   TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER || '',
+  BREVO_SMS_SENDER: process.env.BREVO_SMS_SENDER || '',
 
   // AWS
   AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID || '',
@@ -63,7 +65,16 @@ export const env = {
 };
 
 // Validate required environment variables
-const requiredEnvVars = ['DATABASE_URL', 'JWT_SECRET'];
+const requiredEnvVars = ['DATABASE_URL', 'JWT_SECRET', 'JWT_REFRESH_SECRET'];
+
+// Validate JWT secrets length
+if (env.JWT_SECRET && env.JWT_SECRET.length < 32) {
+  throw new Error('JWT_SECRET must be at least 32 characters long');
+}
+
+if (env.JWT_REFRESH_SECRET && env.JWT_REFRESH_SECRET.length < 32) {
+  throw new Error('JWT_REFRESH_SECRET must be at least 32 characters long');
+}
 
 if (env.NODE_ENV === 'production') {
   requiredEnvVars.forEach((varName) => {
@@ -71,5 +82,10 @@ if (env.NODE_ENV === 'production') {
       throw new Error(`Missing required environment variable: ${varName}`);
     }
   });
+  
+  // Additional production validations
+  if (!env.CORS_ORIGIN || env.CORS_ORIGIN === 'http://localhost:3000') {
+    console.warn('⚠️  WARNING: CORS_ORIGIN is set to localhost in production. This should be your production domain.');
+  }
 }
 

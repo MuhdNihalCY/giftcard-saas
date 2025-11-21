@@ -5,6 +5,7 @@ import { NotFoundError, ValidationError } from '../utils/errors';
 import { generateGiftCardCode, isExpired } from '../utils/helpers';
 import qrCodeService from './qrcode.service';
 import { GiftCardStatus } from '@prisma/client';
+import cacheService, { CacheKeys } from './cache.service';
 
 export interface CreateGiftCardData {
   merchantId: string;
@@ -108,6 +109,9 @@ export class GiftCardService {
       },
     });
 
+    // Invalidate merchant gift cards cache
+    await cacheService.invalidate(`giftcards:merchant:${merchantId}:*`);
+
     return giftCard;
   }
 
@@ -115,6 +119,14 @@ export class GiftCardService {
    * Get gift card by ID
    */
   async getById(id: string, userId?: string) {
+    const cacheKey = CacheKeys.giftCard(id);
+    
+    // Try to get from cache
+    const cached = await cacheService.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const giftCard = await prisma.giftCard.findUnique({
       where: { id },
       include: {
@@ -140,6 +152,9 @@ export class GiftCardService {
       giftCard.status = 'EXPIRED';
     }
 
+    // Cache for 5 minutes
+    await cacheService.set(cacheKey, giftCard, 300);
+
     return giftCard;
   }
 
@@ -147,6 +162,14 @@ export class GiftCardService {
    * Get gift card by code
    */
   async getByCode(code: string) {
+    const cacheKey = CacheKeys.giftCardByCode(code);
+    
+    // Try to get from cache
+    const cached = await cacheService.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const giftCard = await prisma.giftCard.findUnique({
       where: { code },
       include: {
@@ -172,6 +195,11 @@ export class GiftCardService {
       giftCard.status = 'EXPIRED';
     }
 
+    // Cache for 5 minutes
+    await cacheService.set(cacheKey, giftCard, 300);
+    // Also cache by ID
+    await cacheService.set(CacheKeys.giftCard(giftCard.id), giftCard, 300);
+
     return giftCard;
   }
 
@@ -185,6 +213,21 @@ export class GiftCardService {
     limit?: number;
   }) {
     const { merchantId, status, page = 1, limit = 20 } = filters;
+    
+    // Build cache key
+    let cacheKey: string;
+    if (merchantId) {
+      cacheKey = CacheKeys.merchantGiftCards(merchantId, page, limit);
+    } else {
+      cacheKey = `giftcards:all:page:${page}:limit:${limit}:status:${status || 'all'}`;
+    }
+
+    // Try to get from cache
+    const cached = await cacheService.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const skip = (page - 1) * limit;
 
     const where: any = {};
@@ -210,7 +253,7 @@ export class GiftCardService {
       prisma.giftCard.count({ where }),
     ]);
 
-    return {
+    const result = {
       giftCards,
       pagination: {
         page,
@@ -219,6 +262,11 @@ export class GiftCardService {
         totalPages: Math.ceil(total / limit),
       },
     };
+
+    // Cache for 2 minutes
+    await cacheService.set(cacheKey, result, 120);
+
+    return result;
   }
 
   /**
@@ -267,6 +315,11 @@ export class GiftCardService {
       },
     });
 
+    // Invalidate cache
+    await cacheService.delete(CacheKeys.giftCard(id));
+    await cacheService.delete(CacheKeys.giftCardByCode(updated.code));
+    await cacheService.invalidate(`giftcards:merchant:${updated.merchantId}:*`);
+
     return updated;
   }
 
@@ -289,6 +342,11 @@ export class GiftCardService {
     await prisma.giftCard.delete({
       where: { id },
     });
+
+    // Invalidate cache
+    await cacheService.delete(CacheKeys.giftCard(id));
+    await cacheService.delete(CacheKeys.giftCardByCode(giftCard.code));
+    await cacheService.invalidate(`giftcards:merchant:${giftCard.merchantId}:*`);
 
     return { message: 'Gift card deleted successfully' };
   }

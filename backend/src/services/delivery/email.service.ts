@@ -1,6 +1,8 @@
 import nodemailer from 'nodemailer';
+import * as brevo from '@getbrevo/brevo';
 import { env } from '../../config/env';
 import { ValidationError } from '../../utils/errors';
+import logger from '../../utils/logger';
 
 export interface EmailOptions {
   to: string;
@@ -12,11 +14,18 @@ export interface EmailOptions {
 }
 
 export class EmailService {
-  private transporter: nodemailer.Transporter;
+  private transporter: nodemailer.Transporter | null = null;
+  private brevoApiInstance: brevo.TransactionalEmailsApi | null = null;
 
   constructor() {
-    // Create transporter based on email service
-    if (env.EMAIL_SERVICE === 'sendgrid' && env.SENDGRID_API_KEY && env.SENDGRID_API_KEY !== 'your_sendgrid_api_key') {
+    // Initialize based on email service
+    if (env.EMAIL_SERVICE === 'brevo' && env.BREVO_API_KEY) {
+      // Brevo API
+      const apiInstance = new brevo.TransactionalEmailsApi();
+      apiInstance.setApiKey(brevo.TransactionalEmailsApiApiKeys.apiKey, env.BREVO_API_KEY);
+      this.brevoApiInstance = apiInstance;
+      logger.info('Brevo email service initialized');
+    } else if (env.EMAIL_SERVICE === 'sendgrid' && env.SENDGRID_API_KEY && env.SENDGRID_API_KEY !== 'your_sendgrid_api_key') {
       // SendGrid SMTP
       this.transporter = nodemailer.createTransport({
         host: 'smtp.sendgrid.net',
@@ -27,6 +36,7 @@ export class EmailService {
           pass: env.SENDGRID_API_KEY,
         },
       });
+      logger.info('SendGrid email service initialized');
     } else if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
       // Default SMTP (can be configured for other services)
       this.transporter = nodemailer.createTransport({
@@ -38,6 +48,7 @@ export class EmailService {
           pass: process.env.SMTP_PASS,
         },
       });
+      logger.info('SMTP email service initialized');
     } else {
       // Create a dummy transporter that will fail gracefully
       // This allows the app to start without email configuration
@@ -50,7 +61,7 @@ export class EmailService {
           pass: 'dummy',
         },
       });
-      console.warn('Email service not configured, email sending will fail. Please configure SendGrid or SMTP settings.');
+      logger.warn('Email service not configured, email sending will fail. Please configure Brevo, SendGrid, or SMTP settings.');
     }
   }
 
@@ -58,15 +69,56 @@ export class EmailService {
    * Send email
    */
   async sendEmail(options: EmailOptions): Promise<void> {
-    // Check if email is properly configured
-    if (!env.SENDGRID_API_KEY || env.SENDGRID_API_KEY === 'your_sendgrid_api_key') {
-      if (!process.env.SMTP_HOST || !process.env.SMTP_USER) {
-        console.warn('Email service not configured. Email not sent to:', options.to);
-        throw new ValidationError('Email service is not configured. Please set up SendGrid or SMTP settings.');
-      }
+    // Check if email is enabled by admin
+    const communicationSettingsService = await import('../communicationSettings.service').then(m => m.default);
+    const isEnabled = await communicationSettingsService.isEmailEnabled();
+    
+    if (!isEnabled) {
+      const communicationLogService = await import('../communicationLog.service').then(m => m.default);
+      await communicationLogService.log({
+        channel: 'EMAIL',
+        recipient: options.to,
+        subject: options.subject,
+        message: options.html,
+        status: 'BLOCKED',
+        errorMessage: 'Email service disabled by administrator',
+      });
+      throw new ValidationError('Email service is currently disabled by administrator');
     }
 
+    const communicationLogService = await import('../communicationLog.service').then(m => m.default);
+    
     try {
+      // Use Brevo API if configured
+      if (env.EMAIL_SERVICE === 'brevo' && this.brevoApiInstance && env.BREVO_API_KEY) {
+        const sendSmtpEmail = new brevo.SendSmtpEmail();
+        sendSmtpEmail.subject = options.subject;
+        sendSmtpEmail.htmlContent = options.html;
+        sendSmtpEmail.textContent = options.text || this.htmlToText(options.html);
+        sendSmtpEmail.sender = {
+          name: env.EMAIL_FROM_NAME,
+          email: options.from || env.EMAIL_FROM,
+        };
+        sendSmtpEmail.to = [{ email: options.to }];
+
+        await this.brevoApiInstance.sendTransacEmail(sendSmtpEmail);
+        
+        // Log successful email
+        await communicationLogService.log({
+          channel: 'EMAIL',
+          recipient: options.to,
+          subject: options.subject,
+          message: options.html,
+          status: 'SENT',
+        });
+        return;
+      }
+
+      // Use SMTP transporter (SendGrid or custom SMTP)
+      if (!this.transporter) {
+        throw new ValidationError('Email service not configured. Please set up Brevo, SendGrid, or SMTP settings.');
+      }
+
       const mailOptions = {
         from: options.from || `${env.EMAIL_FROM_NAME} <${env.EMAIL_FROM}>`,
         to: options.to,
@@ -76,7 +128,25 @@ export class EmailService {
       };
 
       await this.transporter.sendMail(mailOptions);
+      
+      // Log successful email
+      await communicationLogService.log({
+        channel: 'EMAIL',
+        recipient: options.to,
+        subject: options.subject,
+        message: options.html,
+        status: 'SENT',
+      });
     } catch (error: any) {
+      // Log failed email
+      await communicationLogService.log({
+        channel: 'EMAIL',
+        recipient: options.to,
+        subject: options.subject,
+        message: options.html,
+        status: 'FAILED',
+        errorMessage: error.message,
+      });
       throw new ValidationError(`Email sending failed: ${error.message}`);
     }
   }

@@ -90,12 +90,26 @@ export default function DashboardLayout({
                   </>
                 )}
                 {user?.role === 'ADMIN' && (
-                  <Link
-                    href="/dashboard/users"
-                    className="text-gray-900 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    Users
-                  </Link>
+                  <>
+                    <Link
+                      href="/dashboard/users"
+                      className="text-gray-900 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium"
+                    >
+                      Users
+                    </Link>
+                    <Link
+                      href="/dashboard/admin/communications"
+                      className="text-gray-900 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium"
+                    >
+                      Communications
+                    </Link>
+                    <Link
+                      href="/dashboard/admin/communication-logs"
+                      className="text-gray-900 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium"
+                    >
+                      Comm Logs
+                    </Link>
+                  </>
                 )}
                 <Link
                   href="/dashboard/settings"

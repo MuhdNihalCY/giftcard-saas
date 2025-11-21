@@ -5,6 +5,7 @@ import stripeService from '../services/payment/stripe.service';
 import { PaymentMethod, PaymentStatus } from '@prisma/client';
 import prisma from '../config/database';
 import { env } from '../config/env';
+import logger from '../utils/logger';
 
 export class WebhookController {
   async stripeWebhook(req: Request, res: Response, next: NextFunction) {
@@ -27,7 +28,7 @@ export class WebhookController {
           break;
 
         default:
-          console.log(`Unhandled event type: ${event.type}`);
+          logger.info('Unhandled Stripe webhook event type', { eventType: event.type });
       }
 
       res.json({ received: true });
@@ -96,7 +97,7 @@ export class WebhookController {
 
   private async handleStripeRefund(charge: any) {
     // Handle refund webhook if needed
-    console.log('Stripe refund webhook received:', charge.id);
+    logger.info('Stripe refund webhook received', { chargeId: charge.id });
   }
 
   async razorpayWebhook(req: Request, res: Response, next: NextFunction) {
@@ -127,7 +128,7 @@ export class WebhookController {
           break;
 
         default:
-          console.log(`Unhandled Razorpay event: ${event.event}`);
+          logger.info('Unhandled Razorpay webhook event', { eventType: event.event });
       }
 
       res.json({ received: true });
