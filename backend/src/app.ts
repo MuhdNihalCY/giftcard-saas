@@ -12,7 +12,9 @@ const app: Express = express();
 // Security middleware
 app.use(helmet());
 app.use(cors({
-  origin: env.CORS_ORIGIN,
+  origin: env.CORS_ORIGIN.includes(',') 
+    ? env.CORS_ORIGIN.split(',').map(origin => origin.trim()) 
+    : env.CORS_ORIGIN,
   credentials: true,
 }));
 
@@ -110,6 +112,7 @@ if (env.NODE_ENV === 'production' || process.env.ENABLE_WORKERS === 'true') {
 app.listen(PORT, () => {
   logger.info(`Server is running on port ${PORT}`);
   logger.info(`Environment: ${env.NODE_ENV}`);
+  logger.info(`CORS_ORIGIN: ${env.CORS_ORIGIN}`);
 });
 
 export default app;
