@@ -2,8 +2,13 @@ import { Request, Response, NextFunction } from 'express';
 import uploadService from '../services/upload.service';
 import { ValidationError } from '../utils/errors';
 
+interface MulterRequest extends Request {
+  file?: Express.Multer.File;
+  files?: Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[] };
+}
+
 export class UploadController {
-  async uploadImage(req: Request, res: Response, next: NextFunction) {
+  async uploadImage(req: MulterRequest, res: Response, next: NextFunction) {
     try {
       if (!req.file) {
         throw new ValidationError('No file uploaded');
@@ -28,14 +33,14 @@ export class UploadController {
     }
   }
 
-  async uploadMultiple(req: Request, res: Response, next: NextFunction) {
+  async uploadMultiple(req: MulterRequest, res: Response, next: NextFunction) {
     try {
       if (!req.files || (Array.isArray(req.files) && req.files.length === 0)) {
         throw new ValidationError('No files uploaded');
       }
 
       const files = Array.isArray(req.files) ? req.files : [req.files];
-      const uploadedFiles = files.map((file) => {
+      const uploadedFiles = (files as Express.Multer.File[]).map((file) => {
         uploadService.validateFile(file);
         return {
           filename: file.filename,

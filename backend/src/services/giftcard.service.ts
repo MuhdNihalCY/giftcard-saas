@@ -4,7 +4,7 @@ import prisma from '../config/database';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { generateGiftCardCode, isExpired } from '../utils/helpers';
 import qrCodeService from './qrcode.service';
-import { GiftCardStatus } from '@prisma/client';
+import { GiftCardStatus, GiftCard } from '@prisma/client';
 import cacheService, { CacheKeys } from './cache.service';
 
 export interface CreateGiftCardData {
@@ -28,6 +28,16 @@ export interface UpdateGiftCardData {
   allowPartialRedemption?: boolean;
   status?: GiftCardStatus;
 }
+
+type GiftCardWithRelations = GiftCard & {
+  merchant: {
+    id: string;
+    email: string;
+    businessName: string | null;
+    businessLogo: string | null;
+  };
+  template: any;
+};
 
 export class GiftCardService {
   /**
@@ -118,11 +128,11 @@ export class GiftCardService {
   /**
    * Get gift card by ID
    */
-  async getById(id: string, userId?: string) {
+  async getById(id: string, userId?: string): Promise<GiftCardWithRelations> {
     const cacheKey = CacheKeys.giftCard(id);
     
     // Try to get from cache
-    const cached = await cacheService.get(cacheKey);
+    const cached = await cacheService.get<GiftCardWithRelations>(cacheKey);
     if (cached) {
       return cached;
     }
@@ -161,11 +171,11 @@ export class GiftCardService {
   /**
    * Get gift card by code
    */
-  async getByCode(code: string) {
+  async getByCode(code: string): Promise<GiftCardWithRelations> {
     const cacheKey = CacheKeys.giftCardByCode(code);
     
     // Try to get from cache
-    const cached = await cacheService.get(cacheKey);
+    const cached = await cacheService.get<GiftCardWithRelations>(cacheKey);
     if (cached) {
       return cached;
     }
@@ -211,7 +221,7 @@ export class GiftCardService {
     status?: GiftCardStatus;
     page?: number;
     limit?: number;
-  }) {
+  }): Promise<{ giftCards: GiftCardWithRelations[]; pagination: any }> {
     const { merchantId, status, page = 1, limit = 20 } = filters;
     
     // Build cache key
@@ -223,7 +233,7 @@ export class GiftCardService {
     }
 
     // Try to get from cache
-    const cached = await cacheService.get(cacheKey);
+    const cached = await cacheService.get<{ giftCards: GiftCardWithRelations[]; pagination: any }>(cacheKey);
     if (cached) {
       return cached;
     }
@@ -246,8 +256,10 @@ export class GiftCardService {
               id: true,
               email: true,
               businessName: true,
+              businessLogo: true,
             },
           },
+          template: true,
         },
       }),
       prisma.giftCard.count({ where }),

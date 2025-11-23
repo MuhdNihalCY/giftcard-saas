@@ -42,7 +42,7 @@ export class RazorpayService {
 
       return {
         orderId: order.id,
-        amount: order.amount / 100,
+        amount: Number(order.amount) / 100,
         currency: order.currency,
         status: order.status,
       };
@@ -77,7 +77,7 @@ export class RazorpayService {
         id: payment.id,
         orderId: payment.order_id,
         status: payment.status,
-        amount: payment.amount / 100,
+        amount: Number(payment.amount) / 100,
         currency: payment.currency,
         method: payment.method,
         transactionId: payment.id,
@@ -97,7 +97,7 @@ export class RazorpayService {
       return {
         id: order.id,
         status: order.status,
-        amount: order.amount / 100,
+        amount: Number(order.amount) / 100,
         currency: order.currency,
       };
     } catch (error: any) {
@@ -119,7 +119,7 @@ export class RazorpayService {
 
       return {
         refundId: refund.id,
-        amount: refund.amount / 100,
+        amount: Number(refund.amount) / 100,
         status: refund.status,
       };
     } catch (error: any) {

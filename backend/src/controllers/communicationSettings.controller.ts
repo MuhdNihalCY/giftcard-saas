@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { AuthRequest } from '../middleware/auth.middleware';
 import communicationSettingsService from '../services/communicationSettings.service';
 import { UnauthorizedError } from '../utils/errors';
 
@@ -6,7 +7,7 @@ export class CommunicationSettingsController {
   /**
    * Get communication settings (Admin only)
    */
-  async getSettings(req: Request, res: Response, next: NextFunction) {
+  async getSettings(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       // Check if user is admin
       if (req.user?.role !== 'ADMIN') {
@@ -26,7 +27,7 @@ export class CommunicationSettingsController {
   /**
    * Update communication settings (Admin only)
    */
-  async updateSettings(req: Request, res: Response, next: NextFunction) {
+  async updateSettings(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       // Check if user is admin
       if (req.user?.role !== 'ADMIN') {

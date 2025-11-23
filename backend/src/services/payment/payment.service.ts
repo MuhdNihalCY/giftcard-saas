@@ -53,8 +53,8 @@ export class PaymentService {
 
     let paymentIntentId: string | undefined;
     let orderId: string | undefined;
-    let clientSecret: string | undefined;
-    let status = PaymentStatus.PENDING;
+    let clientSecret: string | null | undefined;
+    let status: PaymentStatus = PaymentStatus.PENDING;
 
     // Create payment based on method
     switch (paymentMethod) {

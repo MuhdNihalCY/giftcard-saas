@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { AuthRequest } from '../middleware/auth.middleware';
 import otpService from '../services/otp.service';
 import { ValidationError } from '../utils/errors';
 
@@ -6,7 +7,7 @@ export class OTPController {
   /**
    * Generate and send OTP
    */
-  async generateOTP(req: Request, res: Response, next: NextFunction) {
+  async generateOTP(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { identifier, type, metadata } = req.body;
 
@@ -33,7 +34,7 @@ export class OTPController {
   /**
    * Verify OTP
    */
-  async verifyOTP(req: Request, res: Response, next: NextFunction) {
+  async verifyOTP(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { identifier, code, type } = req.body;
 
@@ -60,7 +61,7 @@ export class OTPController {
   /**
    * Resend OTP
    */
-  async resendOTP(req: Request, res: Response, next: NextFunction) {
+  async resendOTP(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { identifier, type, metadata } = req.body;
 

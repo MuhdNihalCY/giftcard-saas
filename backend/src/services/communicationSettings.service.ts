@@ -1,4 +1,6 @@
-import prisma from '../config/database';
+// import prisma from '../config/database';
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 import { NotFoundError, ValidationError } from '../utils/errors';
 import logger from '../utils/logger';
 
@@ -22,14 +24,14 @@ export class CommunicationSettingsService {
    */
   async getSettings() {
     let settings = await prisma.communicationSettings.findUnique({
-      where: { id: this.SETTINGS_ID },
+      where: { id: CommunicationSettingsService.SETTINGS_ID },
     });
 
     // Create default settings if they don't exist
     if (!settings) {
       settings = await prisma.communicationSettings.create({
         data: {
-          id: this.SETTINGS_ID,
+          id: CommunicationSettingsService.SETTINGS_ID,
           emailEnabled: true,
           smsEnabled: true,
           otpEnabled: true,
@@ -71,7 +73,7 @@ export class CommunicationSettingsService {
     const settings = await this.getSettings();
 
     const updated = await prisma.communicationSettings.update({
-      where: { id: this.SETTINGS_ID },
+      where: { id: CommunicationSettingsService.SETTINGS_ID },
       data: {
         ...data,
         updatedBy,

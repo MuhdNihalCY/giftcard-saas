@@ -1,3 +1,4 @@
+import Redis from 'ioredis';
 import { Worker } from 'bullmq';
 import { getRedisClient } from '../config/redis';
 import { QUEUE_NAMES } from '../config/queue';
@@ -7,11 +8,9 @@ import { processCleanupTokens } from '../jobs/cleanupTokens.job';
 import logger from '../utils/logger';
 
 const workerOptions = {
-  connection: {
-    get client() {
-      return getRedisClient();
-    },
-  },
+  connection: new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
+    maxRetriesPerRequest: null,
+  }),
   concurrency: 5,
   limiter: {
     max: 10,

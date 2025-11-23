@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { AuthRequest } from '../middleware/auth.middleware';
 import communicationLogService from '../services/communicationLog.service';
 import { UnauthorizedError } from '../utils/errors';
 
@@ -6,7 +7,7 @@ export class CommunicationLogController {
   /**
    * Get communication logs (Admin only)
    */
-  async getLogs(req: Request, res: Response, next: NextFunction) {
+  async getLogs(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       // Check if user is admin
       if (req.user?.role !== 'ADMIN') {
@@ -47,7 +48,7 @@ export class CommunicationLogController {
   /**
    * Get communication statistics (Admin only)
    */
-  async getStatistics(req: Request, res: Response, next: NextFunction) {
+  async getStatistics(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       // Check if user is admin
       if (req.user?.role !== 'ADMIN') {
@@ -74,7 +75,7 @@ export class CommunicationLogController {
   /**
    * Get channel-specific statistics (Admin only)
    */
-  async getChannelStatistics(req: Request, res: Response, next: NextFunction) {
+  async getChannelStatistics(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       // Check if user is admin
       if (req.user?.role !== 'ADMIN') {

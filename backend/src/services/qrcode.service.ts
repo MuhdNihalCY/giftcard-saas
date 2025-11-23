@@ -25,10 +25,10 @@ export class QRCodeService {
   async generateBuffer(data: string): Promise<Buffer> {
     try {
       const qrCodeBuffer = await QRCode.toBuffer(data, {
-        errorCorrectionLevel: 'M',
-        type: 'image/png',
-        width: 300,
+        errorCorrectionLevel: 'H',
+        type: 'png',
         margin: 1,
+        width: 300,
       });
       return qrCodeBuffer;
     } catch (error) {

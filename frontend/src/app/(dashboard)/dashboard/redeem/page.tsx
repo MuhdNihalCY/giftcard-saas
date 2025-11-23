@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
-import { QRCode } from 'react-qr-code';
+import QRCode from 'react-qr-code';
 
 const redeemSchema = z.object({
   code: z.string().min(1, 'Gift card code is required'),
@@ -51,10 +51,10 @@ export default function RedeemPage() {
       const response = await api.post('/redemptions/validate', { code });
       const giftCardData = response.data.data.giftCard;
       setGiftCard(giftCardData);
-      
+
       // Set default amount to full balance
       setValue('amount', giftCardData.balance);
-      
+
       // Generate QR code data
       setQrData(JSON.stringify({ code: giftCardData.code, id: giftCardData.id }));
     } catch (err: any) {
@@ -98,7 +98,7 @@ export default function RedeemPage() {
       setSuccess(
         `Successfully redeemed ${formatCurrency(data.amount, giftCard.currency)}! New balance: ${formatCurrency(response.data.data.giftCard.balance, giftCard.currency)}`
       );
-      
+
       // Refresh gift card data
       await validateGiftCard(data.code);
     } catch (err: any) {

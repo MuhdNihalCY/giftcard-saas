@@ -1,4 +1,5 @@
 import { Queue, Worker, QueueEvents } from 'bullmq';
+import Redis from 'ioredis';
 import { getRedisClient } from './redis';
 import logger from '../utils/logger';
 
@@ -13,11 +14,9 @@ export const QUEUE_NAMES = {
 
 // Queue options
 const queueOptions = {
-  connection: {
-    get client() {
-      return getRedisClient();
-    },
-  },
+  connection: new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
+    maxRetriesPerRequest: null,
+  }),
   defaultJobOptions: {
     attempts: 3,
     backoff: {

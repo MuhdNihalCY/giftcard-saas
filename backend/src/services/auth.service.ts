@@ -66,9 +66,11 @@ export class AuthService {
     });
 
     // Send verification email (don't await to avoid blocking registration)
-    import emailVerificationService from './emailVerification.service';
-    emailVerificationService.sendVerificationEmail(user.id, user.email).catch((error) => {
-      logger.error('Failed to send verification email during registration', { userId: user.id, error });
+    // Use dynamic import to avoid circular dependency if any
+    import('./emailVerification.service').then((module) => {
+      module.default.sendVerificationEmail(user.id, user.email).catch((error) => {
+        logger.error('Failed to send verification email during registration', { userId: user.id, error });
+      });
     });
 
     // Generate tokens
@@ -180,11 +182,11 @@ export class AuthService {
 
   generateTokens(payload: TokenPayload) {
     const accessToken = jwt.sign(payload, env.JWT_SECRET, {
-      expiresIn: env.JWT_EXPIRES_IN,
+      expiresIn: env.JWT_EXPIRES_IN as any,
     });
 
     const refreshToken = jwt.sign(payload, env.JWT_REFRESH_SECRET, {
-      expiresIn: env.JWT_REFRESH_EXPIRES_IN,
+      expiresIn: env.JWT_REFRESH_EXPIRES_IN as any,
     });
 
     return {

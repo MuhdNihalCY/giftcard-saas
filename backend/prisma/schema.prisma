@@ -296,6 +296,7 @@ enum PayoutStatus {
   CANCELLED
 }
 
+
 model CommunicationSettings {
   id               String   @id @default(uuid())
   emailEnabled     Boolean  @default(true) @map("email_enabled")

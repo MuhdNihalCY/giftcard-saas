@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import Link from 'next/link';
-import { QRCode } from 'react-qr-code';
+import QRCode from 'react-qr-code';
 
 interface GiftCard {
   id: string;
@@ -133,13 +133,12 @@ export default function GiftCardDetailsPage() {
                 <div>
                   <p className="text-sm text-gray-500">Status</p>
                   <span
-                    className={`inline-block px-2 py-1 text-xs rounded mt-1 ${
-                      giftCard.status === 'ACTIVE'
+                    className={`inline-block px-2 py-1 text-xs rounded mt-1 ${giftCard.status === 'ACTIVE'
                         ? 'bg-green-100 text-green-800'
                         : giftCard.status === 'REDEEMED'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}
                   >
                     {giftCard.status}
                   </span>
