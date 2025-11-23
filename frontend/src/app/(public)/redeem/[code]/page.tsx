@@ -10,6 +10,9 @@ import { formatCurrency } from '@/lib/utils';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { Navigation } from '@/components/Navigation';
+import { useToast } from '@/components/ui/ToastContainer';
+import { CardSkeleton } from '@/components/ui/Skeleton';
 
 const redeemSchema = z.object({
   amount: z.number().positive('Amount must be greater than 0'),
@@ -23,6 +26,7 @@ type RedeemFormData = z.infer<typeof redeemSchema>;
 export default function RedeemPage() {
   const params = useParams();
   const router = useRouter();
+  const toast = useToast();
   const code = params.code as string;
   const [giftCard, setGiftCard] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -70,7 +74,7 @@ export default function RedeemPage() {
       });
 
       // Show success and redirect
-      alert(`Successfully redeemed ${formatCurrency(data.amount, giftCard.currency)}!`);
+      toast.success(`Successfully redeemed ${formatCurrency(data.amount, giftCard.currency)}!`);
       router.push(`/redeem/${code}/success`);
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Redemption failed');
@@ -81,55 +85,66 @@ export default function RedeemPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="min-h-screen bg-navy-900">
+        <Navigation />
+        <div className="py-16 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl mx-auto">
+            <CardSkeleton />
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!giftCard) {
     return (
-      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-2xl mx-auto">
-          <Card>
-            <CardContent className="text-center py-12">
-              <p className="text-red-600 mb-4">{error}</p>
-              <Button onClick={() => router.push('/')}>Go Home</Button>
-            </CardContent>
-          </Card>
+      <div className="min-h-screen bg-navy-900">
+        <Navigation />
+        <div className="py-12 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl mx-auto">
+            <Card>
+              <CardContent className="text-center py-12">
+                <p className="text-red-400 mb-4">{error}</p>
+                <Button variant="gold" onClick={() => router.push('/')}>Go Home</Button>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">
-          Redeem Gift Card
-        </h1>
+    <div className="min-h-screen bg-navy-900">
+      <Navigation />
+      <div className="py-16 px-4 sm:px-6 lg:px-8 page-transition">
+        <div className="max-w-2xl mx-auto">
+          <h1 className="text-5xl font-serif font-bold text-plum-300 mb-4 text-center">
+            Redeem Gift Card
+          </h1>
+          <p className="text-center text-navy-200 mb-12">Complete your redemption</p>
 
         <Card>
           <CardHeader>
             <CardTitle>Gift Card Details</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="mb-6 p-4 bg-primary-50 rounded-lg">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-gray-600">Code:</span>
-                <span className="font-mono font-semibold">{giftCard.code}</span>
+            <div className="mb-6 p-6 bg-plum-900/20 border border-plum-500/30 rounded-xl backdrop-blur-sm">
+              <div className="flex justify-between items-center mb-3 pb-3 border-b border-navy-700">
+                <span className="text-plum-200">Code:</span>
+                <span className="font-mono font-semibold text-navy-50">{giftCard.code}</span>
               </div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-gray-600">Balance:</span>
-                <span className="text-2xl font-bold text-primary-600">
+              <div className="flex justify-between items-center mb-3 pb-3 border-b border-navy-700">
+                <span className="text-plum-200">Balance:</span>
+                <span className="text-3xl font-serif font-bold bg-gold-gradient bg-clip-text text-transparent">
                   {formatCurrency(giftCard.balance, giftCard.currency)}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600">Status:</span>
+                <span className="text-plum-200">Status:</span>
                 <span
                   className={`font-semibold ${
-                    giftCard.status === 'ACTIVE' ? 'text-green-600' : 'text-red-600'
+                    giftCard.status === 'ACTIVE' ? 'text-green-400' : 'text-red-400'
                   }`}
                 >
                   {giftCard.status}
@@ -153,13 +168,13 @@ export default function RedeemPage() {
                   error={errors.merchantId?.message}
                   {...register('merchantId')}
                 />
-                <p className="mt-1 text-sm text-gray-600">
+                <p className="mt-1 text-sm text-plum-200">
                   Your Merchant ID is your user account ID. You can find it in your{' '}
-                  <a href="/dashboard/settings" className="text-primary-600 hover:underline">
+                  <a href="/dashboard/settings" className="text-gold-400 hover:text-gold-300 transition-colors">
                     Dashboard Settings
                   </a>
                   {' '}or{' '}
-                  <a href="/login" className="text-primary-600 hover:underline">
+                  <a href="/login" className="text-gold-400 hover:text-gold-300 transition-colors">
                     log in
                   </a>
                   {' '}to redeem without entering it manually.
@@ -179,17 +194,18 @@ export default function RedeemPage() {
               />
 
               {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                <div className="bg-red-900/30 border border-red-500/50 text-red-300 px-4 py-3 rounded-lg">
                   {error}
                 </div>
               )}
 
-              <Button type="submit" className="w-full" isLoading={isRedeeming}>
+              <Button type="submit" variant="gold" className="w-full text-lg py-4" isLoading={isRedeeming}>
                 Redeem Gift Card
               </Button>
             </form>
           </CardContent>
         </Card>
+        </div>
       </div>
     </div>
   );

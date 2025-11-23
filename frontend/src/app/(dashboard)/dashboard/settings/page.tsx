@@ -87,36 +87,37 @@ export default function SettingsPage() {
   };
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Settings</h1>
+    <div className="page-transition">
+      <h1 className="text-4xl font-serif font-bold text-plum-300 mb-4">Settings</h1>
+      <p className="text-navy-200 mb-8 text-lg">Manage your account preferences</p>
 
-      <div className="flex space-x-1 border-b mb-6">
+      <div className="flex space-x-1 border-b border-navy-700 mb-6">
         <button
           onClick={() => setActiveTab('profile')}
-          className={`px-4 py-2 font-medium ${
+          className={`px-4 py-2 font-medium transition-colors ${
             activeTab === 'profile'
-              ? 'border-b-2 border-primary-600 text-primary-600'
-              : 'text-gray-600 hover:text-gray-900'
+              ? 'border-b-2 border-gold-500 text-gold-400'
+              : 'text-plum-300 hover:text-gold-300'
           }`}
         >
           Profile
         </button>
         <button
           onClick={() => setActiveTab('password')}
-          className={`px-4 py-2 font-medium ${
+          className={`px-4 py-2 font-medium transition-colors ${
             activeTab === 'password'
-              ? 'border-b-2 border-primary-600 text-primary-600'
-              : 'text-gray-600 hover:text-gray-900'
+              ? 'border-b-2 border-gold-500 text-gold-400'
+              : 'text-plum-300 hover:text-gold-300'
           }`}
         >
           Password
         </button>
         <button
           onClick={() => setActiveTab('notifications')}
-          className={`px-4 py-2 font-medium ${
+          className={`px-4 py-2 font-medium transition-colors ${
             activeTab === 'notifications'
-              ? 'border-b-2 border-primary-600 text-primary-600'
-              : 'text-gray-600 hover:text-gray-900'
+              ? 'border-b-2 border-gold-500 text-gold-400'
+              : 'text-plum-300 hover:text-gold-300'
           }`}
         >
           Notifications
@@ -125,10 +126,10 @@ export default function SettingsPage() {
 
       {message && (
         <div
-          className={`mb-6 px-4 py-3 rounded ${
+          className={`mb-6 px-4 py-3 rounded-lg ${
             message.type === 'success'
-              ? 'bg-green-50 border border-green-200 text-green-700'
-              : 'bg-red-50 border border-red-200 text-red-700'
+              ? 'bg-green-900/30 border border-green-500/50 text-green-300'
+              : 'bg-red-900/30 border border-red-500/50 text-red-300'
           }`}
         >
           {message.text}
@@ -170,16 +171,16 @@ export default function SettingsPage() {
               
               {/* Merchant ID Display */}
               {(user?.role === 'MERCHANT' || user?.role === 'ADMIN') && user?.id && (
-                <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="mt-6 p-6 bg-plum-900/20 border border-plum-500/30 rounded-xl">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-semibold text-gray-900">Your Merchant ID</p>
-                      <p className="text-sm text-gray-600 mt-1">
+                      <p className="font-serif font-semibold text-plum-300">Your Merchant ID</p>
+                      <p className="text-sm text-plum-200 mt-1">
                         Use this ID when redeeming gift cards via public links
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-mono text-sm font-semibold text-blue-600 break-all max-w-xs">
+                      <p className="font-mono text-sm font-semibold text-gold-400 break-all max-w-xs">
                         {user.id}
                       </p>
                       <button
@@ -188,7 +189,7 @@ export default function SettingsPage() {
                           navigator.clipboard.writeText(user.id!);
                           alert('Merchant ID copied to clipboard!');
                         }}
-                        className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline"
+                        className="mt-2 text-xs text-gold-400 hover:text-gold-300 underline transition-colors"
                       >
                         Copy ID
                       </button>
@@ -196,7 +197,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
               )}
-              <Button type="submit" isLoading={isLoading}>
+              <Button type="submit" variant="gold" isLoading={isLoading}>
                 Save Changes
               </Button>
             </form>
@@ -229,7 +230,7 @@ export default function SettingsPage() {
                 error={passwordForm.formState.errors.confirmPassword?.message}
                 {...passwordForm.register('confirmPassword')}
               />
-              <Button type="submit" isLoading={isLoading}>
+              <Button type="submit" variant="gold" isLoading={isLoading}>
                 Update Password
               </Button>
             </form>
@@ -244,28 +245,28 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between py-3 border-b border-navy-700">
                 <div>
-                  <p className="font-medium text-gray-900">Email Notifications</p>
-                  <p className="text-sm text-gray-600">Receive email updates about your account</p>
+                  <p className="font-medium text-plum-300">Email Notifications</p>
+                  <p className="text-sm text-plum-200">Receive email updates about your account</p>
                 </div>
-                <input type="checkbox" className="h-4 w-4 text-primary-600" defaultChecked />
+                <input type="checkbox" className="h-4 w-4 text-gold-500 focus:ring-gold-500 border-plum-500/30 rounded bg-navy-800/50" defaultChecked />
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between py-3 border-b border-navy-700">
                 <div>
-                  <p className="font-medium text-gray-900">Gift Card Redemptions</p>
-                  <p className="text-sm text-gray-600">Get notified when gift cards are redeemed</p>
+                  <p className="font-medium text-plum-300">Gift Card Redemptions</p>
+                  <p className="text-sm text-plum-200">Get notified when gift cards are redeemed</p>
                 </div>
-                <input type="checkbox" className="h-4 w-4 text-primary-600" defaultChecked />
+                <input type="checkbox" className="h-4 w-4 text-gold-500 focus:ring-gold-500 border-plum-500/30 rounded bg-navy-800/50" defaultChecked />
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between py-3">
                 <div>
-                  <p className="font-medium text-gray-900">Payment Notifications</p>
-                  <p className="text-sm text-gray-600">Receive notifications about payments</p>
+                  <p className="font-medium text-plum-300">Payment Notifications</p>
+                  <p className="text-sm text-plum-200">Receive notifications about payments</p>
                 </div>
-                <input type="checkbox" className="h-4 w-4 text-primary-600" defaultChecked />
+                <input type="checkbox" className="h-4 w-4 text-gold-500 focus:ring-gold-500 border-plum-500/30 rounded bg-navy-800/50" defaultChecked />
               </div>
-              <Button>Save Preferences</Button>
+              <Button variant="gold">Save Preferences</Button>
             </div>
           </CardContent>
         </Card>

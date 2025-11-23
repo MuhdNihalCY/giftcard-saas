@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { Card, CardContent } from '@/components/ui/Card';
 import api from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import Link from 'next/link';
@@ -138,8 +139,8 @@ export default function LoginPage() {
   // Show loading while checking auth
   if (isChecking) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-navy-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-500"></div>
       </div>
     );
   }
@@ -150,47 +151,54 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to your account
+    <div className="min-h-screen bg-navy-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8 page-transition">
+        <div className="text-center">
+          <h2 className="text-4xl font-serif font-bold text-plum-300 mb-2">
+            Welcome Back
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Or{' '}
-            <Link href="/register" className="font-medium text-primary-600 hover:text-primary-500">
-              create a new account
-            </Link>
+          <p className="text-navy-200">
+            Sign in to your account
           </p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-          <div className="space-y-4">
-            <Input
-              label="Email address"
-              type="email"
-              autoComplete="email"
-              error={errors.email?.message}
-              {...register('email')}
-            />
-            <Input
-              label="Password"
-              type="password"
-              autoComplete="current-password"
-              error={errors.password?.message}
-              {...register('password')}
-            />
-          </div>
-          <div>
-            <Button type="submit" className="w-full" isLoading={isLoading}>
-              Sign in
-            </Button>
-          </div>
-        </form>
+        <Card>
+          <CardContent className="pt-6">
+            <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+              {error && (
+                <div className="bg-red-900/30 border border-red-500/50 text-red-300 px-4 py-3 rounded-lg">
+                  {error}
+                </div>
+              )}
+              <div className="space-y-5">
+                <Input
+                  label="Email address"
+                  type="email"
+                  autoComplete="email"
+                  error={errors.email?.message}
+                  {...register('email')}
+                />
+                <Input
+                  label="Password"
+                  type="password"
+                  autoComplete="current-password"
+                  error={errors.password?.message}
+                  {...register('password')}
+                />
+              </div>
+              <div>
+                <Button type="submit" variant="gold" className="w-full text-lg py-3" isLoading={isLoading}>
+                  Sign In
+                </Button>
+              </div>
+              <p className="text-center text-sm text-plum-200">
+                Don't have an account?{' '}
+                <Link href="/register" className="font-medium text-gold-400 hover:text-gold-300 transition-colors">
+                  Create one now
+                </Link>
+              </p>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

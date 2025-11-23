@@ -87,7 +87,7 @@ export default function GiftCardDetailsPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-500"></div>
       </div>
     );
   }
@@ -95,20 +95,20 @@ export default function GiftCardDetailsPage() {
   if (!giftCard) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-600">Gift card not found</p>
+        <p className="text-plum-200">Gift card not found</p>
         <Link href="/dashboard/gift-cards">
-          <Button className="mt-4">Back to Gift Cards</Button>
+          <Button variant="gold" className="mt-4">Back to Gift Cards</Button>
         </Link>
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="page-transition">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Gift Card Details</h1>
-          <p className="text-gray-600 mt-1">Code: {giftCard.code}</p>
+          <h1 className="text-4xl font-serif font-bold text-plum-300">Gift Card Details</h1>
+          <p className="text-plum-200 mt-2">Code: <span className="font-mono text-navy-50">{giftCard.code}</span></p>
         </div>
         <div className="flex space-x-2">
           <Link href={`/dashboard/gift-cards/${params.id}/edit`}>
@@ -131,66 +131,67 @@ export default function GiftCardDetailsPage() {
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-gray-500">Status</p>
+                  <p className="text-sm text-plum-300 mb-1">Status</p>
                   <span
-                    className={`inline-block px-2 py-1 text-xs rounded mt-1 ${giftCard.status === 'ACTIVE'
-                      ? 'bg-green-100 text-green-800'
-                      : giftCard.status === 'REDEEMED'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-gray-100 text-gray-800'
-                      }`}
+                    className={`inline-block px-3 py-1 text-xs font-semibold rounded mt-1 ${
+                      giftCard.status === 'ACTIVE'
+                        ? 'bg-green-900/30 text-green-400 border border-green-500/30'
+                        : giftCard.status === 'REDEEMED'
+                        ? 'bg-blue-900/30 text-blue-400 border border-blue-500/30'
+                        : 'bg-navy-700/50 text-plum-300 border border-navy-600'
+                    }`}
                   >
                     {giftCard.status}
                   </span>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Value</p>
-                  <p className="font-semibold text-gray-900">
+                  <p className="text-sm text-plum-300 mb-1">Value</p>
+                  <p className="font-serif font-bold text-gold-400">
                     {formatCurrency(giftCard.value, giftCard.currency)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Balance</p>
-                  <p className="font-semibold text-gray-900">
+                  <p className="text-sm text-plum-300 mb-1">Balance</p>
+                  <p className="font-serif font-bold bg-gold-gradient bg-clip-text text-transparent">
                     {formatCurrency(giftCard.balance, giftCard.currency)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Created</p>
-                  <p className="font-semibold text-gray-900">
+                  <p className="text-sm text-plum-300 mb-1">Created</p>
+                  <p className="font-semibold text-navy-50">
                     {formatDate(giftCard.createdAt)}
                   </p>
                 </div>
                 {giftCard.expiryDate && (
                   <div>
-                    <p className="text-sm text-gray-500">Expires</p>
-                    <p className="font-semibold text-gray-900">
+                    <p className="text-sm text-plum-300 mb-1">Expires</p>
+                    <p className="font-semibold text-navy-50">
                       {formatDate(giftCard.expiryDate)}
                     </p>
                   </div>
                 )}
                 <div>
-                  <p className="text-sm text-gray-500">Partial Redemption</p>
-                  <p className="font-semibold text-gray-900">
+                  <p className="text-sm text-plum-300 mb-1">Partial Redemption</p>
+                  <p className="font-semibold text-navy-50">
                     {giftCard.allowPartialRedemption ? 'Yes' : 'No'}
                   </p>
                 </div>
               </div>
 
               {giftCard.customMessage && (
-                <div className="mt-4 pt-4 border-t">
-                  <p className="text-sm text-gray-500">Custom Message</p>
-                  <p className="text-gray-900 mt-1">{giftCard.customMessage}</p>
+                <div className="mt-4 pt-4 border-t border-navy-700">
+                  <p className="text-sm text-plum-300 mb-1">Custom Message</p>
+                  <p className="text-navy-50 mt-1">{giftCard.customMessage}</p>
                 </div>
               )}
 
               {giftCard.recipientEmail && (
-                <div className="mt-4 pt-4 border-t">
-                  <p className="text-sm text-gray-500">Recipient</p>
-                  <p className="text-gray-900 mt-1">
+                <div className="mt-4 pt-4 border-t border-navy-700">
+                  <p className="text-sm text-plum-300 mb-1">Recipient</p>
+                  <p className="text-navy-50 mt-1">
                     {giftCard.recipientName || giftCard.recipientEmail}
                   </p>
-                  <p className="text-sm text-gray-600">{giftCard.recipientEmail}</p>
+                  <p className="text-sm text-plum-200">{giftCard.recipientEmail}</p>
                 </div>
               )}
             </CardContent>
@@ -202,11 +203,11 @@ export default function GiftCardDetailsPage() {
             </CardHeader>
             <CardContent>
               {!Array.isArray(redemptions) || redemptions.length === 0 ? (
-                <p className="text-gray-600 text-center py-4">No redemptions yet</p>
+                <p className="text-plum-200 text-center py-8">No redemptions yet</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm text-left">
-                    <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                    <thead className="text-xs text-plum-300 uppercase bg-navy-800/50 border-b border-navy-700">
                       <tr>
                         <th className="px-4 py-3">Date</th>
                         <th className="px-4 py-3">Amount</th>
@@ -218,33 +219,33 @@ export default function GiftCardDetailsPage() {
                     </thead>
                     <tbody>
                       {redemptions.map((redemption: any) => (
-                        <tr key={redemption.id} className="bg-white border-b hover:bg-gray-50">
-                          <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">
+                        <tr key={redemption.id} className="border-b border-navy-700 hover:bg-navy-800/30 transition-colors">
+                          <td className="px-4 py-3 font-medium text-navy-50 whitespace-nowrap">
                             {formatDate(redemption.createdAt)}
                           </td>
-                          <td className="px-4 py-3 text-red-600 font-semibold">
+                          <td className="px-4 py-3 text-red-400 font-semibold">
                             -{formatCurrency(redemption.amount, giftCard.currency)}
                           </td>
                           <td className="px-4 py-3">
-                            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-900/30 text-blue-400 border border-blue-500/30">
                               {redemption.redemptionMethod?.replace('_', ' ') || 'N/A'}
                             </span>
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center space-x-1">
-                              <span className="text-gray-500">
+                              <span className="text-plum-300">
                                 {formatCurrency(redemption.balanceBefore, giftCard.currency)}
                               </span>
-                              <span className="text-gray-400">→</span>
-                              <span className="font-medium text-gray-900">
+                              <span className="text-plum-400">→</span>
+                              <span className="font-medium text-navy-50">
                                 {formatCurrency(redemption.balanceAfter, giftCard.currency)}
                               </span>
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-gray-500">
+                          <td className="px-4 py-3 text-plum-200">
                             {redemption.location || '-'}
                           </td>
-                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate" title={redemption.notes}>
+                          <td className="px-4 py-3 text-plum-200 max-w-xs truncate" title={redemption.notes}>
                             {redemption.notes || '-'}
                           </td>
                         </tr>
@@ -263,14 +264,16 @@ export default function GiftCardDetailsPage() {
               <CardTitle>QR Code</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col items-center">
-              <QRCode
-                value={JSON.stringify({ code: giftCard.code, id: giftCard.id })}
-                size={200}
-                level="H"
-                fgColor="#000000"
-                bgColor="#FFFFFF"
-              />
-              <p className="mt-4 text-sm text-gray-600 text-center font-mono">
+              <div className="bg-white p-4 rounded-lg">
+                <QRCode
+                  value={JSON.stringify({ code: giftCard.code, id: giftCard.id })}
+                  size={200}
+                  level="H"
+                  fgColor="#000000"
+                  bgColor="#FFFFFF"
+                />
+              </div>
+              <p className="mt-4 text-sm text-plum-200 text-center font-mono">
                 {giftCard.code}
               </p>
               <Button

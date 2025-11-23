@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
@@ -9,6 +9,9 @@ import { useAuthStore } from '@/store/authStore';
 import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
 import { formatDateTime } from '@/lib/utils';
+import { Navigation } from '@/components/Navigation';
+import { GiftCardSkeleton } from '@/components/ui/Skeleton';
+import { useToast } from '@/components/ui/ToastContainer';
 
 interface GiftCard {
   id: string;
@@ -19,6 +22,7 @@ interface GiftCard {
   status: string;
   expiryDate?: string;
   qrCodeUrl?: string;
+  createdAt?: string;
   merchant: {
     businessName: string;
   };
@@ -26,11 +30,14 @@ interface GiftCard {
 
 export default function WalletPage() {
   const { user, isAuthenticated } = useAuthStore();
+  const toast = useToast();
   const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCard, setSelectedCard] = useState<GiftCard | null>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [showTransactions, setShowTransactions] = useState(false);
+  const [filter, setFilter] = useState<'all' | 'active' | 'expired' | 'redeemed'>('all');
+  const [sortBy, setSortBy] = useState<'name' | 'value' | 'balance' | 'date'>('date');
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -60,13 +67,50 @@ export default function WalletPage() {
     }
   };
 
+  // Filter and sort gift cards - must be before any conditional returns (Rules of Hooks)
+  const filteredAndSortedCards = useMemo(() => {
+    let filtered = [...giftCards];
+
+    // Filter by status
+    if (filter === 'active') {
+      filtered = filtered.filter(card => card.status === 'ACTIVE');
+    } else if (filter === 'expired') {
+      filtered = filtered.filter(card => card.status === 'EXPIRED');
+    } else if (filter === 'redeemed') {
+      filtered = filtered.filter(card => card.balance === 0);
+    }
+
+    // Sort
+    switch (sortBy) {
+      case 'name':
+        filtered.sort((a, b) => a.merchant.businessName.localeCompare(b.merchant.businessName));
+        break;
+      case 'value':
+        filtered.sort((a, b) => b.value - a.value);
+        break;
+      case 'balance':
+        filtered.sort((a, b) => b.balance - a.balance);
+        break;
+      case 'date':
+      default:
+        filtered.sort((a, b) => {
+          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return dateB - dateA;
+        });
+        break;
+    }
+
+    return filtered;
+  }, [giftCards, filter, sortBy]);
+
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-navy-900">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">Please log in to view your wallet</p>
+          <p className="text-plum-200 mb-4">Please log in to view your wallet</p>
           <Link href="/login">
-            <Button>Sign In</Button>
+            <Button variant="gold">Sign In</Button>
           </Link>
         </div>
       </div>
@@ -75,54 +119,123 @@ export default function WalletPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="min-h-screen bg-navy-900">
+        <Navigation />
+        <div className="py-12 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <GiftCardSkeleton key={i} />
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">My Gift Card Wallet</h1>
+    <div className="min-h-screen bg-navy-900">
+      <Navigation />
+      <div className="py-12 px-4 sm:px-6 lg:px-8 page-transition">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-4xl font-serif font-bold text-plum-300 mb-4">My Gift Card Wallet</h1>
+          <p className="text-navy-200 mb-8">Manage and redeem your gift cards</p>
 
-        {giftCards.length === 0 ? (
+          {/* Filters and Sort */}
+          <div className="flex flex-col sm:flex-row gap-4 mb-8">
+            <div className="flex gap-2 flex-wrap">
+              <Button
+                variant={filter === 'all' ? 'secondary' : 'outline'}
+                size="sm"
+                onClick={() => setFilter('all')}
+              >
+                All
+              </Button>
+              <Button
+                variant={filter === 'active' ? 'secondary' : 'outline'}
+                size="sm"
+                onClick={() => setFilter('active')}
+              >
+                Active
+              </Button>
+              <Button
+                variant={filter === 'expired' ? 'secondary' : 'outline'}
+                size="sm"
+                onClick={() => setFilter('expired')}
+              >
+                Expired
+              </Button>
+              <Button
+                variant={filter === 'redeemed' ? 'secondary' : 'outline'}
+                size="sm"
+                onClick={() => setFilter('redeemed')}
+              >
+                Redeemed
+              </Button>
+            </div>
+            <div className="sm:ml-auto">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="px-4 py-2 bg-navy-800/50 border-2 border-plum-500/30 rounded-lg text-navy-50 focus:outline-none focus:ring-2 focus:ring-gold-500"
+              >
+                <option value="date" className="bg-navy-800">Newest First</option>
+                <option value="name" className="bg-navy-800">Name (A-Z)</option>
+                <option value="value" className="bg-navy-800">Highest Value</option>
+                <option value="balance" className="bg-navy-800">Highest Balance</option>
+              </select>
+            </div>
+          </div>
+
+        {filteredAndSortedCards.length === 0 ? (
           <Card>
-            <CardContent className="text-center py-12">
-              <p className="text-gray-600 mb-4">You don't have any gift cards yet.</p>
+            <CardContent className="text-center py-16">
+              <div className="text-6xl mb-4">🎁</div>
+              <h3 className="text-2xl font-serif font-semibold text-plum-300 mb-2">
+                {giftCards.length === 0 ? 'No gift cards yet' : 'No cards match your filter'}
+              </h3>
+              <p className="text-plum-200 mb-6">
+                {giftCards.length === 0
+                  ? 'Start building your collection of gift cards'
+                  : 'Try adjusting your filters'}
+              </p>
               <Link href="/browse">
-                <Button>Browse Gift Cards</Button>
+                <Button variant="gold">Browse Gift Cards</Button>
               </Link>
             </CardContent>
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {giftCards.map((card) => (
-              <Card key={card.id} className="cursor-pointer hover:shadow-lg transition-shadow">
+            {filteredAndSortedCards.map((card) => (
+              <Card
+                key={card.id}
+                className="cursor-pointer hover:shadow-gold-glow-sm transition-all duration-300 hover:scale-105"
+              >
                 <CardHeader>
-                  <CardTitle>{card.merchant.businessName}</CardTitle>
+                  <CardTitle className="text-xl">{card.merchant.businessName}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="mb-4">
-                    <p className="text-2xl font-bold text-primary-600">
+                    <p className="text-3xl font-serif font-bold bg-gold-gradient bg-clip-text text-transparent">
                       {formatCurrency(card.balance, card.currency)}
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-plum-300">
                       of {formatCurrency(card.value, card.currency)}
                     </p>
                   </div>
                   <div className="mb-4">
-                    <p className="text-xs font-mono text-gray-600">{card.code}</p>
+                    <p className="text-xs font-mono text-plum-200">{card.code}</p>
                     <p
-                      className={`text-sm mt-1 ${
-                        card.status === 'ACTIVE' ? 'text-green-600' : 'text-red-600'
+                      className={`text-sm mt-1 font-semibold ${
+                        card.status === 'ACTIVE' ? 'text-green-400' : 'text-red-400'
                       }`}
                     >
                       {card.status}
                     </p>
                   </div>
                   {card.expiryDate && (
-                    <p className="text-xs text-gray-500 mb-4">
+                    <p className="text-xs text-plum-300 mb-4">
                       Expires: {formatDate(card.expiryDate)}
                     </p>
                   )}
@@ -137,6 +250,13 @@ export default function WalletPage() {
                     >
                       View Details
                     </Button>
+                    {card.status === 'ACTIVE' && card.balance > 0 && (
+                      <Link href={`/redeem/${card.code}`} className="flex-1">
+                        <Button variant="gold" className="w-full">
+                          Redeem
+                        </Button>
+                      </Link>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -146,50 +266,57 @@ export default function WalletPage() {
 
         {/* Modal for card details */}
         {selectedCard && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <Card className="max-w-md w-full">
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <Card className="max-w-md w-full max-h-[90vh] overflow-y-auto">
               <CardHeader>
                 <div className="flex justify-between items-center">
-                  <CardTitle>{selectedCard.merchant.businessName}</CardTitle>
+                  <CardTitle className="text-2xl">{selectedCard.merchant.businessName}</CardTitle>
                   <button
-                    onClick={() => setSelectedCard(null)}
-                    className="text-gray-400 hover:text-gray-600"
+                    onClick={() => {
+                      setSelectedCard(null);
+                      setShowTransactions(false);
+                      setTransactions([]);
+                    }}
+                    className="text-plum-300 hover:text-gold-400 transition-colors p-1"
+                    aria-label="Close"
                   >
-                    ✕
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                   </button>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <p className="text-3xl font-bold text-primary-600">
+                  <p className="text-4xl font-serif font-bold bg-gold-gradient bg-clip-text text-transparent">
                     {formatCurrency(selectedCard.balance, selectedCard.currency)}
                   </p>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-plum-300">
                     Remaining balance of {formatCurrency(selectedCard.value, selectedCard.currency)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Gift Card Code:</p>
-                  <p className="font-mono font-semibold">{selectedCard.code}</p>
+                  <p className="text-sm text-plum-200 mb-1">Gift Card Code:</p>
+                  <p className="font-mono font-semibold text-navy-50">{selectedCard.code}</p>
                 </div>
                 {selectedCard.qrCodeUrl && (
-                  <div className="flex justify-center p-4 bg-gray-50 rounded">
+                  <div className="flex justify-center p-4 bg-navy-800/50 rounded-lg border border-navy-700">
                     <QRCodeSVG value={selectedCard.code} size={200} />
                   </div>
                 )}
                 <div className="space-y-4">
                   {showTransactions && transactions.length > 0 && (
-                    <div className="border-t pt-4">
-                      <h4 className="font-semibold mb-3">Transaction History</h4>
+                    <div className="border-t border-navy-700 pt-4">
+                      <h4 className="font-serif font-semibold text-plum-300 mb-3">Transaction History</h4>
                       <div className="space-y-2 max-h-60 overflow-y-auto">
                         {transactions.map((tx) => (
                           <div
                             key={tx.id}
-                            className="flex justify-between items-center p-2 bg-gray-50 rounded text-sm"
+                            className="flex justify-between items-center p-3 bg-navy-800/50 rounded-lg text-sm border border-navy-700"
                           >
                             <div>
-                              <p className="font-medium">{tx.type}</p>
-                              <p className="text-xs text-gray-500">
+                              <p className="font-medium text-navy-50">{tx.type}</p>
+                              <p className="text-xs text-plum-300">
                                 {formatDateTime(tx.createdAt)}
                               </p>
                             </div>
@@ -197,16 +324,16 @@ export default function WalletPage() {
                               <p
                                 className={`font-semibold ${
                                   tx.type === 'PURCHASE'
-                                    ? 'text-green-600'
+                                    ? 'text-green-400'
                                     : tx.type === 'REDEMPTION'
-                                    ? 'text-red-600'
-                                    : 'text-gray-600'
+                                    ? 'text-red-400'
+                                    : 'text-plum-300'
                                 }`}
                               >
                                 {tx.type === 'PURCHASE' ? '+' : '-'}
                                 {formatCurrency(Number(tx.amount), selectedCard.currency)}
                               </p>
-                              <p className="text-xs text-gray-500">
+                              <p className="text-xs text-plum-300">
                                 Balance: {formatCurrency(Number(tx.balanceAfter), selectedCard.currency)}
                               </p>
                             </div>
@@ -215,10 +342,12 @@ export default function WalletPage() {
                       </div>
                     </div>
                   )}
-                  <div className="flex space-x-2">
-                    <Link href={`/redeem/${selectedCard.code}`} className="flex-1">
-                      <Button className="w-full">Redeem</Button>
-                    </Link>
+                  <div className="flex space-x-2 pt-4 border-t border-navy-700">
+                    {selectedCard.status === 'ACTIVE' && selectedCard.balance > 0 && (
+                      <Link href={`/redeem/${selectedCard.code}`} className="flex-1">
+                        <Button variant="gold" className="w-full">Redeem</Button>
+                      </Link>
+                    )}
                     <Button
                       variant="outline"
                       className="flex-1"
@@ -236,6 +365,7 @@ export default function WalletPage() {
             </Card>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

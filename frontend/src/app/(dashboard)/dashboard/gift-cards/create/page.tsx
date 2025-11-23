@@ -89,20 +89,20 @@ export default function CreateGiftCardPage() {
   };
 
   return (
-    <div>
+    <div className="page-transition">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Create Gift Card</h1>
-        <p className="text-gray-600 mt-2">Create a new digital gift card</p>
+        <h1 className="text-4xl font-serif font-bold text-plum-300">Create Gift Card</h1>
+        <p className="text-navy-200 mt-2 text-lg">Create a new digital gift card</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Gift Card Details</CardTitle>
+          <CardTitle className="text-2xl">Gift Card Details</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+              <div className="bg-red-900/30 border border-red-500/50 text-red-300 px-4 py-3 rounded-lg">
                 {error}
               </div>
             )}
@@ -162,16 +162,16 @@ export default function CreateGiftCardPage() {
               <input
                 type="checkbox"
                 id="allowPartial"
-                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                className="h-4 w-4 text-gold-500 focus:ring-gold-500 border-plum-500/30 rounded bg-navy-800/50"
                 {...register('allowPartialRedemption')}
               />
-              <label htmlFor="allowPartial" className="ml-2 block text-sm text-gray-900">
+              <label htmlFor="allowPartial" className="ml-2 block text-sm text-plum-200">
                 Allow partial redemption
               </label>
             </div>
 
             <div className="flex space-x-4">
-              <Button type="submit" isLoading={isLoading}>
+              <Button type="submit" variant="gold" isLoading={isLoading}>
                 Create Gift Card
               </Button>
               <Button

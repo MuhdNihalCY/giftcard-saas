@@ -11,6 +11,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuthStore } from '@/store/authStore';
+import { Navigation } from '@/components/Navigation';
+import { useToast } from '@/components/ui/ToastContainer';
+import { CardSkeleton } from '@/components/ui/Skeleton';
 
 const purchaseSchema = z.object({
   recipientEmail: z.string().email('Invalid email address').optional(),
@@ -25,6 +28,7 @@ export default function PurchasePage() {
   const params = useParams();
   const router = useRouter();
   const { isAuthenticated, user } = useAuthStore();
+  const toast = useToast();
   const giftCardId = params.id as string;
   const [giftCard, setGiftCard] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -104,34 +108,47 @@ export default function PurchasePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-navy-900">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-500"></div>
+      <div className="min-h-screen bg-navy-900">
+        <Navigation />
+        <div className="py-16 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <CardSkeleton />
+              <CardSkeleton />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!giftCard) {
     return (
-      <div className="min-h-screen bg-navy-900 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-2xl mx-auto">
-          <Card>
-            <CardContent className="text-center py-12">
-              <p className="text-red-400 mb-4">{error}</p>
-              <Button variant="gold" onClick={() => router.push('/browse')}>Browse Gift Cards</Button>
-            </CardContent>
-          </Card>
+      <div className="min-h-screen bg-navy-900">
+        <Navigation />
+        <div className="py-12 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-2xl mx-auto">
+            <Card>
+              <CardContent className="text-center py-12">
+                <p className="text-red-400 mb-4">{error}</p>
+                <Button variant="gold" onClick={() => router.push('/browse')}>Browse Gift Cards</Button>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-navy-900 py-16 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-navy-900">
+      <Navigation />
+      <div className="py-16 px-4 sm:px-6 lg:px-8 page-transition">
+        <div className="max-w-4xl mx-auto">
         <h1 className="text-5xl font-serif font-bold text-plum-300 mb-4 text-center">
           Purchase Gift Card
         </h1>
-        <p className="text-center text-navy-200 mb-12">Complete your premium purchase</p>
+        <p className="text-center text-navy-200 mb-12">Complete your purchase</p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <Card>
@@ -217,6 +234,23 @@ export default function PurchasePage() {
                   </div>
                 )}
 
+                {/* Trust Indicators */}
+                <div className="flex items-center justify-center gap-6 py-4 text-sm text-plum-200">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-5 h-5 text-gold-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span>Secure</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <svg className="w-5 h-5 text-gold-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+                      <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z" />
+                    </svg>
+                    <span>Encrypted</span>
+                  </div>
+                </div>
+
                 <Button type="submit" variant="gold" className="w-full text-lg py-4" isLoading={isProcessing}>
                   Purchase Gift Card
                 </Button>
@@ -224,6 +258,7 @@ export default function PurchasePage() {
             </CardContent>
           </Card>
         </div>
+      </div>
       </div>
     </div>
   );

@@ -109,10 +109,10 @@ export default function RedeemPage() {
   };
 
   return (
-    <div>
+    <div className="page-transition">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Redeem Gift Card</h1>
-        <p className="text-gray-600 mt-1">Enter gift card code or scan QR code to redeem</p>
+        <h1 className="text-4xl font-serif font-bold text-plum-300">Redeem Gift Card</h1>
+        <p className="text-navy-200 mt-2 text-lg">Enter gift card code or scan QR code to redeem</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -141,35 +141,35 @@ export default function RedeemPage() {
               </div>
 
               {giftCard && (
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <h3 className="font-semibold text-gray-900 mb-2">Gift Card Valid</h3>
-                  <div className="space-y-1 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Code:</span>
-                      <span className="font-mono font-semibold">{giftCard.code}</span>
+                <div className="p-6 bg-green-900/20 border border-green-500/30 rounded-xl">
+                  <h3 className="font-serif font-semibold text-green-400 mb-4">Gift Card Valid</h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between items-center py-2 border-b border-navy-700">
+                      <span className="text-plum-200">Code:</span>
+                      <span className="font-mono font-semibold text-navy-50">{giftCard.code}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Balance:</span>
-                      <span className="font-semibold text-green-600">
+                    <div className="flex justify-between items-center py-2 border-b border-navy-700">
+                      <span className="text-plum-200">Balance:</span>
+                      <span className="font-serif font-bold text-2xl bg-gold-gradient bg-clip-text text-transparent">
                         {formatCurrency(giftCard.balance, giftCard.currency)}
                       </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Status:</span>
-                      <span className="font-semibold text-green-600">{giftCard.status}</span>
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-plum-200">Status:</span>
+                      <span className="font-semibold text-green-400">{giftCard.status}</span>
                     </div>
                   </div>
                 </div>
               )}
 
               {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                <div className="bg-red-900/30 border border-red-500/50 text-red-300 px-4 py-3 rounded-lg">
                   {error}
                 </div>
               )}
 
               {success && (
-                <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
+                <div className="bg-green-900/30 border border-green-500/50 text-green-300 px-4 py-3 rounded-lg">
                   {success}
                 </div>
               )}
@@ -195,11 +195,11 @@ export default function RedeemPage() {
                 />
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-900 mb-1">
+                  <label className="block text-sm font-medium text-plum-200 mb-2">
                     Notes (Optional)
                   </label>
                   <textarea
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white"
+                    className="w-full px-4 py-3 border-2 border-plum-500/30 rounded-lg text-navy-50 bg-navy-800/50 placeholder-plum-300 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
                     rows={3}
                     disabled={!giftCard}
                     {...register('notes')}
@@ -208,7 +208,8 @@ export default function RedeemPage() {
 
                 <Button
                   type="submit"
-                  className="w-full"
+                  variant="gold"
+                  className="w-full text-lg py-4"
                   isLoading={isRedeeming}
                   disabled={!giftCard || isRedeeming}
                 >
@@ -225,8 +226,8 @@ export default function RedeemPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="p-4 bg-gray-50 rounded-lg text-center">
-                <p className="text-sm text-gray-600 mb-4">
+              <div className="p-6 bg-navy-800/50 rounded-lg text-center border border-navy-700">
+                <p className="text-sm text-plum-200 mb-4">
                   Scan QR code from customer's gift card
                 </p>
                 <div className="bg-white p-4 rounded-lg inline-block">
@@ -238,14 +239,14 @@ export default function RedeemPage() {
                     bgColor="#FFFFFF"
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-4">
+                <p className="text-xs text-plum-300 mt-4">
                   QR code will appear after validating a gift card
                 </p>
               </div>
 
-              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <h4 className="font-semibold text-gray-900 mb-2">How to Redeem:</h4>
-                <ol className="list-decimal list-inside space-y-1 text-sm text-gray-700">
+              <div className="p-6 bg-blue-900/20 border border-blue-500/30 rounded-lg">
+                <h4 className="font-serif font-semibold text-plum-300 mb-3">How to Redeem:</h4>
+                <ol className="list-decimal list-inside space-y-2 text-sm text-plum-200">
                   <li>Enter gift card code or scan QR code</li>
                   <li>Click "Validate Gift Card"</li>
                   <li>Enter redemption amount</li>
@@ -255,13 +256,13 @@ export default function RedeemPage() {
               </div>
 
               {giftCard && (
-                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-sm text-gray-700">
-                    <strong>Note:</strong> Partial redemption is{' '}
+                <div className="p-6 bg-yellow-900/20 border border-yellow-500/30 rounded-lg">
+                  <p className="text-sm text-plum-200">
+                    <strong className="text-gold-400">Note:</strong> Partial redemption is{' '}
                     {giftCard.allowPartialRedemption ? (
-                      <span className="text-green-600">allowed</span>
+                      <span className="text-green-400">allowed</span>
                     ) : (
-                      <span className="text-red-600">not allowed</span>
+                      <span className="text-red-400">not allowed</span>
                     )}
                     . You can only redeem the full balance.
                   </p>

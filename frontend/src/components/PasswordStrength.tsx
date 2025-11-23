@@ -1,11 +1,12 @@
 import React from 'react';
-import { Check, X } from 'lucide-react';
+import { Check } from 'lucide-react';
 
 interface PasswordStrengthProps {
     password?: string;
+    hasError?: boolean;
 }
 
-export function PasswordStrength({ password = '' }: PasswordStrengthProps) {
+export function PasswordStrength({ password = '', hasError = false }: PasswordStrengthProps) {
     const requirements = [
         {
             id: 'length',
@@ -34,6 +35,13 @@ export function PasswordStrength({ password = '' }: PasswordStrengthProps) {
         },
     ];
 
+    // Only show requirements when password is being entered or there's an error
+    const shouldShow = password.length > 0 || hasError;
+
+    if (!shouldShow) {
+        return null;
+    }
+
     const strength = requirements.reduce((acc, req) => {
         return acc + (req.test(password) ? 1 : 0);
     }, 0);
@@ -55,11 +63,11 @@ export function PasswordStrength({ password = '' }: PasswordStrengthProps) {
             {/* Strength Bar */}
             {password.length > 0 && (
                 <div className="space-y-1">
-                    <div className="flex justify-between text-xs text-gray-500">
+                    <div className="flex justify-between text-xs text-plum-300">
                         <span>Password Strength</span>
                         <span className="font-medium">{getStrengthLabel()}</span>
                     </div>
-                    <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                    <div className="h-1.5 w-full bg-navy-700 rounded-full overflow-hidden">
                         <div
                             className={`h-full transition-all duration-300 ${getStrengthColor()}`}
                             style={{ width: `${(strength / 5) * 100}%` }}
@@ -75,13 +83,13 @@ export function PasswordStrength({ password = '' }: PasswordStrengthProps) {
                     return (
                         <div
                             key={req.id}
-                            className={`flex items-center text-xs ${isMet ? 'text-green-600' : 'text-gray-500'
+                            className={`flex items-center text-xs ${isMet ? 'text-green-400' : 'text-plum-300'
                                 }`}
                         >
                             {isMet ? (
                                 <Check className="h-3 w-3 mr-1.5" />
                             ) : (
-                                <div className="h-1 w-1 rounded-full bg-gray-400 mr-2.5 ml-1" />
+                                <div className="h-1 w-1 rounded-full bg-plum-400 mr-2.5 ml-1" />
                             )}
                             <span>{req.label}</span>
                         </div>

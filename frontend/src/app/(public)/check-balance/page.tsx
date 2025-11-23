@@ -9,6 +9,10 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import { Navigation } from '@/components/Navigation';
+import { useToast } from '@/components/ui/ToastContainer';
+import { useAuthStore } from '@/store/authStore';
+import Link from 'next/link';
 
 const checkBalanceSchema = z.object({
   code: z.string().min(1, 'Gift card code is required'),
@@ -17,6 +21,8 @@ const checkBalanceSchema = z.object({
 type CheckBalanceFormData = z.infer<typeof checkBalanceSchema>;
 
 export default function CheckBalancePage() {
+  const { isAuthenticated } = useAuthStore();
+  const toast = useToast();
   const [balance, setBalance] = useState<any>(null);
   const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -37,17 +43,23 @@ export default function CheckBalancePage() {
 
       const response = await api.post('/redemptions/check-balance', data);
       setBalance(response.data.data);
+      setError('');
+      toast.success('Balance retrieved successfully!');
     } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to check balance');
+      const errorMsg = err.response?.data?.error?.message || 'Failed to check balance';
+      setError(errorMsg);
       setBalance(null);
+      toast.error(errorMsg);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-navy-900 py-16 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-2xl mx-auto">
+    <div className="min-h-screen bg-navy-900">
+      <Navigation />
+      <div className="py-16 px-4 sm:px-6 lg:px-8 page-transition">
+        <div className="max-w-2xl mx-auto">
         <h1 className="text-5xl font-serif font-bold text-plum-300 mb-4 text-center">
           Check Gift Card Balance
         </h1>
@@ -114,10 +126,20 @@ export default function CheckBalancePage() {
                     </div>
                   )}
                 </div>
+                {isAuthenticated && (
+                  <div className="mt-6 pt-6 border-t border-navy-700">
+                    <Link href={`/redeem/${balance.code}`}>
+                      <Button variant="gold" className="w-full">
+                        Redeem Gift Card
+                      </Button>
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
         </Card>
+        </div>
       </div>
     </div>
   );

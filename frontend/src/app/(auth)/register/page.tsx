@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { Card, CardContent } from '@/components/ui/Card';
 import api from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import Link from 'next/link';
@@ -73,74 +74,81 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Create your account
+    <div className="min-h-screen bg-navy-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8 page-transition">
+        <div className="text-center">
+          <h2 className="text-4xl font-serif font-bold text-plum-300 mb-2">
+            Create Account
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Or{' '}
-            <Link href="/login" className="font-medium text-primary-600 hover:text-primary-500">
-              sign in to your existing account
-            </Link>
+          <p className="text-navy-200">
+            Create your account and get started
           </p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-          <div className="space-y-4">
-            <Input
-              label="Email address"
-              type="email"
-              autoComplete="email"
-              error={errors.email?.message}
-              {...register('email')}
-            />
+        <Card>
+          <CardContent className="pt-6">
+            <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+              {error && (
+                <div className="bg-red-900/30 border border-red-500/50 text-red-300 px-4 py-3 rounded-lg">
+                  {error}
+                </div>
+              )}
+              <div className="space-y-5">
+                <Input
+                  label="Email address"
+                  type="email"
+                  autoComplete="email"
+                  error={errors.email?.message}
+                  {...register('email')}
+                />
 
-            <div>
-              <Input
-                label="Password"
-                type="password"
-                autoComplete="new-password"
-                error={errors.password?.message}
-                {...register('password')}
-              />
-              <PasswordStrength password={password} />
-            </div>
+                <div>
+                  <Input
+                    label="Password"
+                    type="password"
+                    autoComplete="new-password"
+                    error={errors.password?.message}
+                    {...register('password')}
+                  />
+                  <PasswordStrength password={password} hasError={!!errors.password} />
+                </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <Input
-                label="First name"
-                type="text"
-                autoComplete="given-name"
-                error={errors.firstName?.message}
-                {...register('firstName')}
-              />
-              <Input
-                label="Last name"
-                type="text"
-                autoComplete="family-name"
-                error={errors.lastName?.message}
-                {...register('lastName')}
-              />
-            </div>
-            <Input
-              label="Business name (optional)"
-              type="text"
-              error={errors.businessName?.message}
-              {...register('businessName')}
-            />
-          </div>
-          <div>
-            <Button type="submit" className="w-full" isLoading={isLoading}>
-              Create account
-            </Button>
-          </div>
-        </form>
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="First name"
+                    type="text"
+                    autoComplete="given-name"
+                    error={errors.firstName?.message}
+                    {...register('firstName')}
+                  />
+                  <Input
+                    label="Last name"
+                    type="text"
+                    autoComplete="family-name"
+                    error={errors.lastName?.message}
+                    {...register('lastName')}
+                  />
+                </div>
+                <Input
+                  label="Business name (optional)"
+                  type="text"
+                  error={errors.businessName?.message}
+                  {...register('businessName')}
+                />
+              </div>
+              <div>
+                <Button type="submit" variant="gold" className="w-full text-lg py-3" isLoading={isLoading}>
+                  Create Account
+                </Button>
+              </div>
+              <p className="text-center text-sm text-plum-200">
+                Already have an account?{' '}
+                <Link href="/login" className="font-medium text-gold-400 hover:text-gold-300 transition-colors">
+                  Sign in
+                </Link>
+              </p>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -74,32 +74,35 @@ export default function GiftCardsPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-500"></div>
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="page-transition">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Gift Cards</h1>
+        <div>
+          <h1 className="text-4xl font-serif font-bold text-plum-300">Gift Cards</h1>
+          <p className="text-navy-200 mt-2">Manage your gift card collection</p>
+        </div>
         <Link href="/dashboard/gift-cards/create">
-          <Button>Create Gift Card</Button>
+          <Button variant="gold">Create Gift Card</Button>
         </Link>
       </div>
 
       {/* Filters */}
       <div className="mb-6 flex space-x-4">
         <select
-          className="px-4 py-2 border border-gray-300 rounded-lg"
+          className="px-4 py-3 border-2 border-plum-500/30 rounded-lg bg-navy-800/50 text-navy-50 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
           value={filters.status}
           onChange={(e) => setFilters({ ...filters, status: e.target.value, page: 1 })}
         >
-          <option value="">All Status</option>
-          <option value="ACTIVE">Active</option>
-          <option value="REDEEMED">Redeemed</option>
-          <option value="EXPIRED">Expired</option>
-          <option value="CANCELLED">Cancelled</option>
+          <option value="" className="bg-navy-800">All Status</option>
+          <option value="ACTIVE" className="bg-navy-800">Active</option>
+          <option value="REDEEMED" className="bg-navy-800">Redeemed</option>
+          <option value="EXPIRED" className="bg-navy-800">Expired</option>
+          <option value="CANCELLED" className="bg-navy-800">Cancelled</option>
         </select>
       </div>
 
@@ -107,25 +110,29 @@ export default function GiftCardsPage() {
       <div className="grid grid-cols-1 gap-4">
         {giftCards.length === 0 ? (
           <Card>
-            <CardContent className="text-center py-12">
-              <p className="text-gray-600">No gift cards found.</p>
+            <CardContent className="text-center py-16">
+              <div className="text-6xl mb-4">🎁</div>
+              <h3 className="text-2xl font-serif font-semibold text-plum-300 mb-2">
+                No gift cards found
+              </h3>
+              <p className="text-plum-200">Create your first gift card to get started</p>
             </CardContent>
           </Card>
         ) : (
           giftCards.map((card) => (
-            <Card key={card.id}>
+            <Card key={card.id} className="hover:shadow-gold-glow-sm transition-all duration-300">
               <CardContent className="p-6">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <div className="flex items-center space-x-4 mb-2">
-                      <h3 className="text-lg font-semibold">{card.merchant.businessName}</h3>
+                    <div className="flex items-center space-x-4 mb-4">
+                      <h3 className="text-xl font-serif font-semibold text-navy-50">{card.merchant.businessName}</h3>
                       <span
-                        className={`px-2 py-1 text-xs rounded ${
+                        className={`px-3 py-1 text-xs font-semibold rounded ${
                           card.status === 'ACTIVE'
-                            ? 'bg-green-100 text-green-800'
+                            ? 'bg-green-900/30 text-green-400 border border-green-500/30'
                             : card.status === 'REDEEMED'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-gray-100 text-gray-800'
+                            ? 'bg-blue-900/30 text-blue-400 border border-blue-500/30'
+                            : 'bg-navy-700/50 text-plum-300 border border-navy-600'
                         }`}
                       >
                         {card.status}
@@ -133,24 +140,24 @@ export default function GiftCardsPage() {
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                       <div>
-                        <p className="text-gray-500">Code</p>
-                        <p className="font-mono font-semibold">{card.code}</p>
+                        <p className="text-plum-300 mb-1">Code</p>
+                        <p className="font-mono font-semibold text-navy-50">{card.code}</p>
                       </div>
                       <div>
-                        <p className="text-gray-500">Value</p>
-                        <p className="font-semibold">
+                        <p className="text-plum-300 mb-1">Value</p>
+                        <p className="font-serif font-bold text-gold-400">
                           {formatCurrency(card.value, card.currency)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-gray-500">Balance</p>
-                        <p className="font-semibold">
+                        <p className="text-plum-300 mb-1">Balance</p>
+                        <p className="font-serif font-bold bg-gold-gradient bg-clip-text text-transparent">
                           {formatCurrency(card.balance, card.currency)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-gray-500">Created</p>
-                        <p className="font-semibold">{formatDate(card.createdAt)}</p>
+                        <p className="text-plum-300 mb-1">Created</p>
+                        <p className="font-semibold text-navy-50">{formatDate(card.createdAt)}</p>
                       </div>
                     </div>
                   </div>

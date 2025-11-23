@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Playfair_Display, Montserrat } from 'next/font/google'
 import './globals.css'
 import { ErrorBoundaryWrapper } from '@/components/ErrorBoundaryWrapper'
+import { ToastProvider } from '@/components/ui/ToastContainer'
 
 const playfairDisplay = Playfair_Display({ 
   subsets: ['latin'],
@@ -28,7 +29,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="light">
       <body className={`${montserrat.variable} ${playfairDisplay.variable} font-sans text-gray-100 bg-navy-900 antialiased`}>
-        <ErrorBoundaryWrapper>{children}</ErrorBoundaryWrapper>
+        <ErrorBoundaryWrapper>
+          <ToastProvider>
+            {children}
+          </ToastProvider>
+        </ErrorBoundaryWrapper>
       </body>
     </html>
   )
