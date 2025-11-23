@@ -1,1 +1,0 @@
-self.__REACT_LOADABLE_MANIFEST='{"app/(auth)/layout.tsx -> @/lib/auth":{"id":68123,"files":[]},"app/(auth)/login/page.tsx -> @/lib/auth":{"id":68123,"files":[]}}';

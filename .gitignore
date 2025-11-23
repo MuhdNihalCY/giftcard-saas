@@ -10,6 +10,8 @@ node_modules/
 /build
 /dist
 /.next
+/frontend/.next
+/backend/dist
 /out
 
 # Misc
