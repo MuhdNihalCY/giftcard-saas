@@ -3,6 +3,7 @@ import prisma from '../config/database';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { RedemptionMethod, TransactionType } from '@prisma/client';
 import giftCardService from './giftcard.service';
+import cacheService, { CacheKeys } from './cache.service';
 import { isExpired } from '../utils/helpers';
 
 export interface RedeemGiftCardData {
@@ -167,6 +168,11 @@ export class RedemptionService {
         } as any,
       },
     });
+
+    // Invalidate cache
+    await cacheService.delete(CacheKeys.giftCard(giftCard.id));
+    await cacheService.delete(CacheKeys.giftCardByCode(giftCard.code));
+    await cacheService.invalidate(`giftcards:merchant:${giftCard.merchantId}:*`);
 
     return {
       redemption,

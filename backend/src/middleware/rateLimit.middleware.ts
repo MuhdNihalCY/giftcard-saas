@@ -3,7 +3,7 @@ import { env } from '../config/env';
 
 export const apiRateLimiter = rateLimit({
   windowMs: env.RATE_LIMIT_WINDOW_MS,
-  max: env.RATE_LIMIT_MAX_REQUESTS,
+  max: Math.max(env.RATE_LIMIT_MAX_REQUESTS, 1000), // Ensure at least 1000 requests per window
   message: {
     success: false,
     error: {
@@ -17,7 +17,7 @@ export const apiRateLimiter = rateLimit({
 
 export const authRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 requests per window
+  max: 100, // Increased to 100 to allow for testing/multiple attempts
   message: {
     success: false,
     error: {
@@ -29,7 +29,7 @@ export const authRateLimiter = rateLimit({
 
 export const paymentRateLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 10, // 10 payment requests per minute
+  max: 50, // Increased to 50 payment requests per minute
   message: {
     success: false,
     error: {

@@ -21,10 +21,23 @@ export class GiftCardController {
     }
   }
 
-  async getById(req: Request, res: Response, next: NextFunction) {
+  async getById(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
+      const userId = req.user?.userId;
+      const role = req.user?.role;
+
       const giftCard = await giftCardService.getById(id);
+
+      // If user is authenticated and not admin, check ownership
+      if (userId && role !== 'ADMIN' && giftCard.merchantId !== userId) {
+        // If it's a public route usage, we might want to allow it, but for dashboard usage we should restrict.
+        // However, getById returns sensitive info like merchant details.
+        // Let's assume strict ownership for getById.
+        // If we need public access, we should use getByCode or a specific public endpoint.
+        throw new Error('Unauthorized access to gift card');
+      }
+
       res.json({
         success: true,
         data: giftCard,
@@ -47,11 +60,17 @@ export class GiftCardController {
     }
   }
 
-  async list(req: Request, res: Response, next: NextFunction) {
+  async list(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { merchantId, status, page, limit } = req.query;
+      const userId = req.user!.userId;
+      const role = req.user!.role;
+
+      // If not admin, force merchantId to be current user
+      const filterMerchantId = role === 'ADMIN' ? (merchantId as string) : userId;
+
       const result = await giftCardService.list({
-        merchantId: merchantId as string,
+        merchantId: filterMerchantId,
         status: status as any,
         page: page ? parseInt(page as string) : undefined,
         limit: limit ? parseInt(limit as string) : undefined,

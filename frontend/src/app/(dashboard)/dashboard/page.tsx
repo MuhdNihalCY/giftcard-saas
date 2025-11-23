@@ -16,6 +16,8 @@ export default function DashboardPage() {
   useEffect(() => {
     if (user?.role === 'ADMIN' || user?.role === 'MERCHANT') {
       fetchStats();
+    } else {
+      setIsLoading(false);
     }
   }, [user]);
 
@@ -64,9 +66,14 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">
+      <h1 className="text-3xl font-bold text-gray-900 mb-2">
         Welcome back, {user?.firstName || user?.email}!
       </h1>
+      <p className="text-gray-600 mb-8">
+        {user?.role === 'CUSTOMER'
+          ? 'Manage your gift cards and wallet from here.'
+          : 'Here is an overview of your business performance.'}
+      </p>
 
       {(user?.role === 'ADMIN' || user?.role === 'MERCHANT') && stats ? (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">

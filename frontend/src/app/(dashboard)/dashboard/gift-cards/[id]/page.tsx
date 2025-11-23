@@ -134,10 +134,10 @@ export default function GiftCardDetailsPage() {
                   <p className="text-sm text-gray-500">Status</p>
                   <span
                     className={`inline-block px-2 py-1 text-xs rounded mt-1 ${giftCard.status === 'ACTIVE'
-                        ? 'bg-green-100 text-green-800'
-                        : giftCard.status === 'REDEEMED'
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-gray-100 text-gray-800'
+                      ? 'bg-green-100 text-green-800'
+                      : giftCard.status === 'REDEEMED'
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-gray-100 text-gray-800'
                       }`}
                   >
                     {giftCard.status}
@@ -202,29 +202,55 @@ export default function GiftCardDetailsPage() {
             </CardHeader>
             <CardContent>
               {!Array.isArray(redemptions) || redemptions.length === 0 ? (
-                <p className="text-gray-600">No redemptions yet</p>
+                <p className="text-gray-600 text-center py-4">No redemptions yet</p>
               ) : (
-                <div className="space-y-4">
-                  {redemptions.map((redemption: any) => (
-                    <div key={redemption.id} className="border-b pb-4 last:border-0">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="font-semibold text-gray-900">
-                            {formatCurrency(redemption.amount, giftCard.currency)}
-                          </p>
-                          <p className="text-sm text-gray-600">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left">
+                    <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3">Date</th>
+                        <th className="px-4 py-3">Amount</th>
+                        <th className="px-4 py-3">Method</th>
+                        <th className="px-4 py-3">Balance (Before → After)</th>
+                        <th className="px-4 py-3">Location</th>
+                        <th className="px-4 py-3">Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {redemptions.map((redemption: any) => (
+                        <tr key={redemption.id} className="bg-white border-b hover:bg-gray-50">
+                          <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">
                             {formatDate(redemption.createdAt)}
-                          </p>
-                          {redemption.location && (
-                            <p className="text-sm text-gray-600">{redemption.location}</p>
-                          )}
-                        </div>
-                        <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
-                          Redeemed
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                          </td>
+                          <td className="px-4 py-3 text-red-600 font-semibold">
+                            -{formatCurrency(redemption.amount, giftCard.currency)}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                              {redemption.redemptionMethod?.replace('_', ' ') || 'N/A'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center space-x-1">
+                              <span className="text-gray-500">
+                                {formatCurrency(redemption.balanceBefore, giftCard.currency)}
+                              </span>
+                              <span className="text-gray-400">→</span>
+                              <span className="font-medium text-gray-900">
+                                {formatCurrency(redemption.balanceAfter, giftCard.currency)}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-gray-500">
+                            {redemption.location || '-'}
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 max-w-xs truncate" title={redemption.notes}>
+                            {redemption.notes || '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </CardContent>

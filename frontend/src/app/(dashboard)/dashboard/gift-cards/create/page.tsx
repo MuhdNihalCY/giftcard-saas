@@ -1,14 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { CurrencySelector } from '@/components/CurrencySelector';
 import api from '@/lib/api';
+import { currencies } from '@/lib/currencies';
 
 const giftCardSchema = z.object({
   value: z.number().min(1, 'Value must be at least 1'),
@@ -22,6 +24,8 @@ const giftCardSchema = z.object({
 
 type GiftCardFormData = z.infer<typeof giftCardSchema>;
 
+const CURRENCY_STORAGE_KEY = 'giftcard_preferred_currency';
+
 export default function CreateGiftCardPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -31,7 +35,9 @@ export default function CreateGiftCardPage() {
     register,
     handleSubmit,
     formState: { errors },
+    setValue,
     watch,
+    control,
   } = useForm<GiftCardFormData>({
     resolver: zodResolver(giftCardSchema),
     defaultValues: {
@@ -39,6 +45,26 @@ export default function CreateGiftCardPage() {
       allowPartialRedemption: true,
     },
   });
+
+  // Load preferred currency on mount
+  useEffect(() => {
+    const savedCurrency = localStorage.getItem(CURRENCY_STORAGE_KEY);
+    if (savedCurrency) {
+      // Verify the saved currency still exists in our list
+      const currencyExists = currencies.some(c => c.code === savedCurrency);
+      if (currencyExists) {
+        setValue('currency', savedCurrency);
+      }
+    }
+  }, [setValue]);
+
+  // Watch for currency changes to save preference
+  const selectedCurrency = watch('currency');
+  useEffect(() => {
+    if (selectedCurrency) {
+      localStorage.setItem(CURRENCY_STORAGE_KEY, selectedCurrency);
+    }
+  }, [selectedCurrency]);
 
   const onSubmit = async (data: GiftCardFormData) => {
     try {
@@ -53,7 +79,7 @@ export default function CreateGiftCardPage() {
       };
 
       const response = await api.post('/gift-cards', payload);
-      
+
       router.push(`/dashboard/gift-cards/${response.data.data.id}`);
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to create gift card');
@@ -91,20 +117,17 @@ export default function CreateGiftCardPage() {
                 {...register('value', { valueAsNumber: true })}
               />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-900 mb-1">
-                  Currency
-                </label>
-                <select
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white"
-                  {...register('currency')}
-                >
-                  <option value="USD">USD ($)</option>
-                  <option value="EUR">EUR (€)</option>
-                  <option value="GBP">GBP (£)</option>
-                  <option value="INR">INR (₹)</option>
-                </select>
-              </div>
+              <Controller
+                name="currency"
+                control={control}
+                render={({ field }) => (
+                  <CurrencySelector
+                    value={field.value}
+                    onChange={field.onChange}
+                    error={errors.currency?.message}
+                  />
+                )}
+              />
 
               <Input
                 label="Expiry Date (Optional)"

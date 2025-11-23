@@ -10,10 +10,17 @@ import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import Link from 'next/link';
+import { PasswordStrength } from '@/components/PasswordStrength';
 
 const registerSchema = z.object({
   email: z.string().email('Invalid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number')
+    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
   firstName: z.string().optional(),
   lastName: z.string().optional(),
   businessName: z.string().optional(),
@@ -31,9 +38,13 @@ export default function RegisterPage() {
     register,
     handleSubmit,
     formState: { errors },
+    watch,
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
+    mode: 'onChange', // Validate on change for better UX
   });
+
+  const password = watch('password');
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
@@ -89,13 +100,18 @@ export default function RegisterPage() {
               error={errors.email?.message}
               {...register('email')}
             />
-            <Input
-              label="Password"
-              type="password"
-              autoComplete="new-password"
-              error={errors.password?.message}
-              {...register('password')}
-            />
+
+            <div>
+              <Input
+                label="Password"
+                type="password"
+                autoComplete="new-password"
+                error={errors.password?.message}
+                {...register('password')}
+              />
+              <PasswordStrength password={password} />
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <Input
                 label="First name"
