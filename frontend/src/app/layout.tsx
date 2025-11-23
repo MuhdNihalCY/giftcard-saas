@@ -1,9 +1,19 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Playfair_Display, Montserrat } from 'next/font/google'
 import './globals.css'
 import { ErrorBoundaryWrapper } from '@/components/ErrorBoundaryWrapper'
 
-const inter = Inter({ subsets: ['latin'] })
+const playfairDisplay = Playfair_Display({ 
+  subsets: ['latin'],
+  variable: '--font-serif',
+  display: 'swap',
+})
+
+const montserrat = Montserrat({ 
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: 'Gift Card SaaS',
@@ -17,7 +27,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="light">
-      <body className={`${inter.className} text-gray-900 bg-white antialiased`}>
+      <body className={`${montserrat.variable} ${playfairDisplay.variable} font-sans text-gray-100 bg-navy-900 antialiased`}>
         <ErrorBoundaryWrapper>{children}</ErrorBoundaryWrapper>
       </body>
     </html>

@@ -11,3 +11,4 @@ router.post('/reset', validate(resetPasswordSchema), passwordResetController.res
 
 export default router;
 
+

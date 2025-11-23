@@ -2,7 +2,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'gold';
   size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
 }
@@ -19,10 +19,11 @@ export const Button: React.FC<ButtonProps> = ({
   const baseStyles = 'font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
   
   const variants = {
-    primary: 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500',
-    secondary: 'bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-500',
-    outline: 'border-2 border-primary-600 text-primary-600 hover:bg-primary-50 focus:ring-primary-500',
-    ghost: 'text-gray-900 hover:bg-gray-100 focus:ring-gray-500',
+    primary: 'bg-navy-600 text-white hover:bg-navy-700 focus:ring-navy-500',
+    secondary: 'bg-plum-600 text-white hover:bg-plum-700 focus:ring-plum-500',
+    gold: 'bg-gold-gradient text-navy-900 font-bold hover:shadow-gold-glow focus:ring-gold-500 gold-glow transition-all duration-300 hover:scale-105',
+    outline: 'border-2 border-plum-500 text-plum-300 hover:bg-plum-900/30 focus:ring-plum-500',
+    ghost: 'text-navy-50 hover:bg-navy-800/50 focus:ring-navy-500',
     danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
   };
 

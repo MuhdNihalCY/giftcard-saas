@@ -104,20 +104,20 @@ export default function PurchasePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-navy-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-500"></div>
       </div>
     );
   }
 
   if (!giftCard) {
     return (
-      <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-navy-900 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto">
           <Card>
             <CardContent className="text-center py-12">
-              <p className="text-red-600 mb-4">{error}</p>
-              <Button onClick={() => router.push('/browse')}>Browse Gift Cards</Button>
+              <p className="text-red-400 mb-4">{error}</p>
+              <Button variant="gold" onClick={() => router.push('/browse')}>Browse Gift Cards</Button>
             </CardContent>
           </Card>
         </div>
@@ -126,33 +126,34 @@ export default function PurchasePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">
+    <div className="min-h-screen bg-navy-900 py-16 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-5xl font-serif font-bold text-plum-300 mb-4 text-center">
           Purchase Gift Card
         </h1>
+        <p className="text-center text-navy-200 mb-12">Complete your premium purchase</p>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <Card>
             <CardHeader>
-              <CardTitle>Gift Card Details</CardTitle>
+              <CardTitle className="text-2xl">Gift Card Details</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div>
-                  <p className="text-sm text-gray-600">Merchant</p>
-                  <p className="text-lg font-semibold">{giftCard.merchant.businessName}</p>
+                  <p className="text-sm text-plum-300 mb-1">Merchant</p>
+                  <p className="text-xl font-serif font-semibold text-navy-50">{giftCard.merchant.businessName}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Value</p>
-                  <p className="text-3xl font-bold text-primary-600">
+                  <p className="text-sm text-plum-300 mb-1">Value</p>
+                  <p className="text-4xl font-serif font-bold bg-gold-gradient bg-clip-text text-transparent">
                     {formatCurrency(Number(giftCard.value), giftCard.currency)}
                   </p>
                 </div>
                 {giftCard.expiryDate && (
                   <div>
-                    <p className="text-sm text-gray-600">Expires</p>
-                    <p className="text-base">{new Date(giftCard.expiryDate).toLocaleDateString()}</p>
+                    <p className="text-sm text-plum-300 mb-1">Expires</p>
+                    <p className="text-base text-navy-100">{new Date(giftCard.expiryDate).toLocaleDateString()}</p>
                   </div>
                 )}
               </div>
@@ -161,10 +162,10 @@ export default function PurchasePage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Purchase Information</CardTitle>
+              <CardTitle className="text-2xl">Purchase Information</CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                 <Input
                   label="Recipient Email (optional)"
                   type="email"
@@ -187,37 +188,37 @@ export default function PurchasePage() {
                   {...register('customMessage')}
                 />
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-plum-200 mb-2">
                     Payment Method
                   </label>
                   <select
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-4 py-3 border-2 border-navy-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 bg-navy-800/50 text-navy-50"
                     {...register('paymentMethod')}
                   >
-                    <option value="STRIPE">Stripe (Card, Apple Pay, Google Pay)</option>
-                    <option value="PAYPAL">PayPal</option>
-                    <option value="RAZORPAY">Razorpay (Cards, UPI, Wallets)</option>
-                    <option value="UPI">UPI</option>
+                    <option value="STRIPE" className="bg-navy-800">Stripe (Card, Apple Pay, Google Pay)</option>
+                    <option value="PAYPAL" className="bg-navy-800">PayPal</option>
+                    <option value="RAZORPAY" className="bg-navy-800">Razorpay (Cards, UPI, Wallets)</option>
+                    <option value="UPI" className="bg-navy-800">UPI</option>
                   </select>
                 </div>
 
-                <div className="pt-4 border-t">
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-lg font-semibold">Total:</span>
-                    <span className="text-2xl font-bold text-primary-600">
+                <div className="pt-4 border-t border-navy-700">
+                  <div className="flex justify-between items-center mb-6">
+                    <span className="text-xl font-serif font-semibold text-plum-300">Total:</span>
+                    <span className="text-3xl font-serif font-bold bg-gold-gradient bg-clip-text text-transparent">
                       {formatCurrency(Number(giftCard.value), giftCard.currency)}
                     </span>
                   </div>
                 </div>
 
                 {error && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                  <div className="bg-red-900/30 border border-red-500/50 text-red-300 px-4 py-3 rounded-lg">
                     {error}
                   </div>
                 )}
 
-                <Button type="submit" className="w-full" isLoading={isProcessing}>
-                  Proceed to Payment
+                <Button type="submit" variant="gold" className="w-full text-lg py-4" isLoading={isProcessing}>
+                  Purchase Gift Card
                 </Button>
               </form>
             </CardContent>

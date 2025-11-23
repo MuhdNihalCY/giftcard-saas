@@ -101,3 +101,4 @@ export class CommunicationLogController {
 
 export default new CommunicationLogController();
 
+

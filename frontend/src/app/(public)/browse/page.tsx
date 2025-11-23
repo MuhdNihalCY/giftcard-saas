@@ -42,42 +42,47 @@ export default function BrowsePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-navy-900">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading gift cards...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-500 mx-auto"></div>
+          <p className="mt-4 text-plum-200">Loading gift cards...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-navy-900 py-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Browse Gift Cards</h1>
+        <h1 className="text-5xl font-serif font-bold text-plum-300 mb-4 text-center">
+          Browse Gift Cards
+        </h1>
+        <p className="text-center text-navy-200 mb-12 text-lg">Discover our exclusive collection</p>
         
         {giftCards.length === 0 ? (
           <Card>
             <CardContent className="text-center py-12">
-              <p className="text-gray-600">No gift cards available at the moment.</p>
+              <p className="text-plum-200">No gift cards available at the moment.</p>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {giftCards.map((giftCard) => (
-              <Card key={giftCard.id}>
+              <Card key={giftCard.id} className="hover:shadow-gold-glow-sm transition-all duration-300 hover:scale-105">
                 <CardHeader>
-                  <CardTitle>{giftCard.merchant.businessName}</CardTitle>
+                  <CardTitle className="text-2xl">{giftCard.merchant.businessName}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="mb-4">
-                    <p className="text-2xl font-bold text-primary-600">
+                  <div className="mb-6">
+                    <p className="text-4xl font-serif font-bold bg-gold-gradient bg-clip-text text-transparent">
                       {formatCurrency(giftCard.value, giftCard.currency)}
                     </p>
-                    <p className="text-sm text-gray-500 mt-1">Gift Card</p>
+                    <p className="text-sm text-plum-300 mt-2">Premium Gift Card</p>
                   </div>
                   <Link href={`/purchase/${giftCard.id}`}>
-                    <Button className="w-full">Purchase Now</Button>
+                    <Button variant="gold" className="w-full text-lg py-3">
+                      Purchase Now
+                    </Button>
                   </Link>
                 </CardContent>
               </Card>

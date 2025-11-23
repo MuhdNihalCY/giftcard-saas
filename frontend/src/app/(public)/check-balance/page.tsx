@@ -46,69 +46,71 @@ export default function CheckBalancePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-navy-900 py-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">
+        <h1 className="text-5xl font-serif font-bold text-plum-300 mb-4 text-center">
           Check Gift Card Balance
         </h1>
+        <p className="text-center text-navy-200 mb-12">Verify your gift card details</p>
 
         <Card>
           <CardHeader>
-            <CardTitle>Enter Gift Card Code</CardTitle>
+            <CardTitle className="text-2xl">Enter Gift Card Code</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <Input
                 label="Gift Card Code"
                 placeholder="GIFT-XXXX-XXXX-XXXX"
                 error={errors.code?.message}
+                variant="plum"
                 {...register('code')}
               />
-              <Button type="submit" className="w-full" isLoading={isLoading}>
+              <Button type="submit" variant="gold" className="w-full text-lg py-4" isLoading={isLoading}>
                 Check Balance
               </Button>
             </form>
 
             {error && (
-              <div className="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+              <div className="mt-6 bg-red-900/30 border border-red-500/50 text-red-300 px-4 py-3 rounded-lg">
                 {error}
               </div>
             )}
 
             {balance && (
-              <div className="mt-6 p-6 bg-primary-50 rounded-lg">
-                <h3 className="text-lg font-semibold mb-4">Gift Card Details</h3>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Code:</span>
-                    <span className="font-mono font-semibold">{balance.code}</span>
+              <div className="mt-8 p-8 bg-plum-900/20 border border-plum-500/30 rounded-xl backdrop-blur-sm">
+                <h3 className="text-2xl font-serif font-semibold mb-6 text-plum-300">Gift Card Details</h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center py-2 border-b border-navy-700">
+                    <span className="text-plum-200">Code:</span>
+                    <span className="font-mono font-semibold text-navy-50">{balance.code}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Balance:</span>
-                    <span className="text-2xl font-bold text-primary-600">
+                  <div className="flex justify-between items-center py-2 border-b border-navy-700">
+                    <span className="text-plum-200">Balance:</span>
+                    <span className="text-3xl font-serif font-bold bg-gold-gradient bg-clip-text text-transparent">
                       {formatCurrency(balance.balance, balance.currency)}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Original Value:</span>
-                    <span className="font-semibold">
+                  <div className="flex justify-between items-center py-2 border-b border-navy-700">
+                    <span className="text-plum-200">Original Value:</span>
+                    <span className="font-semibold text-navy-50">
                       {formatCurrency(balance.value, balance.currency)}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Status:</span>
+                  <div className="flex justify-between items-center py-2 border-b border-navy-700">
+                    <span className="text-plum-200">Status:</span>
                     <span
                       className={`font-semibold ${
-                        balance.status === 'ACTIVE' ? 'text-green-600' : 'text-red-600'
+                        balance.status === 'ACTIVE' ? 'text-green-400' : 'text-red-400'
                       }`}
                     >
                       {balance.status}
                     </span>
                   </div>
                   {balance.expiryDate && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Expires:</span>
-                      <span className="font-semibold">{formatDate(balance.expiryDate)}</span>
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-plum-200">Expires:</span>
+                      <span className="font-semibold text-navy-50">{formatDate(balance.expiryDate)}</span>
                     </div>
                   )}
                 </div>

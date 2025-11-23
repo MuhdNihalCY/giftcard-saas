@@ -19,3 +19,4 @@ router.post('/resend', validate(resendVerificationSchema), emailVerificationCont
 
 export default router;
 
+

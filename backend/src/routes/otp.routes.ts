@@ -25,3 +25,4 @@ router.post('/resend', validate(generateOTPSchema), otpController.resendOTP.bind
 
 export default router;
 
+
