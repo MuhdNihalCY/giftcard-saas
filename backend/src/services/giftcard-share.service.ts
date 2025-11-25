@@ -29,7 +29,7 @@ export class GiftCardShareService {
     expiryDate.setHours(expiryDate.getHours() + expiryHours);
 
     // Update gift card with share token
-    const updated = await prisma.giftCard.update({
+        await prisma.giftCard.update({
       where: { id: giftCardId },
       data: {
         shareToken: token,

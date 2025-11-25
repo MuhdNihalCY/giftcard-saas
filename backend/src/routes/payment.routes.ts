@@ -10,7 +10,6 @@ import {
   createPaymentFromProductSchema,
   bulkPurchaseSchema,
 } from '../validators/payment.validator';
-import { env } from '../config/env';
 import express from 'express';
 
 const router = Router();

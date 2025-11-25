@@ -26,6 +26,11 @@ export default function LoginPage() {
   const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
+  const [requires2FA, setRequires2FA] = useState(false);
+  const [loginData, setLoginData] = useState<LoginFormData | null>(null);
+  const [twoFactorToken, setTwoFactorToken] = useState('');
+  const [useBackupCode, setUseBackupCode] = useState(false);
+  const [backupCode, setBackupCode] = useState('');
 
   // Check if already authenticated on mount
   useEffect(() => {
@@ -86,6 +91,15 @@ export default function LoginPage() {
       setError('');
 
       const response = await api.post('/auth/login', data);
+      
+      // Check if 2FA is required
+      if (response.data.data.requires2FA) {
+        setRequires2FA(true);
+        setLoginData(data);
+        setIsLoading(false);
+        return;
+      }
+
       const { user, accessToken, refreshToken } = response.data.data;
 
       // Store tokens first - direct localStorage write for immediate effect
@@ -129,11 +143,71 @@ export default function LoginPage() {
       
       // Force immediate redirect - don't wait for anything
       window.location.replace(redirectUrl);
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error('Login error', { error: err });
-      const errorMessage = err.response?.data?.error?.message 
-        || err.message 
-        || (err.code === 'ECONNREFUSED' ? 'Cannot connect to server. Please make sure the backend is running.' : 'Login failed. Please try again.');
+      const errorMessage = 
+        (err && typeof err === 'object' && 'response' in err && err.response && typeof err.response === 'object' && 'data' in err.response && err.response.data && typeof err.response.data === 'object' && 'error' in err.response.data && err.response.data.error && typeof err.response.data.error === 'object' && 'message' in err.response.data.error && typeof err.response.data.error.message === 'string')
+          ? err.response.data.error.message
+          : (err instanceof Error && err.message)
+            ? err.message
+            : (err && typeof err === 'object' && 'code' in err && err.code === 'ECONNREFUSED')
+              ? 'Cannot connect to server. Please make sure the backend is running.'
+              : 'Login failed. Please try again.';
+      setError(errorMessage);
+      setIsLoading(false);
+    }
+  };
+
+  const onSubmit2FA = async () => {
+    if (!loginData) return;
+
+    try {
+      setIsLoading(true);
+      setError('');
+
+      let response;
+      if (useBackupCode) {
+        response = await api.post('/auth/2fa/verify-backup', {
+          email: loginData.email,
+          password: loginData.password,
+          backupCode: backupCode,
+        });
+      } else {
+        response = await api.post('/auth/2fa/verify', {
+          email: loginData.email,
+          password: loginData.password,
+          token: twoFactorToken,
+        });
+      }
+
+      const { user, accessToken, refreshToken, remainingBackupCodes } = response.data.data;
+
+      // Store tokens
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('refreshToken', refreshToken);
+        localStorage.setItem('user', JSON.stringify(user));
+      }
+      
+      setTokens(accessToken, refreshToken);
+      setUser(user);
+
+      // Show warning if backup codes are running low
+      if (remainingBackupCodes !== undefined && remainingBackupCodes < 3) {
+        logger.warn('Low backup codes remaining', { remainingBackupCodes });
+      }
+
+      const redirectUrl = user.role === 'ADMIN' || user.role === 'MERCHANT' 
+        ? '/dashboard' 
+        : '/';
+      
+      window.location.replace(redirectUrl);
+    } catch (err: unknown) {
+      logger.error('2FA verification error', { error: err });
+      const errorMessage = 
+        (err && typeof err === 'object' && 'response' in err && err.response && typeof err.response === 'object' && 'data' in err.response && err.response.data && typeof err.response.data === 'object' && 'error' in err.response.data && err.response.data.error && typeof err.response.data.error === 'object' && 'message' in err.response.data.error && typeof err.response.data.error.message === 'string')
+          ? err.response.data.error.message
+          : 'Invalid 2FA code. Please try again.';
       setError(errorMessage);
       setIsLoading(false);
     }
@@ -166,40 +240,146 @@ export default function LoginPage() {
         </div>
         <Card>
           <CardContent className="pt-6">
-            <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-              {error && (
-                <div className="bg-red-900/30 border border-red-500/50 text-red-300 px-4 py-3 rounded-lg">
-                  {error}
+            {!requires2FA ? (
+              <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+                {error && (
+                  <div className="bg-red-900/30 border border-red-500/50 text-red-300 px-4 py-3 rounded-lg">
+                    {error}
+                  </div>
+                )}
+                <div className="space-y-5">
+                  <Input
+                    label="Email address"
+                    type="email"
+                    autoComplete="email"
+                    error={errors.email?.message}
+                    {...register('email')}
+                  />
+                  <Input
+                    label="Password"
+                    type="password"
+                    autoComplete="current-password"
+                    error={errors.password?.message}
+                    {...register('password')}
+                  />
                 </div>
-              )}
-              <div className="space-y-5">
-                <Input
-                  label="Email address"
-                  type="email"
-                  autoComplete="email"
-                  error={errors.email?.message}
-                  {...register('email')}
-                />
-                <Input
-                  label="Password"
-                  type="password"
-                  autoComplete="current-password"
-                  error={errors.password?.message}
-                  {...register('password')}
-                />
+                <div>
+                  <Button type="submit" variant="gold" className="w-full text-lg py-3" isLoading={isLoading}>
+                    Sign In
+                  </Button>
+                </div>
+                <p className="text-center text-sm text-plum-200">
+                  Don't have an account?{' '}
+                  <Link href="/register" className="font-medium text-gold-400 hover:text-gold-300 transition-colors">
+                    Create one now
+                  </Link>
+                </p>
+              </form>
+            ) : (
+              <div className="space-y-6">
+                <div className="text-center">
+                  <h3 className="text-xl font-semibold text-plum-300 mb-2">Two-Factor Authentication</h3>
+                  <p className="text-sm text-plum-200">
+                    Enter the 6-digit code from your authenticator app
+                  </p>
+                </div>
+                {error && (
+                  <div className="bg-red-900/30 border border-red-500/50 text-red-300 px-4 py-3 rounded-lg">
+                    {error}
+                  </div>
+                )}
+                {!useBackupCode ? (
+                  <>
+                    <div>
+                      <Input
+                        label="Authentication Code"
+                        type="text"
+                        value={twoFactorToken}
+                        onChange={(e) => setTwoFactorToken(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        placeholder="000000"
+                        maxLength={6}
+                        className="text-center text-2xl tracking-widest font-mono"
+                        autoFocus
+                      />
+                    </div>
+                    <div>
+                      <Button
+                        onClick={onSubmit2FA}
+                        variant="gold"
+                        className="w-full text-lg py-3"
+                        isLoading={isLoading}
+                        disabled={twoFactorToken.length !== 6}
+                      >
+                        Verify
+                      </Button>
+                    </div>
+                    <div className="text-center">
+                      <button
+                        type="button"
+                        onClick={() => setUseBackupCode(true)}
+                        className="text-sm text-gold-400 hover:text-gold-300 transition-colors"
+                      >
+                        Use backup code instead
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <Input
+                        label="Backup Code"
+                        type="text"
+                        value={backupCode}
+                        onChange={(e) => setBackupCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8))}
+                        placeholder="XXXXXXXX"
+                        maxLength={8}
+                        className="text-center text-lg tracking-widest font-mono uppercase"
+                        autoFocus
+                      />
+                    </div>
+                    <div>
+                      <Button
+                        onClick={onSubmit2FA}
+                        variant="gold"
+                        className="w-full text-lg py-3"
+                        isLoading={isLoading}
+                        disabled={backupCode.length < 8}
+                      >
+                        Verify Backup Code
+                      </Button>
+                    </div>
+                    <div className="text-center">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUseBackupCode(false);
+                          setBackupCode('');
+                        }}
+                        className="text-sm text-gold-400 hover:text-gold-300 transition-colors"
+                      >
+                        Use authenticator app instead
+                      </button>
+                    </div>
+                  </>
+                )}
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRequires2FA(false);
+                      setLoginData(null);
+                      setTwoFactorToken('');
+                      setBackupCode('');
+                      setUseBackupCode(false);
+                      setError('');
+                    }}
+                    className="text-sm text-plum-300 hover:text-plum-200 transition-colors"
+                  >
+                    ← Back to login
+                  </button>
+                </div>
               </div>
-              <div>
-                <Button type="submit" variant="gold" className="w-full text-lg py-3" isLoading={isLoading}>
-                  Sign In
-                </Button>
-              </div>
-              <p className="text-center text-sm text-plum-200">
-                Don't have an account?{' '}
-                <Link href="/register" className="font-medium text-gold-400 hover:text-gold-300 transition-colors">
-                  Create one now
-                </Link>
-              </p>
-            </form>
+            )}
           </CardContent>
         </Card>
       </div>

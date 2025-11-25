@@ -2,28 +2,45 @@ import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
+import cookieParser from 'cookie-parser';
 import { env } from './config/env';
 import { errorHandler } from './middleware/error.middleware';
 import { requestLogger } from './middleware/logger.middleware';
+import { attachCSRFToken, validateCSRF } from './middleware/csrf.middleware';
+import { sessionMiddleware } from './config/session';
+import { cspHeaders, hstsHeaders, removeServerHeaders } from './middleware/security-headers.middleware';
 import logger from './utils/logger';
 
 const app: Express = express();
 
 // Security middleware
 app.use(helmet());
+app.use(removeServerHeaders);
+app.use(cspHeaders);
+app.use(hstsHeaders);
 app.use(cors({
   origin: env.CORS_ORIGIN.includes(',') 
     ? env.CORS_ORIGIN.split(',').map(origin => origin.trim()) 
     : env.CORS_ORIGIN,
   credentials: true,
 }));
-
-// Compression middleware
 app.use(compression());
+app.use(cookieParser());
+app.use(sessionMiddleware);
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// CSRF protection - attach token to all requests
+app.use(attachCSRFToken);
+// Validate CSRF token for state-changing operations (skip webhooks)
+app.use((req, res, next) => {
+  if (req.path.includes('/webhook/')) {
+    return next(); // Skip CSRF for webhooks
+  }
+  return validateCSRF(req, res, next);
+});
 
 // Request logging
 app.use(requestLogger);
@@ -37,7 +54,7 @@ import healthRoutes from './routes/health.routes';
 app.use('/', healthRoutes);
 
 // API routes
-app.get(`/api/${env.API_VERSION}`, (req: Request, res: Response) => {
+app.get(`/api/${env.API_VERSION}`, (_req: Request, res: Response) => {
   res.json({
     success: true,
     message: 'Gift Card SaaS API',
@@ -60,8 +77,13 @@ import communicationSettingsRoutes from './routes/communicationSettings.routes';
 import otpRoutes from './routes/otp.routes';
 import communicationLogRoutes from './routes/communicationLog.routes';
 import giftCardShareRoutes from './routes/giftcard-share.routes';
+import twoFactorRoutes from './routes/two-factor.routes';
+import deviceRoutes from './routes/device.routes';
+import auditLogRoutes from './routes/audit-log.routes';
 
 app.use(`/api/${env.API_VERSION}/auth`, authRoutes);
+app.use(`/api/${env.API_VERSION}/auth/2fa`, twoFactorRoutes);
+app.use(`/api/${env.API_VERSION}/auth/devices`, deviceRoutes);
 app.use(`/api/${env.API_VERSION}/gift-cards`, giftCardRoutes);
 app.use(`/api/${env.API_VERSION}/gift-card-share`, giftCardShareRoutes);
 app.use(`/api/${env.API_VERSION}/gift-card-products`, giftCardProductRoutes);
@@ -75,13 +97,14 @@ app.use(`/api/${env.API_VERSION}/password-reset`, passwordResetRoutes);
 app.use(`/api/${env.API_VERSION}/admin/communication-settings`, communicationSettingsRoutes);
 app.use(`/api/${env.API_VERSION}/otp`, otpRoutes);
 app.use(`/api/${env.API_VERSION}/admin/communication-logs`, communicationLogRoutes);
+app.use(`/api/${env.API_VERSION}/admin/audit-logs`, auditLogRoutes);
 
 // Serve uploaded files
 app.use('/uploads', express.static('uploads'));
 app.use('/uploads/pdfs', express.static('uploads/pdfs'));
 
 // 404 handler
-app.use((req: Request, res: Response) => {
+app.use((_req: Request, res: Response) => {
   res.status(404).json({
     success: false,
     error: {

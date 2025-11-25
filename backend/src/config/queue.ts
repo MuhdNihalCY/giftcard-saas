@@ -1,6 +1,5 @@
-import { Queue, Worker, QueueEvents } from 'bullmq';
+import { Queue, QueueEvents } from 'bullmq';
 import Redis from 'ioredis';
-import { getRedisClient } from './redis';
 import logger from '../utils/logger';
 
 // Queue names

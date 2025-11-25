@@ -3,13 +3,7 @@
  * Supports Web NFC API on Android Chrome with fallbacks for other platforms
  */
 
-interface NFCData {
-  type: string;
-  id: string;
-  code: string;
-  shareToken: string;
-  url: string;
-}
+import type { NFCData, PlatformInfo } from '@/types/nfc';
 
 export class NFCService {
   /**
@@ -36,7 +30,7 @@ export class NFCService {
   /**
    * Get platform capabilities
    */
-  static getPlatformInfo() {
+  static getPlatformInfo(): PlatformInfo {
     return {
       isNFCAvailable: this.isNFCAvailable(),
       isAndroid: this.isAndroid(),
@@ -60,6 +54,7 @@ export class NFCService {
 
     try {
       // Use Web NFC API
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const ndef = new (window as any).NDEFReader();
       
       // Encode data properly for NDEF
@@ -104,9 +99,10 @@ export class NFCService {
     }
 
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const ndef = new (window as any).NDEFReader();
       
-      return new Promise((resolve, reject) => {
+      return new Promise<NFCData>((resolve, reject) => {
         const timeout = setTimeout(() => {
           ndef.abort();
           reject(new Error('NFC read timeout. Please try again.'));
@@ -114,6 +110,7 @@ export class NFCService {
 
         ndef.scan()
           .then(() => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             ndef.onreading = (event: any) => {
               clearTimeout(timeout);
               
@@ -149,29 +146,40 @@ export class NFCService {
                 } else {
                   reject(new Error('Invalid NFC data format. Could not read gift card information.'));
                 }
-              } catch (error: any) {
-                reject(new Error(`Failed to parse NFC data: ${error.message}`));
+              } catch (error: unknown) {
+                const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+                reject(new Error(`Failed to parse NFC data: ${errorMessage}`));
               }
             };
 
-            ndef.onreadingerror = (error: any) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            ndef.onreadingerror = (err: any) => {
               clearTimeout(timeout);
-              reject(new Error(`NFC read error: ${error.message || 'Unknown error'}`));
+              const errorMessage = err?.message || 'Unknown error';
+              reject(new Error(`NFC read error: ${errorMessage}`));
             };
           })
-          .catch((error: any) => {
+          .catch((err: unknown) => {
             clearTimeout(timeout);
-            if (error.name === 'NotAllowedError') {
-              reject(new Error('NFC permission denied. Please allow NFC access in your browser settings.'));
-            } else if (error.name === 'NotSupportedError') {
-              reject(new Error('NFC is not supported on this device.'));
+            if (err && typeof err === 'object' && 'name' in err) {
+              const errorName = err.name as string;
+              if (errorName === 'NotAllowedError') {
+                reject(new Error('NFC permission denied. Please allow NFC access in your browser settings.'));
+              } else if (errorName === 'NotSupportedError') {
+                reject(new Error('NFC is not supported on this device.'));
+              } else {
+                const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+                reject(new Error(`Failed to start NFC reader: ${errorMessage}`));
+              }
             } else {
-              reject(new Error(`Failed to start NFC reader: ${error.message}`));
+              const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+              reject(new Error(`Failed to start NFC reader: ${errorMessage}`));
             }
           });
       });
-    } catch (error: any) {
-      throw new Error(`NFC read failed: ${error.message}`);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`NFC read failed: ${errorMessage}`);
     }
   }
 

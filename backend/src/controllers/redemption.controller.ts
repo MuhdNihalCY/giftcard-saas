@@ -154,7 +154,7 @@ export class RedemptionController {
   /**
    * Redeem via link (public endpoint)
    */
-  async redeemViaLink(req: Request, res: Response, next: NextFunction) {
+  async redeemViaLink(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const { code } = req.params;
       const { amount, merchantId, location, notes } = req.body;
@@ -178,13 +178,13 @@ export class RedemptionController {
         notes,
       });
 
-      res.json({
+      return res.json({
         success: true,
         data: result,
         message: 'Gift card redeemed successfully',
       });
     } catch (error) {
-      next(error);
+      return next(error);
     }
   }
 }

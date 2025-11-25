@@ -45,13 +45,13 @@ export default function GiftCardProductsPage() {
 
   const fetchProducts = async () => {
     try {
-      const params: any = {
+      const params: Record<string, string | number> = {
         page: filters.page,
         limit: filters.limit,
       };
 
       if (user?.role === 'MERCHANT') {
-        params.merchantId = user.id;
+        params.merchantId = user.id as string;
       }
 
       if (filters.isActive !== '') {
@@ -73,8 +73,12 @@ export default function GiftCardProductsPage() {
     try {
       await api.delete(`/gift-card-products/${id}`);
       fetchProducts();
-    } catch (error: any) {
-      alert(error.response?.data?.error?.message || 'Failed to delete product');
+    } catch (error: unknown) {
+      const errorMessage = 
+        (error && typeof error === 'object' && 'response' in error && error.response && typeof error.response === 'object' && 'data' in error.response && error.response.data && typeof error.response.data === 'object' && 'error' in error.response.data && error.response.data.error && typeof error.response.data.error === 'object' && 'message' in error.response.data.error && typeof error.response.data.error.message === 'string')
+          ? error.response.data.error.message
+          : 'Failed to delete product';
+      alert(errorMessage);
     }
   };
 

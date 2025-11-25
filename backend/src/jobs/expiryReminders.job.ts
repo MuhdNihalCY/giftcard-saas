@@ -2,7 +2,6 @@ import { Job } from 'bullmq';
 import prisma from '../config/database';
 import logger from '../utils/logger';
 import emailService from '../services/delivery/email.service';
-import smsService from '../services/delivery/sms.service';
 import { env } from '../config/env';
 
 export interface ExpiryReminderJobData {
@@ -55,16 +54,18 @@ export async function processExpiryReminder(job: Job<ExpiryReminderJobData>) {
             redemptionUrl,
           });
           logger.info('Expiry reminder email sent', { giftCardId, email: giftCard.recipientEmail });
-        } catch (error: any) {
-          logger.error('Failed to send expiry reminder email', { giftCardId, error: error.message });
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          logger.error('Failed to send expiry reminder email', { giftCardId, error: errorMessage });
         }
       }
 
       // Note: SMS reminders would require recipient phone number in the schema
       // For now, we'll skip SMS reminders
     }
-  } catch (error: any) {
-    logger.error('Error processing expiry reminder', { giftCardId, error: error.message });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Error processing expiry reminder', { giftCardId, error: errorMessage });
     throw error;
   }
 }

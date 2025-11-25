@@ -3,7 +3,6 @@ import deliveryController from '../controllers/delivery.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validation.middleware';
 import { deliverGiftCardSchema, sendReminderSchema } from '../validators/delivery.validator';
-import { env } from '../config/env';
 
 const router = Router();
 

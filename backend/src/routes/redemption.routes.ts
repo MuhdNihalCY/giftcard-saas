@@ -9,7 +9,6 @@ import {
   redeemViaLinkSchema,
   checkBalanceSchema,
 } from '../validators/redemption.validator';
-import { env } from '../config/env';
 
 const router = Router();
 

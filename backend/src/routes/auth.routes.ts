@@ -4,6 +4,7 @@ import { validate } from '../middleware/validation.middleware';
 import { registerSchema, loginSchema, refreshTokenSchema } from '../validators/auth.validator';
 import { authRateLimiter } from '../middleware/rateLimit.middleware';
 import { authenticate } from '../middleware/auth.middleware';
+import { auditAuth } from '../middleware/audit.middleware';
 
 const router = Router();
 
@@ -12,8 +13,8 @@ router.use(authRateLimiter);
 
 // Public routes
 router.post('/register', validate(registerSchema), authController.register.bind(authController));
-router.post('/login', validate(loginSchema), authController.login.bind(authController));
-router.post('/refresh', validate(refreshTokenSchema), authController.refreshToken.bind(authController));
+router.post('/login', validate(loginSchema), auditAuth('LOGIN_FAILED'), authController.login.bind(authController));
+router.post('/refresh', validate(refreshTokenSchema), auditAuth('TOKEN_REFRESH'), authController.refreshToken.bind(authController));
 
 // Protected routes
 router.get('/profile', authenticate, authController.getProfile.bind(authController));

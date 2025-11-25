@@ -1,7 +1,7 @@
 // import prisma from '../config/database';
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
-import { NotFoundError, ValidationError } from '../utils/errors';
+import { ValidationError } from '../utils/errors';
 import logger from '../utils/logger';
 
 export interface CommunicationSettingsData {
@@ -70,7 +70,8 @@ export class CommunicationSettingsService {
       throw new ValidationError('OTP length must be between 4 and 8 digits');
     }
 
-    const settings = await this.getSettings();
+    // Ensure settings exist before updating
+    await this.getSettings();
 
     const updated = await prisma.communicationSettings.update({
       where: { id: CommunicationSettingsService.SETTINGS_ID },

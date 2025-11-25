@@ -1,6 +1,5 @@
 import Redis from 'ioredis';
 import { Worker } from 'bullmq';
-import { getRedisClient } from '../config/redis';
 import { QUEUE_NAMES } from '../config/queue';
 import { processGiftCardExpiry } from '../jobs/giftCardExpiry.job';
 import { processExpiryReminder } from '../jobs/expiryReminders.job';

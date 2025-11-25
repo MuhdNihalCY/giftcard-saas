@@ -1,11 +1,10 @@
 import { randomInt } from 'crypto';
 import prisma from '../config/database';
-import { ValidationError, UnauthorizedError } from '../utils/errors';
+import { ValidationError } from '../utils/errors';
 import logger from '../utils/logger';
 import communicationSettingsService from './communicationSettings.service';
 import emailService from './delivery/email.service';
 import smsService from './delivery/sms.service';
-import { env } from '../config/env';
 
 export type OTPType = 'LOGIN' | 'VERIFICATION' | 'PASSWORD_RESET' | 'TRANSACTION' | '2FA';
 
@@ -59,7 +58,7 @@ export class OTPService {
     expiresAt.setMinutes(expiresAt.getMinutes() + otpConfig.expiryMinutes);
 
     // Store OTP
-    const otp = await prisma.oTP.create({
+    await prisma.oTP.create({
       data: {
         userId,
         identifier,

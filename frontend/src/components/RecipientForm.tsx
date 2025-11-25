@@ -23,7 +23,7 @@ export function RecipientForm({
   recipients,
   onChange,
   defaultAmount = 0,
-  currency = 'USD',
+  currency: _currency = 'USD',
 }: RecipientFormProps) {
   const addRecipient = () => {
     onChange([

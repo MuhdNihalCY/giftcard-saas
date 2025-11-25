@@ -26,7 +26,7 @@ export class PDFService {
       currency,
       qrCodeUrl,
       merchantName,
-      recipientName,
+      recipientName: _recipientName,
       customMessage,
       expiryDate,
     } = data;

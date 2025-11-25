@@ -1,7 +1,7 @@
 import { Decimal } from '@prisma/client/runtime/library';
 import prisma from '../config/database';
 import { NotFoundError, ValidationError } from '../utils/errors';
-import { RedemptionMethod, TransactionType } from '@prisma/client';
+import { RedemptionMethod } from '@prisma/client';
 import giftCardService from './giftcard.service';
 import cacheService, { CacheKeys } from './cache.service';
 import { isExpired } from '../utils/helpers';
@@ -113,7 +113,7 @@ export class RedemptionService {
     const balanceAfter = new Decimal(newBalance);
 
     // Update gift card balance
-    const updatedGiftCard = await prisma.giftCard.update({
+    await prisma.giftCard.update({
       where: { id: giftCard.id },
       data: {
         balance: balanceAfter,

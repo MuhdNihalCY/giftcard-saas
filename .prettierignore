@@ -1,0 +1,17 @@
+node_modules
+dist
+.next
+build
+coverage
+*.log
+.env
+.env.local
+.env.*.local
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+prisma/migrations
+*.md
+!README.md
+
+

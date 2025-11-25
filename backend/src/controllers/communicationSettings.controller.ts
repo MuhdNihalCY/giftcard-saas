@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import communicationSettingsService from '../services/communicationSettings.service';
 import { UnauthorizedError } from '../utils/errors';

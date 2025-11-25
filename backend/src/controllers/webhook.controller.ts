@@ -8,7 +8,7 @@ import { env } from '../config/env';
 import logger from '../utils/logger';
 
 export class WebhookController {
-  async stripeWebhook(req: Request, res: Response, next: NextFunction) {
+  async stripeWebhook(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const signature = req.headers['stripe-signature'] as string;
       const event = stripeService.verifyWebhookSignature(req.body, signature);
@@ -16,35 +16,39 @@ export class WebhookController {
       // Handle different event types
       switch (event.type) {
         case 'payment_intent.succeeded':
-          await this.handleStripePaymentSuccess(event.data.object);
+          await this.handleStripePaymentSuccess(event.data.object as unknown as Record<string, unknown>);
           break;
 
         case 'payment_intent.payment_failed':
-          await this.handleStripePaymentFailed(event.data.object);
+          await this.handleStripePaymentFailed(event.data.object as unknown as Record<string, unknown>);
           break;
 
         case 'charge.refunded':
-          await this.handleStripeRefund(event.data.object);
+          await this.handleStripeRefund(event.data.object as unknown as Record<string, unknown>);
           break;
 
         default:
           logger.info('Unhandled Stripe webhook event type', { eventType: event.type });
       }
 
-      res.json({ received: true });
+      return res.json({ received: true });
     } catch (error) {
-      next(error);
+      return next(error);
     }
   }
 
-  private async handleStripePaymentSuccess(paymentIntent: any) {
-    const giftCardId = paymentIntent.metadata?.giftCardId;
+  private async handleStripePaymentSuccess(paymentIntent: Record<string, unknown>): Promise<void> {
+    const metadata = paymentIntent.metadata as Record<string, unknown> | undefined;
+    const giftCardId = metadata?.giftCardId as string | undefined;
     if (!giftCardId) return;
+
+    const paymentIntentId = paymentIntent.id as string | undefined;
+    if (!paymentIntentId) return;
 
     // Find payment by payment intent ID
     const payment = await prisma.payment.findFirst({
       where: {
-        paymentIntentId: paymentIntent.id,
+        paymentIntentId,
         paymentMethod: PaymentMethod.STRIPE,
       },
     });
@@ -58,7 +62,7 @@ export class WebhookController {
       where: { id: payment.id },
       data: {
         status: PaymentStatus.COMPLETED,
-        transactionId: paymentIntent.latest_charge,
+        transactionId: (paymentIntent.latest_charge as string | undefined) || null,
       },
     });
 
@@ -74,15 +78,18 @@ export class WebhookController {
         metadata: {
           paymentId: payment.id,
           paymentMethod: PaymentMethod.STRIPE,
-        } as any,
+        } satisfies { paymentId: string; paymentMethod: PaymentMethod },
       },
     });
   }
 
-  private async handleStripePaymentFailed(paymentIntent: any) {
+  private async handleStripePaymentFailed(paymentIntent: Record<string, unknown>): Promise<void> {
+    const paymentIntentId = paymentIntent.id as string | undefined;
+    if (!paymentIntentId) return;
+    
     const payment = await prisma.payment.findFirst({
       where: {
-        paymentIntentId: paymentIntent.id,
+        paymentIntentId,
         paymentMethod: PaymentMethod.STRIPE,
       },
     });
@@ -95,12 +102,15 @@ export class WebhookController {
     }
   }
 
-  private async handleStripeRefund(charge: any) {
+  private async handleStripeRefund(charge: Record<string, unknown>): Promise<void> {
     // Handle refund webhook if needed
-    logger.info('Stripe refund webhook received', { chargeId: charge.id });
+    const chargeId = charge.id as string | undefined;
+    if (chargeId) {
+      logger.info('Stripe refund webhook received', { chargeId });
+    }
   }
 
-  async razorpayWebhook(req: Request, res: Response, next: NextFunction) {
+  async razorpayWebhook(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const event = req.body;
 
@@ -131,17 +141,19 @@ export class WebhookController {
           logger.info('Unhandled Razorpay webhook event', { eventType: event.event });
       }
 
-      res.json({ received: true });
+      return res.json({ received: true });
     } catch (error) {
-      next(error);
+      return next(error);
     }
   }
 
-  private async handleRazorpayPaymentSuccess(payment: any) {
-    const orderId = payment.order_id;
+  private async handleRazorpayPaymentSuccess(payment: Record<string, unknown>): Promise<void> {
+    const paymentId = payment.id as string | undefined;
+    if (!paymentId) return;
+    
     const paymentRecord = await prisma.payment.findFirst({
       where: {
-        paymentIntentId: payment.id,
+        paymentIntentId: paymentId,
         paymentMethod: PaymentMethod.RAZORPAY,
       },
     });
@@ -154,7 +166,7 @@ export class WebhookController {
       where: { id: paymentRecord.id },
       data: {
         status: PaymentStatus.COMPLETED,
-        transactionId: payment.id,
+        transactionId: paymentId,
       },
     });
 
@@ -169,15 +181,18 @@ export class WebhookController {
         metadata: {
           paymentId: paymentRecord.id,
           paymentMethod: PaymentMethod.RAZORPAY,
-        } as any,
+        } satisfies { paymentId: string; paymentMethod: PaymentMethod },
       },
     });
   }
 
-  private async handleRazorpayPaymentFailed(payment: any) {
+  private async handleRazorpayPaymentFailed(payment: Record<string, unknown>): Promise<void> {
+    const paymentId = payment.id as string | undefined;
+    if (!paymentId) return;
+    
     const paymentRecord = await prisma.payment.findFirst({
       where: {
-        paymentIntentId: payment.id,
+        paymentIntentId: paymentId,
         paymentMethod: PaymentMethod.RAZORPAY,
       },
     });

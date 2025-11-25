@@ -29,8 +29,8 @@ export function NFCReader({ onScanSuccess, onError }: NFCReaderProps) {
       });
       
       setIsReading(false);
-    } catch (err: any) {
-      const errorMsg = err.message || 'Failed to read NFC data';
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to read NFC data';
       setError(errorMsg);
       setStatus('');
       onError?.(errorMsg);

@@ -9,7 +9,6 @@ import {
   createTemplateSchema,
   updateTemplateSchema,
 } from '../validators/giftcard.validator';
-import { env } from '../config/env';
 
 const router = Router();
 

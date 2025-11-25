@@ -1,10 +1,13 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { randomBytes } from 'crypto';
 import { env } from '../config/env';
 import prisma from '../config/database';
 import { UnauthorizedError, ValidationError } from '../utils/errors';
 import { UserRole } from '@prisma/client';
 import logger from '../utils/logger';
+import twoFactorService from './two-factor.service';
+import type { DeviceInfo } from './device.service';
 
 export interface RegisterData {
   email: string;
@@ -157,13 +160,16 @@ export class AuthService {
       });
     }
 
-    // Generate tokens
-    const tokens = this.generateTokens({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-    });
+    // Check if 2FA is enabled
+    if (user.twoFactorEnabled) {
+      // Return requires2FA flag instead of tokens
+      return {
+        requires2FA: true,
+        email: user.email,
+      };
+    }
 
+    // Return user info - tokens will be generated in controller with device tracking
     logger.info('User logged in successfully', { userId: user.id, email });
 
     return {
@@ -176,11 +182,170 @@ export class AuthService {
         businessName: user.businessName,
         isEmailVerified: user.isEmailVerified,
       },
-      ...tokens,
     };
   }
 
-  generateTokens(payload: TokenPayload) {
+  /**
+   * Verify 2FA and complete login
+   */
+  async verify2FA(email: string, password: string, token: string): Promise<{
+    user: {
+      id: string;
+      email: string;
+      firstName: string | null;
+      lastName: string | null;
+      role: UserRole;
+      businessName: string | null;
+      isEmailVerified: boolean;
+    };
+  }> {
+    // First verify password
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new UnauthorizedError('Invalid email or password');
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    if (!isPasswordValid) {
+      throw new UnauthorizedError('Invalid email or password');
+    }
+
+    if (!user.twoFactorEnabled || !user.twoFactorSecret) {
+      throw new ValidationError('2FA is not enabled for this account');
+    }
+
+    // Verify TOTP token
+    const isValidToken = twoFactorService.verifyToken(user.twoFactorSecret, token);
+    if (!isValidToken) {
+      throw new UnauthorizedError('Invalid 2FA code');
+    }
+
+    // Return user info - tokens will be generated in controller with device tracking
+    logger.info('User logged in successfully with 2FA', { userId: user.id, email });
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        businessName: user.businessName,
+        isEmailVerified: user.isEmailVerified,
+      },
+    };
+  }
+
+  /**
+   * Verify 2FA using backup code
+   */
+  async verify2FABackup(email: string, password: string, backupCode: string): Promise<{
+    user: {
+      id: string;
+      email: string;
+      firstName: string | null;
+      lastName: string | null;
+      role: UserRole;
+      businessName: string | null;
+      isEmailVerified: boolean;
+    };
+    remainingBackupCodes: number;
+  }> {
+    // First verify password
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new UnauthorizedError('Invalid email or password');
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    if (!isPasswordValid) {
+      throw new UnauthorizedError('Invalid email or password');
+    }
+
+    if (!user.twoFactorEnabled) {
+      throw new ValidationError('2FA is not enabled for this account');
+    }
+
+    // Verify backup code
+    const result = await twoFactorService.verifyBackupCode(user.id, backupCode);
+
+    // Return user info - tokens will be generated in controller with device tracking
+    logger.info('User logged in successfully with 2FA backup code', { userId: user.id, email });
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        businessName: user.businessName,
+        isEmailVerified: user.isEmailVerified,
+      },
+      remainingBackupCodes: result.remainingCodes,
+    };
+  }
+
+  /**
+   * Generate tokens with device tracking
+   */
+  async generateTokens(
+    payload: TokenPayload,
+    deviceInfo?: DeviceInfo,
+    ipAddress?: string
+  ): Promise<{ accessToken: string; refreshToken: string; refreshTokenId: string }> {
+    const accessToken = jwt.sign(payload, env.JWT_SECRET, {
+      expiresIn: env.JWT_EXPIRES_IN as any,
+    });
+
+    // Generate a secure random token for refresh token
+    const refreshTokenValue = randomBytes(32).toString('hex');
+    
+    // Calculate expiry date
+    const expiresAt = new Date();
+    const refreshExpiresIn = parseInt(env.JWT_REFRESH_EXPIRES_IN.replace('d', '')) || 30;
+    expiresAt.setDate(expiresAt.getDate() + refreshExpiresIn);
+
+    // Create refresh token record in database
+    const refreshTokenRecord = await prisma.refreshToken.create({
+      data: {
+        userId: payload.userId,
+        token: refreshTokenValue,
+        deviceName: deviceInfo?.deviceName,
+        deviceType: deviceInfo?.deviceType,
+        userAgent: deviceInfo?.userAgent,
+        ipAddress: ipAddress,
+        lastUsedAt: new Date(),
+        expiresAt,
+      },
+    });
+
+    // Sign the refresh token with the database ID
+    const refreshToken = jwt.sign(
+      { ...payload, refreshTokenId: refreshTokenRecord.id },
+      env.JWT_REFRESH_SECRET,
+      {
+        expiresIn: env.JWT_REFRESH_EXPIRES_IN as any,
+      }
+    );
+
+    return {
+      accessToken,
+      refreshToken,
+      refreshTokenId: refreshTokenRecord.id,
+    };
+  }
+
+  /**
+   * Legacy generateTokens for backward compatibility (without device tracking)
+   */
+  generateTokensLegacy(payload: TokenPayload) {
     const accessToken = jwt.sign(payload, env.JWT_SECRET, {
       expiresIn: env.JWT_EXPIRES_IN as any,
     });
@@ -205,24 +370,99 @@ export class AuthService {
     }
   }
 
-  async refreshToken(refreshToken: string) {
+  async refreshToken(
+    refreshToken: string,
+    deviceInfo?: DeviceInfo,
+    ipAddress?: string
+  ): Promise<{ accessToken: string; refreshToken: string; refreshTokenId: string }> {
     const payload = this.verifyToken(refreshToken, true);
 
-    // Verify user still exists and is active
-    const user = await prisma.user.findUnique({
-      where: { id: payload.userId },
-    });
+    // Extract refreshTokenId from payload if it exists (new format)
+    const refreshTokenId = (payload as any).refreshTokenId;
 
-    if (!user || !user.isActive) {
-      throw new UnauthorizedError('User not found or inactive');
+    if (refreshTokenId) {
+      // New token rotation flow
+      const refreshTokenRecord = await prisma.refreshToken.findUnique({
+        where: { id: refreshTokenId },
+        include: { user: true },
+      });
+
+      if (!refreshTokenRecord) {
+        throw new UnauthorizedError('Refresh token not found');
+      }
+
+      if (refreshTokenRecord.revokedAt) {
+        throw new UnauthorizedError('Refresh token has been revoked');
+      }
+
+      if (refreshTokenRecord.expiresAt < new Date()) {
+        throw new UnauthorizedError('Refresh token has expired');
+      }
+
+      const user = refreshTokenRecord.user;
+      if (!user || !user.isActive) {
+        throw new UnauthorizedError('User not found or inactive');
+      }
+
+      // Revoke old token
+      await prisma.refreshToken.update({
+        where: { id: refreshTokenId },
+        data: { revokedAt: new Date() },
+      });
+
+      // Generate new tokens with device tracking
+      const newTokens = await this.generateTokens(
+        {
+          userId: user.id,
+          email: user.email,
+          role: user.role,
+        },
+        deviceInfo || {
+          deviceName: refreshTokenRecord.deviceName || 'Unknown Device',
+          deviceType: (refreshTokenRecord.deviceType as 'MOBILE' | 'DESKTOP' | 'TABLET' | 'UNKNOWN') || 'UNKNOWN',
+          userAgent: refreshTokenRecord.userAgent || '',
+        },
+        ipAddress || refreshTokenRecord.ipAddress || undefined
+      );
+
+      // Update last used timestamp on old token (before revoking)
+      await prisma.refreshToken.update({
+        where: { id: refreshTokenId },
+        data: { lastUsedAt: new Date() },
+      });
+
+      logger.info('Token refreshed with rotation', { userId: user.id, oldTokenId: refreshTokenId });
+
+      return newTokens;
+    } else {
+      // Legacy flow - no token rotation, but verify user
+      const user = await prisma.user.findUnique({
+        where: { id: payload.userId },
+      });
+
+      if (!user || !user.isActive) {
+        throw new UnauthorizedError('User not found or inactive');
+      }
+
+      // Legacy flow - generate tokens without device tracking
+      const accessToken = jwt.sign(
+        { userId: user.id, email: user.email, role: user.role },
+        env.JWT_SECRET,
+        { expiresIn: env.JWT_EXPIRES_IN as any }
+      );
+
+      const refreshTokenValue = jwt.sign(
+        { userId: user.id, email: user.email, role: user.role },
+        env.JWT_REFRESH_SECRET,
+        { expiresIn: env.JWT_REFRESH_EXPIRES_IN as any }
+      );
+
+      return {
+        accessToken,
+        refreshToken: refreshTokenValue,
+        refreshTokenId: '',
+      };
     }
-
-    // Generate new tokens
-    return this.generateTokens({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-    });
   }
 }
 

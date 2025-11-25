@@ -13,6 +13,7 @@ import { GiftCardSkeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/ToastContainer';
 import { GiftCardShare } from '@/components/GiftCardShare';
 import logger from '@/lib/logger';
+import type { Transaction } from '@/types/transaction';
 
 interface GiftCard {
   id: string;
@@ -35,7 +36,7 @@ export default function WalletPage() {
   const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCard, setSelectedCard] = useState<GiftCard | null>(null);
-  const [transactions, setTransactions] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [showTransactions, setShowTransactions] = useState(false);
   const [filter, setFilter] = useState<'all' | 'active' | 'expired' | 'redeemed'>('all');
   const [sortBy, setSortBy] = useState<'name' | 'value' | 'balance' | 'date'>('date');
@@ -158,7 +159,7 @@ export default function WalletPage() {
         <div className="sm:ml-auto">
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
+            onChange={(e) => setSortBy(e.target.value as 'code' | 'balance' | 'expiryDate' | 'createdAt')}
             className="px-4 py-2 bg-navy-800/50 border-2 border-plum-500/30 rounded-lg text-navy-50 focus:outline-none focus:ring-2 focus:ring-gold-500"
           >
             <option value="date" className="bg-navy-800">Newest First</option>

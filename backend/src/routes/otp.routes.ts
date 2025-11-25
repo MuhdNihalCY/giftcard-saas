@@ -2,7 +2,6 @@ import { Router } from 'express';
 import otpController from '../controllers/otp.controller';
 import { validate } from '../middleware/validation.middleware';
 import { z } from 'zod';
-import { authenticate } from '../middleware/auth.middleware';
 
 const router = Router();
 

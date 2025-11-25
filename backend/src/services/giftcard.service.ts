@@ -4,8 +4,9 @@ import prisma from '../config/database';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { generateGiftCardCode, isExpired } from '../utils/helpers';
 import qrCodeService from './qrcode.service';
-import { GiftCardStatus, GiftCard } from '@prisma/client';
+import { GiftCardStatus, GiftCard, Prisma } from '@prisma/client';
 import cacheService, { CacheKeys } from './cache.service';
+import type { PaginationResult } from '../types';
 
 export interface CreateGiftCardData {
   merchantId: string;
@@ -30,6 +31,8 @@ export interface UpdateGiftCardData {
   status?: GiftCardStatus;
 }
 
+import type { GiftCardTemplate } from '@prisma/client';
+
 type GiftCardWithRelations = GiftCard & {
   merchant: {
     id: string;
@@ -37,7 +40,7 @@ type GiftCardWithRelations = GiftCard & {
     businessName: string | null;
     businessLogo: string | null;
   };
-  template: any;
+  template: GiftCardTemplate | null;
 };
 
 export class GiftCardService {
@@ -131,7 +134,7 @@ export class GiftCardService {
   /**
    * Get gift card by ID
    */
-  async getById(id: string, userId?: string): Promise<GiftCardWithRelations> {
+  async getById(id: string, _userId?: string): Promise<GiftCardWithRelations> {
     const cacheKey = CacheKeys.giftCard(id);
     
     // Try to get from cache
@@ -224,7 +227,7 @@ export class GiftCardService {
     status?: GiftCardStatus;
     page?: number;
     limit?: number;
-  }): Promise<{ giftCards: GiftCardWithRelations[]; pagination: any }> {
+  }): Promise<{ giftCards: GiftCardWithRelations[]; pagination: PaginationResult }> {
     const { merchantId, status, page = 1, limit = 20 } = filters;
     
     // Build cache key
@@ -236,14 +239,14 @@ export class GiftCardService {
     }
 
     // Try to get from cache
-    const cached = await cacheService.get<{ giftCards: GiftCardWithRelations[]; pagination: any }>(cacheKey);
+    const cached = await cacheService.get<{ giftCards: GiftCardWithRelations[]; pagination: PaginationResult }>(cacheKey);
     if (cached) {
       return cached;
     }
 
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: Prisma.GiftCardWhereInput = {};
     if (merchantId) where.merchantId = merchantId;
     if (status) where.status = status;
 
@@ -300,7 +303,7 @@ export class GiftCardService {
       throw new ValidationError('Gift card value must be greater than 0');
     }
 
-    const updateData: any = {};
+    const updateData: Prisma.GiftCardUpdateInput = {};
     if (data.value !== undefined) {
       updateData.value = new Decimal(data.value);
       // If balance is still full, update balance too

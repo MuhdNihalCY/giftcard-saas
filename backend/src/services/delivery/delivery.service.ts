@@ -3,7 +3,7 @@ import emailService from './email.service';
 import smsService from './sms.service';
 import giftCardService from '../giftcard.service';
 import { env } from '../../config/env';
-import { NotFoundError, ValidationError } from '../../utils/errors';
+import { ValidationError } from '../../utils/errors';
 
 export interface DeliveryOptions {
   giftCardId: string;

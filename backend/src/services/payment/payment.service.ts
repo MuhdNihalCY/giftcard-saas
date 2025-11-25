@@ -1,7 +1,7 @@
 import { Decimal } from '@prisma/client/runtime/library';
 import prisma from '../../config/database';
 import { NotFoundError, ValidationError } from '../../utils/errors';
-import { PaymentMethod, PaymentStatus } from '@prisma/client';
+import { PaymentMethod, PaymentStatus, Prisma } from '@prisma/client';
 import logger from '../../utils/logger';
 import stripeService from './stripe.service';
 import paypalService from './paypal.service';
@@ -9,6 +9,7 @@ import razorpayService from './razorpay.service';
 import giftCardService from '../giftcard.service';
 import giftCardProductService from '../giftcard-product.service';
 import deliveryService from '../delivery/delivery.service';
+import type { PaymentMetadata, TransactionMetadata, RefundResult, ProductPaymentData } from '../../types/payment';
 
 export interface CreatePaymentData {
   giftCardId: string;
@@ -137,7 +138,7 @@ export class PaymentService {
         metadata: {
           returnUrl,
           cancelUrl,
-        } as any,
+        } satisfies PaymentMetadata,
       },
       include: {
         giftCard: true,
@@ -261,14 +262,14 @@ export class PaymentService {
         metadata: {
           paymentId: payment.id,
           paymentMethod: payment.paymentMethod,
-        } as any,
+        } satisfies TransactionMetadata,
       },
     });
 
     // If this is a bulk purchase, deliver all gift cards
-    const metadata = payment.metadata as any;
+    const metadata = payment.metadata as PaymentMetadata | null;
     if (metadata?.type === 'bulk_purchase' && metadata.giftCardIds) {
-      const giftCardIds = metadata.giftCardIds as string[];
+      const giftCardIds = metadata.giftCardIds;
       for (const giftCardId of giftCardIds) {
         try {
           const giftCard = await giftCardService.getById(giftCardId);
@@ -356,7 +357,7 @@ export class PaymentService {
     const { giftCardId, customerId, status, paymentMethod, page = 1, limit = 20 } = filters;
     const skip = (page - 1) * limit;
 
-    const where: any = {};
+    const where: Prisma.PaymentWhereInput = {};
     if (giftCardId) where.giftCardId = giftCardId;
     if (customerId) where.customerId = customerId;
     if (status) where.status = status;
@@ -414,21 +415,42 @@ export class PaymentService {
       throw new ValidationError('Payment transaction ID not found');
     }
 
-    let refundResult: any;
+    let refundResult: RefundResult;
 
     // Process refund based on payment method
     switch (payment.paymentMethod) {
-      case PaymentMethod.STRIPE:
-        refundResult = await stripeService.refundPayment(payment.paymentIntentId, amount);
+      case PaymentMethod.STRIPE: {
+        const result = await stripeService.refundPayment(payment.paymentIntentId, amount);
+        refundResult = {
+          success: true,
+          refundId: result.refundId ? String(result.refundId) : undefined,
+          amount: result.amount,
+          status: result.status ? String(result.status) : undefined,
+        };
         break;
+      }
 
-      case PaymentMethod.PAYPAL:
-        refundResult = await paypalService.refundPayment(payment.transactionId, amount);
+      case PaymentMethod.PAYPAL: {
+        const result = await paypalService.refundPayment(payment.transactionId, amount);
+        refundResult = {
+          success: true,
+          refundId: result.refundId ? String(result.refundId) : undefined,
+          amount: result.amount,
+          status: result.status ? String(result.status) : undefined,
+        };
         break;
+      }
 
-      case PaymentMethod.RAZORPAY:
-        refundResult = await razorpayService.refundPayment(payment.transactionId, amount);
+      case PaymentMethod.RAZORPAY: {
+        const result = await razorpayService.refundPayment(payment.transactionId, amount);
+        refundResult = {
+          success: true,
+          refundId: result.refundId ? String(result.refundId) : undefined,
+          amount: result.amount,
+          status: result.status ? String(result.status) : undefined,
+        };
         break;
+      }
 
       default:
         throw new ValidationError('Refund not supported for this payment method');
@@ -466,14 +488,14 @@ export class PaymentService {
           paymentId: payment.id,
           refundId: refundResult.refundId,
           reason,
-        } as any,
+        } satisfies TransactionMetadata,
       },
     });
 
     return {
       refundId: refundResult.refundId,
       amount: refundAmount,
-      status: refundResult.status,
+      success: refundResult.success,
     };
   }
 
@@ -492,7 +514,7 @@ export class PaymentService {
     returnUrl?: string;
     cancelUrl?: string;
   }) {
-    const { productId, amount, customerId, currency, paymentMethod, recipientEmail, recipientName, customMessage, returnUrl, cancelUrl } = data;
+    const { productId, amount, customerId, currency: _currency, paymentMethod, recipientEmail, recipientName, customMessage, returnUrl, cancelUrl } = data;
 
     // Get product
     const product = await giftCardProductService.getById(productId);
@@ -590,7 +612,7 @@ export class PaymentService {
       throw new ValidationError('Maximum 50 recipients allowed per bulk purchase');
     }
 
-    let product: any = null;
+    let product: ProductPaymentData | null = null;
     let finalMerchantId = merchantId;
 
     // If productId is provided, get product details

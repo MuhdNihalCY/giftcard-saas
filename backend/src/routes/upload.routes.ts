@@ -2,7 +2,6 @@ import { Router } from 'express';
 import uploadController from '../controllers/upload.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 import { upload } from '../services/upload.service';
-import { env } from '../config/env';
 
 const router = Router();
 

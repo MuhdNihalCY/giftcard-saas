@@ -5,7 +5,7 @@ import logger from '../utils/logger';
 /**
  * Clean up expired tokens
  */
-export async function processCleanupTokens(job: Job) {
+export async function processCleanupTokens(_job: Job) {
   try {
     const now = new Date();
 
@@ -36,8 +36,9 @@ export async function processCleanupTokens(job: Job) {
       emailTokens: deletedEmailTokens.count,
       passwordTokens: deletedPasswordTokens.count,
     };
-  } catch (error: any) {
-    logger.error('Error cleaning up tokens', { error: error.message });
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error('Error cleaning up tokens', { error: errorMessage });
     throw error;
   }
 }

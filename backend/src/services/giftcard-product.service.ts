@@ -1,7 +1,7 @@
 import { Decimal } from '@prisma/client/runtime/library';
 import prisma from '../config/database';
 import { NotFoundError, ValidationError } from '../utils/errors';
-import cacheService, { CacheKeys } from './cache.service';
+import cacheService from './cache.service';
 
 export interface CreateProductData {
   merchantId: string;

@@ -17,7 +17,7 @@ export interface AuthRequest extends Request {
  */
 export const authenticate = async (
   req: AuthRequest,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ) => {
   try {
@@ -69,7 +69,7 @@ export const authenticate = async (
  * Must be used after authenticate middleware
  */
 export const authorize = (...roles: string[]) => {
-  return (req: AuthRequest, res: Response, next: NextFunction) => {
+  return (req: AuthRequest, _res: Response, next: NextFunction) => {
     if (!req.user) {
       return next(new UnauthorizedError('Authentication required'));
     }
@@ -88,7 +88,7 @@ export const authorize = (...roles: string[]) => {
  */
 export const optionalAuthenticate = async (
   req: AuthRequest,
-  res: Response,
+  _res: Response,
   next: NextFunction
 ) => {
   try {

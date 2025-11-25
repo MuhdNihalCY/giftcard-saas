@@ -7,6 +7,7 @@ import QRCode from 'react-qr-code';
 import NFCService from '@/services/nfc.service';
 import api from '@/lib/api';
 import logger from '@/lib/logger';
+import type { ShareData, NFCShareData } from '@/types/share';
 
 interface GiftCardShareProps {
   giftCardId: string;
@@ -14,11 +15,7 @@ interface GiftCardShareProps {
 }
 
 export function GiftCardShare({ giftCardId, onClose }: GiftCardShareProps) {
-  const [shareData, setShareData] = useState<{
-    token: string;
-    shareUrl: string;
-    nfcData?: any;
-  } | null>(null);
+  const [shareData, setShareData] = useState<ShareData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
   const [isWritingNFC, setIsWritingNFC] = useState(false);
@@ -46,9 +43,12 @@ export function GiftCardShare({ giftCardId, onClose }: GiftCardShareProps) {
             ...prev!,
             nfcData: nfcResponse.data.data,
           }));
-        } catch (err) {
+        } catch (err: unknown) {
           // NFC data fetch failed, but continue with share token
-          logger.warn('Failed to fetch NFC data', { error: err, giftCardId });
+          logger.warn('Failed to fetch NFC data', { 
+            error: err instanceof Error ? err.message : String(err), 
+            giftCardId 
+          });
         }
       }
     } catch (err: any) {
@@ -70,8 +70,9 @@ export function GiftCardShare({ giftCardId, onClose }: GiftCardShareProps) {
 
       await NFCService.writeNFC(shareData.nfcData);
       setError(''); // Clear any previous errors
-    } catch (err: any) {
-      setError(err.message || 'Failed to write to NFC');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to write to NFC';
+      setError(errorMessage);
     } finally {
       setIsWritingNFC(false);
     }

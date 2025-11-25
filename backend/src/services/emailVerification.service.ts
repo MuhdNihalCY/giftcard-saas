@@ -1,6 +1,6 @@
 import { randomBytes } from 'crypto';
 import prisma from '../config/database';
-import { ValidationError, UnauthorizedError } from '../utils/errors';
+import { ValidationError } from '../utils/errors';
 import emailService from './delivery/email.service';
 import logger from '../utils/logger';
 import { env } from '../config/env';

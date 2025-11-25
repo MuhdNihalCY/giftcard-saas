@@ -62,6 +62,12 @@ export const env = {
   // Rate Limiting
   RATE_LIMIT_WINDOW_MS: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10),
   RATE_LIMIT_MAX_REQUESTS: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10),
+
+  // Session
+  SESSION_SECRET: process.env.SESSION_SECRET || process.env.JWT_SECRET || '',
+
+  // App
+  APP_NAME: process.env.APP_NAME || 'Gift Card SaaS',
 };
 
 // Validate required environment variables
