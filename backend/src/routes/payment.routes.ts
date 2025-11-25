@@ -7,6 +7,8 @@ import {
   createPaymentSchema,
   confirmPaymentSchema,
   refundPaymentSchema,
+  createPaymentFromProductSchema,
+  bulkPurchaseSchema,
 } from '../validators/payment.validator';
 import { env } from '../config/env';
 import express from 'express';
@@ -45,6 +47,20 @@ router.post(
   authorize('ADMIN', 'MERCHANT'),
   validate(refundPaymentSchema),
   paymentController.refundPayment.bind(paymentController)
+);
+
+router.post(
+  '/from-product',
+  authenticate,
+  validate(createPaymentFromProductSchema),
+  paymentController.createPaymentFromProduct.bind(paymentController)
+);
+
+router.post(
+  '/bulk-purchase',
+  authenticate,
+  validate(bulkPurchaseSchema),
+  paymentController.bulkPurchase.bind(paymentController)
 );
 
 // Webhook routes (no authentication, signature verification instead)

@@ -48,6 +48,7 @@ app.get(`/api/${env.API_VERSION}`, (req: Request, res: Response) => {
 // Import routes
 import authRoutes from './routes/auth.routes';
 import giftCardRoutes from './routes/giftcard.routes';
+import giftCardProductRoutes from './routes/giftcard-product.routes';
 import uploadRoutes from './routes/upload.routes';
 import paymentRoutes from './routes/payment.routes';
 import deliveryRoutes from './routes/delivery.routes';
@@ -58,9 +59,12 @@ import passwordResetRoutes from './routes/passwordReset.routes';
 import communicationSettingsRoutes from './routes/communicationSettings.routes';
 import otpRoutes from './routes/otp.routes';
 import communicationLogRoutes from './routes/communicationLog.routes';
+import giftCardShareRoutes from './routes/giftcard-share.routes';
 
 app.use(`/api/${env.API_VERSION}/auth`, authRoutes);
 app.use(`/api/${env.API_VERSION}/gift-cards`, giftCardRoutes);
+app.use(`/api/${env.API_VERSION}/gift-card-share`, giftCardShareRoutes);
+app.use(`/api/${env.API_VERSION}/gift-card-products`, giftCardProductRoutes);
 app.use(`/api/${env.API_VERSION}/upload`, uploadRoutes);
 app.use(`/api/${env.API_VERSION}/payments`, paymentRoutes);
 app.use(`/api/${env.API_VERSION}/delivery`, deliveryRoutes);

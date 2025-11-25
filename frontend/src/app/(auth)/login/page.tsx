@@ -11,6 +11,7 @@ import { Card, CardContent } from '@/components/ui/Card';
 import api from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import Link from 'next/link';
+import logger from '@/lib/logger';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -48,7 +49,7 @@ export default function LoginPage() {
               return;
             }
           } catch (e) {
-            console.error('Error checking auth:', e);
+            logger.error('Error checking auth', { error: e });
           }
         }
       }
@@ -104,13 +105,13 @@ export default function LoginPage() {
         const storedUser = localStorage.getItem('user');
         
         if (!storedToken || !storedUser) {
-          console.error('Storage verification failed - retrying...');
+          logger.warn('Storage verification failed - retrying');
           // Force retry
           localStorage.setItem('accessToken', accessToken);
           localStorage.setItem('refreshToken', refreshToken);
           localStorage.setItem('user', JSON.stringify(user));
         } else {
-          console.log('✅ Tokens stored successfully');
+          logger.debug('Tokens stored successfully');
         }
       }
 
@@ -120,14 +121,16 @@ export default function LoginPage() {
         ? '/dashboard' 
         : '/';
       
-      console.log('✅ Login successful! Redirecting to:', redirectUrl);
-      console.log('Stored token:', localStorage.getItem('accessToken') ? 'YES' : 'NO');
-      console.log('Stored user:', localStorage.getItem('user') ? 'YES' : 'NO');
+      logger.info('Login successful', { redirectUrl });
+      logger.debug('Token storage verification', {
+        hasToken: !!localStorage.getItem('accessToken'),
+        hasUser: !!localStorage.getItem('user'),
+      });
       
       // Force immediate redirect - don't wait for anything
       window.location.replace(redirectUrl);
     } catch (err: any) {
-      console.error('Login error:', err);
+      logger.error('Login error', { error: err });
       const errorMessage = err.response?.data?.error?.message 
         || err.message 
         || (err.code === 'ECONNREFUSED' ? 'Cannot connect to server. Please make sure the backend is running.' : 'Login failed. Please try again.');

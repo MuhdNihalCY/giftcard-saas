@@ -83,6 +83,40 @@ export class PaymentController {
       next(error);
     }
   }
+
+  async createPaymentFromProduct(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const customerId = req.user?.userId;
+      const result = await paymentService.createPaymentFromProduct({
+        ...req.body,
+        customerId,
+      });
+      res.status(201).json({
+        success: true,
+        data: result,
+        message: 'Payment created successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async bulkPurchase(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const customerId = req.user?.userId;
+      const result = await paymentService.bulkPurchase({
+        ...req.body,
+        customerId,
+      });
+      res.status(201).json({
+        success: true,
+        data: result,
+        message: 'Bulk purchase created successfully',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new PaymentController();

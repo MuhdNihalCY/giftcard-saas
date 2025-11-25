@@ -73,6 +73,7 @@ model User {
   // Relations
   giftCards               GiftCard[]
   giftCardTemplates       GiftCardTemplate[]
+  giftCardProducts        GiftCardProduct[]
   payments                Payment[]
   redemptions             Redemption[]
   transactions            Transaction[]
@@ -96,8 +97,9 @@ model GiftCardTemplate {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
-  merchant  User       @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  giftCards GiftCard[]
+  merchant        User              @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  giftCards       GiftCard[]
+  giftCardProducts GiftCardProduct[]
 
   @@map("gift_card_templates")
 }
@@ -113,16 +115,21 @@ model GiftCard {
   status                 GiftCardStatus @default(ACTIVE)
   expiryDate             DateTime?      @map("expiry_date")
   templateId             String?        @map("template_id")
+  productId              String?        @map("product_id")
   customMessage          String?        @map("custom_message") @db.Text
   recipientEmail         String?        @map("recipient_email")
   recipientName          String?        @map("recipient_name")
   allowPartialRedemption Boolean        @default(true) @map("allow_partial_redemption")
+  shareToken             String?        @unique @map("share_token")
+  shareTokenExpiry       DateTime?      @map("share_token_expiry")
+  shareEnabled           Boolean        @default(true) @map("share_enabled")
   createdAt              DateTime       @default(now()) @map("created_at")
   updatedAt              DateTime       @updatedAt @map("updated_at")
 
   // Relations
   merchant     User              @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   template     GiftCardTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  product      GiftCardProduct?  @relation(fields: [productId], references: [id], onDelete: SetNull)
   payments     Payment[]
   redemptions  Redemption[]
   transactions Transaction[]
@@ -130,7 +137,44 @@ model GiftCard {
   @@index([merchantId])
   @@index([code])
   @@index([status])
+  @@index([productId])
+  @@index([shareToken])
   @@map("gift_cards")
+}
+
+model GiftCardProduct {
+  id               String   @id @default(uuid())
+  merchantId       String   @map("merchant_id")
+  name             String
+  description      String?  @db.Text
+  image            String?
+  minAmount        Decimal? @map("min_amount") @db.Decimal(10, 2) // Gift card value (what customer gets)
+  maxAmount        Decimal? @map("max_amount") @db.Decimal(10, 2) // Gift card value (what customer gets)
+  minSalePrice     Decimal? @map("min_sale_price") @db.Decimal(10, 2) // What customer pays
+  maxSalePrice     Decimal? @map("max_sale_price") @db.Decimal(10, 2) // What customer pays
+  allowCustomAmount Boolean @default(false) @map("allow_custom_amount")
+  fixedAmounts     Json?    @map("fixed_amounts") // Array of gift card values
+  fixedSalePrices  Json?    @map("fixed_sale_prices") // Array of sale prices (corresponding to fixedAmounts)
+  currency         String   @default("USD")
+  expiryDays       Int?     @map("expiry_days") // Days until expiry
+  templateId       String?  @map("template_id")
+  category         String?
+  tags             Json?    // Array of strings
+  isActive         Boolean  @default(true) @map("is_active")
+  isPublic         Boolean  @default(false) @map("is_public") // Make product visible to all users
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  merchant  User       @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  template  GiftCardTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  giftCards GiftCard[]
+
+  @@index([merchantId])
+  @@index([isActive])
+  @@index([isPublic])
+  @@index([category])
+  @@map("gift_card_products")
 }
 
 model Payment {

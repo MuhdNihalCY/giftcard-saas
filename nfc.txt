@@ -1,0 +1,5 @@
+impliment nfc featture, without physicalc card.
+for like user 1 has a nfc digital card. and that user need to come near the user2's phone to scan the nfc card of the user 1 to user 2. 
+how it hsould be handled
+
+is it possible 

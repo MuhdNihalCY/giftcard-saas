@@ -83,14 +83,14 @@ export function Navigation() {
                         <NavLink href="/dashboard/admin/communications" pathname={pathname}>Communications</NavLink>
                       </>
                     )}
-                    <NavLink href="/wallet" pathname={pathname}>Wallet</NavLink>
+                    <NavLink href="/dashboard/wallet" pathname={pathname}>Wallet</NavLink>
                   </>
                 ) : (
                   <>
                     <NavLink href="/" pathname={pathname}>Home</NavLink>
                     <NavLink href="/browse" pathname={pathname}>Browse</NavLink>
                     <NavLink href="/check-balance" pathname={pathname}>Check Balance</NavLink>
-                    <NavLink href="/wallet" pathname={pathname}>My Wallet</NavLink>
+                    <NavLink href="/dashboard/wallet" pathname={pathname}>My Wallet</NavLink>
                   </>
                 )}
               </>
@@ -260,14 +260,14 @@ export function Navigation() {
                           <MobileNavLink href="/dashboard/admin/communications" pathname={pathname} onClick={() => setIsMobileMenuOpen(false)}>Communications</MobileNavLink>
                         </>
                       )}
-                      <MobileNavLink href="/wallet" pathname={pathname} onClick={() => setIsMobileMenuOpen(false)}>Wallet</MobileNavLink>
+                      <MobileNavLink href="/dashboard/wallet" pathname={pathname} onClick={() => setIsMobileMenuOpen(false)}>Wallet</MobileNavLink>
                     </>
                   ) : (
                     <>
                       <MobileNavLink href="/" pathname={pathname} onClick={() => setIsMobileMenuOpen(false)}>Home</MobileNavLink>
                       <MobileNavLink href="/browse" pathname={pathname} onClick={() => setIsMobileMenuOpen(false)}>Browse</MobileNavLink>
                       <MobileNavLink href="/check-balance" pathname={pathname} onClick={() => setIsMobileMenuOpen(false)}>Check Balance</MobileNavLink>
-                      <MobileNavLink href="/wallet" pathname={pathname} onClick={() => setIsMobileMenuOpen(false)}>My Wallet</MobileNavLink>
+                      <MobileNavLink href="/dashboard/wallet" pathname={pathname} onClick={() => setIsMobileMenuOpen(false)}>My Wallet</MobileNavLink>
                       <MobileNavLink href="/dashboard" pathname={pathname} onClick={() => setIsMobileMenuOpen(false)}>Dashboard</MobileNavLink>
                     </>
                   )}

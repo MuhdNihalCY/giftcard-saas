@@ -11,6 +11,8 @@ import api from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
 import QRCode from 'react-qr-code';
+import { QRCodeScanner } from '@/components/QRCodeScanner';
+import { NFCReader } from '@/components/NFCReader';
 
 const redeemSchema = z.object({
   code: z.string().min(1, 'Gift card code is required'),
@@ -54,6 +56,7 @@ export default function RedeemPage() {
 
       // Set default amount to full balance
       setValue('amount', giftCardData.balance);
+      setValue('code', giftCardData.code);
 
       // Generate QR code data
       setQrData(JSON.stringify({ code: giftCardData.code, id: giftCardData.id }));
@@ -62,6 +65,41 @@ export default function RedeemPage() {
       setGiftCard(null);
     } finally {
       setIsValidating(false);
+    }
+  };
+
+  const handleQRScan = async (scannedData: string) => {
+    try {
+      // Try to parse as JSON first (if it's our QR code format)
+      let code: string;
+      try {
+        const parsed = JSON.parse(scannedData);
+        code = parsed.code || scannedData;
+      } catch {
+        // If not JSON, treat as plain code
+        code = scannedData;
+      }
+
+      // Validate the gift card
+      await validateGiftCard(code);
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Failed to process scanned QR code');
+    }
+  };
+
+  const handleNFCScan = async (data: { shareToken: string; url: string }) => {
+    try {
+      // Fetch gift card by share token
+      const response = await api.get(`/gift-card-share/token/${data.shareToken}`);
+      const giftCardData = response.data.data.giftCard;
+      
+      // Set gift card and populate form
+      setGiftCard(giftCardData);
+      setValue('amount', giftCardData.balance);
+      setValue('code', giftCardData.code);
+      setQrData(JSON.stringify({ code: giftCardData.code, id: giftCardData.id }));
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || 'Failed to process NFC data');
     }
   };
 
@@ -87,12 +125,13 @@ export default function RedeemPage() {
       }
 
       // Redeem via QR code if we have the data
-      // Merchant ID is automatically taken from authenticated user
+      // Merchant ID is automatically taken from authenticated user (via auth middleware)
+      // Do NOT send merchantId in the body - it comes from the authenticated user
       const response = await api.post('/redemptions/redeem/qr', {
-        qrData: qrData || data.code,
+        qrData: qrData || JSON.stringify({ code: data.code }),
         amount: data.amount,
-        location: data.location,
-        notes: data.notes,
+        location: data.location || undefined,
+        notes: data.notes || undefined,
       });
 
       setSuccess(
@@ -225,30 +264,56 @@ export default function RedeemPage() {
             <CardTitle>QR Code Scanner</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-6">
+              <div>
+                <h4 className="text-lg font-semibold text-plum-300 mb-3">Scan Customer's QR Code</h4>
+                <QRCodeScanner
+                  onScanSuccess={handleQRScan}
+                  onError={(error) => setError(error)}
+                />
+              </div>
+
+              <div>
+                <h4 className="text-lg font-semibold text-plum-300 mb-3">Scan via NFC</h4>
+                <NFCReader
+                  onScanSuccess={handleNFCScan}
+                  onError={(error) => setError(error)}
+                />
+              </div>
+
               <div className="p-6 bg-navy-800/50 rounded-lg text-center border border-navy-700">
                 <p className="text-sm text-plum-200 mb-4">
-                  Scan QR code from customer's gift card
+                  QR Code Display (for reference)
                 </p>
-                <div className="bg-white p-4 rounded-lg inline-block">
-                  <QRCode
-                    value={qrData || 'Scan QR code to redeem'}
-                    size={200}
-                    level="H"
-                    fgColor="#000000"
-                    bgColor="#FFFFFF"
-                  />
-                </div>
-                <p className="text-xs text-plum-300 mt-4">
-                  QR code will appear after validating a gift card
-                </p>
+                {giftCard && qrData ? (
+                  <div className="bg-white p-4 rounded-lg inline-block">
+                    <QRCode
+                      value={qrData}
+                      size={200}
+                      level="H"
+                      fgColor="#000000"
+                      bgColor="#FFFFFF"
+                    />
+                  </div>
+                ) : (
+                  <div className="bg-navy-700/50 p-8 rounded-lg border-2 border-dashed border-navy-600">
+                    <p className="text-plum-300 text-sm">
+                      QR code will appear after validating a gift card
+                    </p>
+                  </div>
+                )}
+                {!giftCard && (
+                  <p className="text-xs text-plum-300 mt-4">
+                    Scan a QR code or enter a gift card code to see the QR code display
+                  </p>
+                )}
               </div>
 
               <div className="p-6 bg-blue-900/20 border border-blue-500/30 rounded-lg">
                 <h4 className="font-serif font-semibold text-plum-300 mb-3">How to Redeem:</h4>
                 <ol className="list-decimal list-inside space-y-2 text-sm text-plum-200">
-                  <li>Enter gift card code or scan QR code</li>
-                  <li>Click "Validate Gift Card"</li>
+                  <li>Click "Start Scanner" and scan the customer's QR code, OR enter the gift card code manually</li>
+                  <li>If scanning, the gift card will be validated automatically. If entering manually, click "Validate Gift Card"</li>
                   <li>Enter redemption amount</li>
                   <li>Click "Redeem Gift Card"</li>
                   <li>Balance will be deducted automatically</li>

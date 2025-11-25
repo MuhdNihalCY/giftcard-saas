@@ -39,7 +39,10 @@ export default function AuthLayout({
             }
           });
         } catch (e) {
-          console.error('Error checking auth:', e);
+          // Error in auth check - acceptable in layout
+          if (process.env.NODE_ENV === 'development') {
+            console.error('Error checking auth:', e);
+          }
         }
       }
     }

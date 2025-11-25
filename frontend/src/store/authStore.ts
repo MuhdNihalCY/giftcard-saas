@@ -33,7 +33,10 @@ export const useAuthStore = create<AuthState>()(
         if (typeof window !== 'undefined') {
           const stored = localStorage.getItem('accessToken');
           if (!stored || stored !== accessToken) {
-            console.warn('Token storage verification failed, retrying...');
+            // Token storage verification - use logger if available
+            if (process.env.NODE_ENV === 'development') {
+              console.warn('Token storage verification failed, retrying...');
+            }
             localStorage.setItem('accessToken', accessToken);
             localStorage.setItem('refreshToken', refreshToken);
           }

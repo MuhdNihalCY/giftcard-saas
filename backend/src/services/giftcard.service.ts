@@ -13,6 +13,7 @@ export interface CreateGiftCardData {
   currency?: string;
   expiryDate?: Date;
   templateId?: string;
+  productId?: string;
   customMessage?: string;
   recipientEmail?: string;
   recipientName?: string;
@@ -50,6 +51,7 @@ export class GiftCardService {
       currency = 'USD',
       expiryDate,
       templateId,
+      productId,
       customMessage,
       recipientEmail,
       recipientName,
@@ -101,6 +103,7 @@ export class GiftCardService {
         balance: new Decimal(value),
         expiryDate,
         templateId,
+        productId,
         customMessage,
         recipientEmail,
         recipientName,

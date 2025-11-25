@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
+import logger from '@/lib/logger';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 
@@ -50,7 +51,7 @@ export default function DashboardPage() {
         totalCards: giftCards.length,
       });
     } catch (error) {
-      console.error('Failed to fetch stats:', error);
+      logger.error('Failed to fetch stats', { error });
     } finally {
       setIsLoading(false);
     }
@@ -132,7 +133,7 @@ export default function DashboardPage() {
                 </Link>
               </>
             )}
-            <Link href="/wallet">
+            <Link href="/dashboard/wallet">
               <Button className="w-full" variant="outline">
                 View My Wallet
               </Button>

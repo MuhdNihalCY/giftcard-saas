@@ -10,16 +10,27 @@ import { formatCurrency } from '@/lib/utils';
 import Link from 'next/link';
 import { Navigation } from '@/components/Navigation';
 import { GiftCardSkeleton } from '@/components/ui/Skeleton';
+import { ProductCard } from '@/components/ProductCard';
+import logger from '@/lib/logger';
 
-interface GiftCard {
+interface GiftCardProduct {
   id: string;
-  code: string;
-  value: number;
+  name: string;
+  description?: string | null;
+  image?: string | null;
+  minAmount?: number | null;
+  maxAmount?: number | null;
+  minSalePrice?: number | null;
+  maxSalePrice?: number | null;
+  allowCustomAmount: boolean;
+  fixedAmounts?: number[] | null;
+  fixedSalePrices?: number[] | null;
   currency: string;
-  status: string;
+  category?: string | null;
   merchant: {
     id: string;
-    businessName: string;
+    businessName: string | null;
+    businessLogo?: string | null;
   };
 }
 
@@ -27,73 +38,83 @@ type SortOption = 'name-asc' | 'name-desc' | 'price-asc' | 'price-desc' | 'defau
 
 function BrowsePageContent() {
   const searchParams = useSearchParams();
-  const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
+  const [products, setProducts] = useState<GiftCardProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(searchParams?.get('search') || '');
-  const [selectedMerchant, setSelectedMerchant] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [sortBy, setSortBy] = useState<SortOption>('default');
 
   useEffect(() => {
-    fetchGiftCards();
+    fetchProducts();
   }, []);
 
-  const fetchGiftCards = async () => {
+  const fetchProducts = async () => {
     try {
-      const response = await api.get('/gift-cards', {
-        params: { status: 'ACTIVE' },
+      const response = await api.get('/gift-card-products/public', {
+        params: { isActive: true },
       });
-      setGiftCards(response.data.data || []);
+      setProducts(response.data.data || []);
     } catch (error) {
-      console.error('Failed to fetch gift cards:', error);
+      logger.error('Failed to fetch products', { error });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Get unique merchants for filter
-  const merchants = useMemo(() => {
-    const unique = Array.from(new Set(giftCards.map(card => card.merchant.businessName)));
+  // Get unique categories for filter
+  const categories = useMemo(() => {
+    const unique = Array.from(new Set(products.map(p => p.category).filter(Boolean) as string[]));
     return unique.sort();
-  }, [giftCards]);
+  }, [products]);
 
-  // Filter and sort gift cards
-  const filteredAndSortedCards = useMemo(() => {
-    let filtered = [...giftCards];
+  // Filter and sort products
+  const filteredAndSortedProducts = useMemo(() => {
+    let filtered = [...products];
 
     // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(card =>
-        card.merchant.businessName.toLowerCase().includes(query) ||
-        card.currency.toLowerCase().includes(query)
+      filtered = filtered.filter(product =>
+        product.name.toLowerCase().includes(query) ||
+        product.description?.toLowerCase().includes(query) ||
+        product.merchant.businessName?.toLowerCase().includes(query) ||
+        product.currency.toLowerCase().includes(query)
       );
     }
 
-    // Filter by merchant
-    if (selectedMerchant !== 'all') {
-      filtered = filtered.filter(card => card.merchant.businessName === selectedMerchant);
+    // Filter by category
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(product => product.category === selectedCategory);
     }
 
     // Sort
     switch (sortBy) {
       case 'name-asc':
-        filtered.sort((a, b) => a.merchant.businessName.localeCompare(b.merchant.businessName));
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
         break;
       case 'name-desc':
-        filtered.sort((a, b) => b.merchant.businessName.localeCompare(a.merchant.businessName));
+        filtered.sort((a, b) => b.name.localeCompare(a.name));
         break;
       case 'price-asc':
-        filtered.sort((a, b) => a.value - b.value);
+        const getMinPrice = (p: GiftCardProduct) => {
+          if (p.fixedAmounts && p.fixedAmounts.length > 0) return Math.min(...p.fixedAmounts);
+          return p.minAmount || 0;
+        };
+        filtered.sort((a, b) => getMinPrice(a) - getMinPrice(b));
         break;
       case 'price-desc':
-        filtered.sort((a, b) => b.value - a.value);
+        const getMaxPrice = (p: GiftCardProduct) => {
+          if (p.fixedAmounts && p.fixedAmounts.length > 0) return Math.max(...p.fixedAmounts);
+          return p.maxAmount || p.minAmount || 0;
+        };
+        filtered.sort((a, b) => getMaxPrice(b) - getMaxPrice(a));
         break;
       default:
         break;
     }
 
     return filtered;
-  }, [giftCards, searchQuery, selectedMerchant, sortBy]);
+  }, [products, searchQuery, selectedCategory, sortBy]);
 
   return (
     <div className="min-h-screen bg-navy-900">
@@ -113,7 +134,7 @@ function BrowsePageContent() {
                 <div className="relative">
                   <input
                     type="text"
-                    placeholder="Search by merchant name or currency..."
+                    placeholder="Search by product name, description, or merchant..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full px-4 py-3 pl-12 bg-navy-800/50 border-2 border-plum-500/30 rounded-lg text-navy-50 placeholder-plum-300 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all"
@@ -129,21 +150,23 @@ function BrowsePageContent() {
                 </div>
               </div>
 
-              {/* Merchant Filter */}
-              <div className="md:w-64">
-                <select
-                  value={selectedMerchant}
-                  onChange={(e) => setSelectedMerchant(e.target.value)}
-                  className="w-full px-4 py-3 bg-navy-800/50 border-2 border-plum-500/30 rounded-lg text-navy-50 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
-                >
-                  <option value="all" className="bg-navy-800">All Merchants</option>
-                  {merchants.map((merchant) => (
-                    <option key={merchant} value={merchant} className="bg-navy-800">
-                      {merchant}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* Category Filter */}
+              {categories.length > 0 && (
+                <div className="md:w-64">
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="w-full px-4 py-3 bg-navy-800/50 border-2 border-plum-500/30 rounded-lg text-navy-50 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
+                  >
+                    <option value="all" className="bg-navy-800">All Categories</option>
+                    {categories.map((category) => (
+                      <option key={category} value={category} className="bg-navy-800">
+                        {category}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* Sort */}
               <div className="md:w-48">
@@ -164,7 +187,7 @@ function BrowsePageContent() {
             {/* Results count */}
             {!isLoading && (
               <p className="text-plum-200 text-sm">
-                Showing {filteredAndSortedCards.length} of {giftCards.length} gift cards
+                Showing {filteredAndSortedProducts.length} of {products.length} products
               </p>
             )}
           </div>
@@ -176,24 +199,24 @@ function BrowsePageContent() {
                 <GiftCardSkeleton key={i} />
               ))}
             </div>
-          ) : filteredAndSortedCards.length === 0 ? (
+          ) : filteredAndSortedProducts.length === 0 ? (
             <Card>
               <CardContent className="text-center py-16">
                 <div className="text-6xl mb-4">🎁</div>
                 <h3 className="text-2xl font-serif font-semibold text-plum-300 mb-2">
-                  No gift cards found
+                  No products found
                 </h3>
                 <p className="text-plum-200 mb-6">
-                  {searchQuery || selectedMerchant !== 'all'
+                  {searchQuery || selectedCategory !== 'all'
                     ? 'Try adjusting your search or filters'
-                    : 'No gift cards available at the moment.'}
+                    : 'No products available at the moment.'}
                 </p>
-                {(searchQuery || selectedMerchant !== 'all') && (
+                {(searchQuery || selectedCategory !== 'all') && (
                   <Button
                     variant="outline"
                     onClick={() => {
                       setSearchQuery('');
-                      setSelectedMerchant('all');
+                      setSelectedCategory('all');
                       setSortBy('default');
                     }}
                   >
@@ -204,28 +227,8 @@ function BrowsePageContent() {
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredAndSortedCards.map((giftCard) => (
-                <Card
-                  key={giftCard.id}
-                  className="hover:shadow-gold-glow-sm transition-all duration-300 hover:scale-105"
-                >
-                  <CardHeader>
-                    <CardTitle className="text-2xl">{giftCard.merchant.businessName}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="mb-6">
-                      <p className="text-4xl font-serif font-bold bg-gold-gradient bg-clip-text text-transparent">
-                        {formatCurrency(giftCard.value, giftCard.currency)}
-                      </p>
-                      <p className="text-sm text-plum-300 mt-2">Gift Card</p>
-                    </div>
-                    <Link href={`/purchase/${giftCard.id}`}>
-                      <Button variant="gold" className="w-full text-lg py-3">
-                        Purchase Now
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
+              {filteredAndSortedProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
               ))}
             </div>
           )}

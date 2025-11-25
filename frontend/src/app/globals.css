@@ -119,3 +119,36 @@ a:hover {
   pointer-events: auto;
 }
 
+/* QR Code Scanner Styles */
+#qr-reader {
+  border: 2px solid rgba(130, 65, 165, 0.3) !important; /* plum-500 with transparency */
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+#qr-reader__dashboard_section {
+  background-color: rgba(20, 40, 80, 0.5) !important; /* navy-800 */
+  border-top: 1px solid rgba(130, 65, 165, 0.3) !important;
+}
+
+#qr-reader__dashboard_section_csr button {
+  background-color: rgba(255, 215, 0, 0.2) !important; /* gold-500 */
+  color: rgb(255, 215, 0) !important;
+  border: 1px solid rgba(255, 215, 0, 0.5) !important;
+  border-radius: 0.375rem;
+  padding: 0.5rem 1rem;
+  transition: all 0.3s ease;
+}
+
+#qr-reader__dashboard_section_csr button:hover {
+  background-color: rgba(255, 215, 0, 0.3) !important;
+}
+
+#qr-reader__scan_region {
+  border: 2px solid rgba(255, 215, 0, 0.5) !important; /* gold border for scan area */
+}
+
+#qr-reader__scan_region img {
+  border-radius: 0.5rem;
+}
+
