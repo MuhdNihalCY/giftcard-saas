@@ -4,8 +4,21 @@ import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Switch } from '@/components/ui/Switch';
+import { ChartContainer } from '@/components/dashboard/ChartContainer';
 import api from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
+import { MessageSquare, Mail, MessageCircle, Bell, Save } from 'lucide-react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 
 interface CommunicationSettings {
   id: string;
@@ -27,6 +40,7 @@ export default function AdminCommunicationsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<CommunicationSettings | null>(null);
+  const [stats, setStats] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -39,6 +53,7 @@ export default function AdminCommunicationsPage() {
 
   useEffect(() => {
     fetchSettings();
+    fetchStatistics();
   }, []);
 
   const fetchSettings = async () => {
@@ -51,6 +66,15 @@ export default function AdminCommunicationsPage() {
       setError(err.response?.data?.message || 'Failed to load settings');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchStatistics = async () => {
+    try {
+      const response = await api.get('/admin/communication-logs/statistics');
+      setStats(response.data.data);
+    } catch (err: any) {
+      console.error('Failed to load statistics:', err);
     }
   };
 
@@ -91,61 +115,131 @@ export default function AdminCommunicationsPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">Loading settings...</div>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-500"></div>
       </div>
     );
   }
 
   if (!settings) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center text-red-600">Failed to load settings</div>
-      </div>
+      <div className="text-center text-red-400 py-8">Failed to load settings</div>
     );
   }
 
+  const channelStatsData = stats?.byChannel
+    ? Object.entries(stats.byChannel).map(([channel, data]: [string, any]) => ({
+        channel,
+        sent: data.sent || 0,
+        failed: data.failed || 0,
+        successRate: data.successRate || 0,
+      }))
+    : [];
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Communication Settings</h1>
-        <p className="text-gray-600 mt-2">Manage global communication channel settings</p>
+    <div className="page-transition">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-4xl font-serif font-bold text-plum-300 mb-2 flex items-center space-x-3">
+          <MessageSquare className="w-8 h-8" />
+          <span>Communication Settings</span>
+        </h1>
+        <p className="text-navy-200 text-lg">
+          Manage global communication channel settings and monitor performance
+        </p>
       </div>
 
+      {/* Alerts */}
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+        <div className="mb-6 p-4 bg-red-500/20 border border-red-500/30 rounded-lg text-red-400">
           {error}
         </div>
       )}
 
       {success && (
-        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">
+        <div className="mb-6 p-4 bg-green-500/20 border border-green-500/30 rounded-lg text-green-400">
           {success}
         </div>
       )}
 
-      <div className="grid gap-6">
+      {/* Statistics */}
+      {stats && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <ChartContainer
+            title="Communication Statistics"
+            description="Messages sent by channel"
+            height={300}
+          >
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={channelStatsData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1a0d21" />
+                <XAxis dataKey="channel" stroke="#b48dc9" />
+                <YAxis stroke="#b48dc9" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#0a1428',
+                    border: '1px solid #341a42',
+                    borderRadius: '8px',
+                  }}
+                />
+                <Legend />
+                <Bar dataKey="sent" fill="#ffd700" name="Sent" />
+                <Bar dataKey="failed" fill="#ef4444" name="Failed" />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartContainer>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Success Rates</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {channelStatsData.map((stat) => (
+                  <div key={stat.channel} className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-plum-300 capitalize">{stat.channel}</span>
+                      <span className="text-navy-50 font-semibold">
+                        {stat.successRate.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-navy-700 rounded-full h-2">
+                      <div
+                        className="bg-gold-500 h-2 rounded-full transition-all"
+                        style={{ width: `${stat.successRate}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Settings */}
+      <div className="grid gap-6 mb-6">
         {/* Email Settings */}
         <Card>
           <CardHeader>
-            <CardTitle>Email Settings</CardTitle>
+            <CardTitle className="flex items-center space-x-2">
+              <Mail className="w-5 h-5" />
+              <span>Email Settings</span>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <label className="text-sm font-medium text-gray-900">Enable Email Service</label>
-                  <p className="text-sm text-gray-600">Allow sending emails through the platform</p>
+                  <label className="text-sm font-medium text-plum-200">Enable Email Service</label>
+                  <p className="text-sm text-navy-300 mt-1">
+                    Allow sending emails through the platform
+                  </p>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={settings.emailEnabled}
-                    onChange={(e) => updateSetting('emailEnabled', e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
+                <Switch
+                  checked={settings.emailEnabled}
+                  onChange={(e) => updateSetting('emailEnabled', e.target.checked)}
+                />
               </div>
 
               {settings.emailEnabled && (
@@ -155,7 +249,9 @@ export default function AdminCommunicationsPage() {
                     type="number"
                     min="1"
                     value={settings.emailRateLimit}
-                    onChange={(e) => updateSetting('emailRateLimit', parseInt(e.target.value))}
+                    onChange={(e) =>
+                      updateSetting('emailRateLimit', parseInt(e.target.value))
+                    }
                   />
                 </div>
               )}
@@ -166,24 +262,24 @@ export default function AdminCommunicationsPage() {
         {/* SMS Settings */}
         <Card>
           <CardHeader>
-            <CardTitle>SMS Settings</CardTitle>
+            <CardTitle className="flex items-center space-x-2">
+              <MessageCircle className="w-5 h-5" />
+              <span>SMS Settings</span>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <label className="text-sm font-medium text-gray-900">Enable SMS Service</label>
-                  <p className="text-sm text-gray-600">Allow sending SMS messages through the platform</p>
+                  <label className="text-sm font-medium text-plum-200">Enable SMS Service</label>
+                  <p className="text-sm text-navy-300 mt-1">
+                    Allow sending SMS messages through the platform
+                  </p>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={settings.smsEnabled}
-                    onChange={(e) => updateSetting('smsEnabled', e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
+                <Switch
+                  checked={settings.smsEnabled}
+                  onChange={(e) => updateSetting('smsEnabled', e.target.checked)}
+                />
               </div>
 
               {settings.smsEnabled && (
@@ -193,7 +289,9 @@ export default function AdminCommunicationsPage() {
                     type="number"
                     min="1"
                     value={settings.smsRateLimit}
-                    onChange={(e) => updateSetting('smsRateLimit', parseInt(e.target.value))}
+                    onChange={(e) =>
+                      updateSetting('smsRateLimit', parseInt(e.target.value))
+                    }
                   />
                 </div>
               )}
@@ -204,57 +302,55 @@ export default function AdminCommunicationsPage() {
         {/* OTP Settings */}
         <Card>
           <CardHeader>
-            <CardTitle>OTP Settings</CardTitle>
+            <CardTitle className="flex items-center space-x-2">
+              <MessageSquare className="w-5 h-5" />
+              <span>OTP Settings</span>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <label className="text-sm font-medium text-gray-900">Enable OTP Service</label>
-                  <p className="text-sm text-gray-600">Allow generating and sending OTP codes</p>
+                  <label className="text-sm font-medium text-plum-200">Enable OTP Service</label>
+                  <p className="text-sm text-navy-300 mt-1">
+                    Allow generating and sending OTP codes
+                  </p>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={settings.otpEnabled}
-                    onChange={(e) => updateSetting('otpEnabled', e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
+                <Switch
+                  checked={settings.otpEnabled}
+                  onChange={(e) => updateSetting('otpEnabled', e.target.checked)}
+                />
               </div>
 
               {settings.otpEnabled && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Input
-                      label="Rate Limit (per hour per user)"
-                      type="number"
-                      min="1"
-                      value={settings.otpRateLimit}
-                      onChange={(e) => updateSetting('otpRateLimit', parseInt(e.target.value))}
-                    />
-                  </div>
-                  <div>
-                    <Input
-                      label="OTP Length (digits)"
-                      type="number"
-                      min="4"
-                      max="8"
-                      value={settings.otpLength}
-                      onChange={(e) => updateSetting('otpLength', parseInt(e.target.value))}
-                    />
-                  </div>
-                  <div>
-                    <Input
-                      label="Expiry (minutes)"
-                      type="number"
-                      min="1"
-                      max="60"
-                      value={settings.otpExpiryMinutes}
-                      onChange={(e) => updateSetting('otpExpiryMinutes', parseInt(e.target.value))}
-                    />
-                  </div>
+                  <Input
+                    label="Rate Limit (per hour per user)"
+                    type="number"
+                    min="1"
+                    value={settings.otpRateLimit}
+                    onChange={(e) =>
+                      updateSetting('otpRateLimit', parseInt(e.target.value))
+                    }
+                  />
+                  <Input
+                    label="OTP Length (digits)"
+                    type="number"
+                    min="4"
+                    max="8"
+                    value={settings.otpLength}
+                    onChange={(e) => updateSetting('otpLength', parseInt(e.target.value))}
+                  />
+                  <Input
+                    label="Expiry (minutes)"
+                    type="number"
+                    min="1"
+                    max="60"
+                    value={settings.otpExpiryMinutes}
+                    onChange={(e) =>
+                      updateSetting('otpExpiryMinutes', parseInt(e.target.value))
+                    }
+                  />
                 </div>
               )}
             </div>
@@ -264,37 +360,40 @@ export default function AdminCommunicationsPage() {
         {/* Push Notification Settings */}
         <Card>
           <CardHeader>
-            <CardTitle>Push Notification Settings</CardTitle>
+            <CardTitle className="flex items-center space-x-2">
+              <Bell className="w-5 h-5" />
+              <span>Push Notification Settings</span>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <label className="text-sm font-medium text-gray-900">Enable Push Notifications</label>
-                <p className="text-sm text-gray-600">Allow sending push notifications (coming soon)</p>
+                <label className="text-sm font-medium text-plum-200">
+                  Enable Push Notifications
+                </label>
+                <p className="text-sm text-navy-300 mt-1">
+                  Allow sending push notifications (coming soon)
+                </p>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={settings.pushEnabled}
-                  onChange={(e) => updateSetting('pushEnabled', e.target.checked)}
-                  disabled
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 opacity-50 cursor-not-allowed"></div>
-              </label>
+              <Switch checked={settings.pushEnabled} disabled />
             </div>
           </CardContent>
         </Card>
+      </div>
 
-        {/* Save Button */}
-        <div className="flex justify-end">
-          <Button onClick={handleSave} isLoading={saving} disabled={saving}>
-            Save Settings
-          </Button>
-        </div>
+      {/* Save Button */}
+      <div className="flex justify-end">
+        <Button
+          onClick={handleSave}
+          isLoading={saving}
+          disabled={saving}
+          variant="gold"
+          className="flex items-center space-x-2"
+        >
+          <Save className="w-4 h-4" />
+          <span>Save Settings</span>
+        </Button>
       </div>
     </div>
   );
 }
-
-

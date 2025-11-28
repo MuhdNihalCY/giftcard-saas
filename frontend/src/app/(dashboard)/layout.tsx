@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
-import { Navigation } from '@/components/Navigation';
+import { Sidebar } from '@/components/dashboard/Sidebar';
+import { TopBar } from '@/components/dashboard/TopBar';
 
 export default function DashboardLayout({
   children,
@@ -12,6 +13,7 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const { isAuthenticated, checkAuth } = useAuthStore();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     // Check auth on mount
@@ -33,12 +35,25 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-navy-900 text-navy-50">
-      <Navigation />
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 page-transition">
-        {children}
-      </main>
+    <div className="min-h-screen bg-navy-900 text-navy-50 flex">
+      {/* Sidebar */}
+      <Sidebar
+        isMobileOpen={isMobileMenuOpen}
+        onMobileClose={() => setIsMobileMenuOpen(false)}
+      />
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col lg:ml-64">
+        {/* Top Bar */}
+        <TopBar onMenuClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
+
+        {/* Page Content */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 page-transition">
+            {children}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

@@ -3,10 +3,26 @@
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
+import { DataTable, Column } from '@/components/ui/DataTable';
+import { FilterBar } from '@/components/dashboard/FilterBar';
+import { Badge } from '@/components/ui/Badge';
+import { ChartContainer } from '@/components/dashboard/ChartContainer';
+import { MetricCard } from '@/components/dashboard/MetricCard';
 import api from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import logger from '@/lib/logger';
+import { Shield, Download, FileText, Activity } from 'lucide-react';
+import { formatDateTime } from '@/lib/utils';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 
 interface AuditLog {
   id: string;
@@ -39,15 +55,12 @@ export default function AdminAuditLogsPage() {
   const [loading, setLoading] = useState(true);
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [stats, setStats] = useState<AuditLogStats | null>(null);
-  const [filters, setFilters] = useState({
-    userEmail: '',
-    action: '',
-    resourceType: '',
-    ipAddress: '',
-    startDate: '',
-    endDate: '',
-    page: 1,
-    limit: 50,
+  const [searchQuery, setSearchQuery] = useState('');
+  const [actionFilter, setActionFilter] = useState('');
+  const [resourceTypeFilter, setResourceTypeFilter] = useState('');
+  const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({
+    start: null,
+    end: null,
   });
   const [pagination, setPagination] = useState({
     page: 1,
@@ -55,7 +68,8 @@ export default function AdminAuditLogsPage() {
     total: 0,
     totalPages: 0,
   });
-  const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<string>('createdAt');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [exporting, setExporting] = useState(false);
 
   // Check if user is admin
@@ -68,24 +82,33 @@ export default function AdminAuditLogsPage() {
   useEffect(() => {
     fetchLogs();
     fetchStatistics();
-  }, [filters]);
+  }, [searchQuery, actionFilter, resourceTypeFilter, dateRange, pagination.page, pagination.limit, sortKey, sortDirection]);
 
   const fetchLogs = async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams();
-      if (filters.userEmail) params.append('userEmail', filters.userEmail);
-      if (filters.action) params.append('action', filters.action);
-      if (filters.resourceType) params.append('resourceType', filters.resourceType);
-      if (filters.ipAddress) params.append('ipAddress', filters.ipAddress);
-      if (filters.startDate) params.append('startDate', filters.startDate);
-      if (filters.endDate) params.append('endDate', filters.endDate);
-      params.append('page', filters.page.toString());
-      params.append('limit', filters.limit.toString());
+      const params: any = {
+        page: pagination.page,
+        limit: pagination.limit,
+      };
+      if (searchQuery) params.userEmail = searchQuery;
+      if (actionFilter) params.action = actionFilter;
+      if (resourceTypeFilter) params.resourceType = resourceTypeFilter;
+      if (dateRange.start) params.startDate = dateRange.start.toISOString();
+      if (dateRange.end) params.endDate = dateRange.end.toISOString();
+      if (sortKey) {
+        params.sortBy = sortKey;
+        params.sortOrder = sortDirection;
+      }
 
-      const response = await api.get(`/admin/audit-logs?${params.toString()}`);
-      setLogs(response.data.data.logs);
-      setPagination(response.data.data.pagination);
+      const response = await api.get('/admin/audit-logs', { params });
+      setLogs(response.data.data.logs || []);
+      setPagination({
+        page: response.data.data.pagination?.page || pagination.page,
+        limit: response.data.data.pagination?.limit || pagination.limit,
+        total: response.data.data.pagination?.total || 0,
+        totalPages: response.data.data.pagination?.totalPages || 0,
+      });
     } catch (err: unknown) {
       logger.error('Failed to load audit logs', { error: err });
     } finally {
@@ -95,34 +118,29 @@ export default function AdminAuditLogsPage() {
 
   const fetchStatistics = async () => {
     try {
-      const params = new URLSearchParams();
-      if (filters.startDate) params.append('startDate', filters.startDate);
-      if (filters.endDate) params.append('endDate', filters.endDate);
+      const params: any = {};
+      if (dateRange.start) params.startDate = dateRange.start.toISOString();
+      if (dateRange.end) params.endDate = dateRange.end.toISOString();
 
-      const response = await api.get(`/admin/audit-logs/statistics?${params.toString()}`);
+      const response = await api.get('/admin/audit-logs/statistics', { params });
       setStats(response.data.data);
     } catch (err: unknown) {
       logger.error('Failed to load statistics', { error: err });
     }
   };
 
-  const updateFilter = (key: string, value: string | number) => {
-    setFilters({ ...filters, [key]: value, page: 1 });
-  };
-
   const handleExport = async (format: 'csv' | 'json') => {
     try {
       setExporting(true);
-      const params = new URLSearchParams();
-      if (filters.userEmail) params.append('userEmail', filters.userEmail);
-      if (filters.action) params.append('action', filters.action);
-      if (filters.resourceType) params.append('resourceType', filters.resourceType);
-      if (filters.ipAddress) params.append('ipAddress', filters.ipAddress);
-      if (filters.startDate) params.append('startDate', filters.startDate);
-      if (filters.endDate) params.append('endDate', filters.endDate);
-      params.append('format', format);
+      const params: any = { format };
+      if (searchQuery) params.userEmail = searchQuery;
+      if (actionFilter) params.action = actionFilter;
+      if (resourceTypeFilter) params.resourceType = resourceTypeFilter;
+      if (dateRange.start) params.startDate = dateRange.start.toISOString();
+      if (dateRange.end) params.endDate = dateRange.end.toISOString();
 
-      const response = await api.get(`/admin/audit-logs/export?${params.toString()}`, {
+      const response = await api.get('/admin/audit-logs/export', {
+        params,
         responseType: 'blob',
       });
 
@@ -144,233 +162,254 @@ export default function AdminAuditLogsPage() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
+  const handleSort = (key: string, direction: 'asc' | 'desc') => {
+    setSortKey(key);
+    setSortDirection(direction);
   };
 
-  const getActionColor = (action: string) => {
+  const getActionBadgeVariant = (action: string): 'success' | 'error' | 'warning' | 'info' | 'default' => {
     if (action.includes('LOGIN') || action.includes('SUCCESS')) {
-      return 'bg-green-900/30 text-green-400 border border-green-500/30';
+      return 'success';
     }
     if (action.includes('FAILED') || action.includes('DELETE')) {
-      return 'bg-red-900/30 text-red-400 border border-red-500/30';
+      return 'error';
     }
     if (action.includes('CREATE') || action.includes('UPDATE')) {
-      return 'bg-blue-900/30 text-blue-400 border border-blue-500/30';
+      return 'info';
     }
-    return 'bg-navy-700/50 text-plum-300 border border-navy-600';
+    return 'default';
   };
 
-  if (loading && logs.length === 0) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-500 mx-auto"></div>
-      </div>
-    );
+  // Get unique actions and resource types for filters
+  const uniqueActions = stats?.byAction.map((a) => a.action) || [];
+  const uniqueResourceTypes = stats?.byResourceType.map((r) => r.resourceType) || [];
+
+  const columns: Column<AuditLog>[] = [
+    {
+      key: 'action',
+      label: 'Action',
+      sortable: true,
+      render: (value) => (
+        <Badge variant={getActionBadgeVariant(value)}>{value}</Badge>
+      ),
+    },
+    {
+      key: 'resourceType',
+      label: 'Resource Type',
+      sortable: true,
+      render: (value) => <Badge variant="default">{value}</Badge>,
+    },
+    {
+      key: 'userEmail',
+      label: 'User',
+      sortable: true,
+      render: (value) => (
+        <span className="text-plum-300">{value || 'System'}</span>
+      ),
+    },
+    {
+      key: 'resourceId',
+      label: 'Resource ID',
+      render: (value) => (
+        <span className="text-navy-300 font-mono text-xs">{value || '-'}</span>
+      ),
+    },
+    {
+      key: 'ipAddress',
+      label: 'IP Address',
+      render: (value) => (
+        <span className="text-navy-300 font-mono text-xs">{value || '-'}</span>
+      ),
+    },
+    {
+      key: 'createdAt',
+      label: 'Timestamp',
+      sortable: true,
+      render: (value) => (
+        <span className="text-sm text-plum-300">{formatDateTime(value)}</span>
+      ),
+    },
+  ];
+
+  if (user?.role !== 'ADMIN') {
+    return null;
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <div className="mb-8">
-        <h1 className="text-4xl font-serif font-bold text-plum-300">Audit Logs</h1>
-        <p className="text-navy-200 mt-2 text-lg">View and monitor all system activities</p>
+    <div className="page-transition">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-4xl font-serif font-bold text-plum-300 mb-2 flex items-center space-x-3">
+            <Shield className="w-8 h-8" />
+            <span>Audit Logs</span>
+          </h1>
+          <p className="text-navy-200 text-lg">View and monitor all system activities</p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            onClick={() => handleExport('csv')}
+            disabled={exporting}
+            className="flex items-center space-x-2"
+          >
+            <Download className="w-4 h-4" />
+            <span>Export CSV</span>
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => handleExport('json')}
+            disabled={exporting}
+            className="flex items-center space-x-2"
+          >
+            <FileText className="w-4 h-4" />
+            <span>Export JSON</span>
+          </Button>
+        </div>
       </div>
 
-      {/* Statistics Cards */}
+      {/* Statistics */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-2xl font-bold text-plum-300">{stats.total}</div>
-              <div className="text-sm text-plum-200 mt-1">Total Logs</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-2xl font-bold text-blue-400">{stats.byAction.length}</div>
-              <div className="text-sm text-plum-200 mt-1">Action Types</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-2xl font-bold text-green-400">{stats.byResourceType.length}</div>
-              <div className="text-sm text-plum-200 mt-1">Resource Types</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-2xl font-bold text-gold-400">{stats.recentActivity.length}</div>
-              <div className="text-sm text-plum-200 mt-1">Recent Activities</div>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <MetricCard
+            title="Total Logs"
+            value={stats.total}
+            icon={Activity}
+          />
+          <MetricCard
+            title="Action Types"
+            value={stats.byAction.length}
+            icon={FileText}
+          />
+          <MetricCard
+            title="Resource Types"
+            value={stats.byResourceType.length}
+            icon={Shield}
+          />
+          <MetricCard
+            title="Recent Activities"
+            value={stats.recentActivity.length}
+            icon={Activity}
+          />
+        </div>
+      )}
+
+      {/* Charts */}
+      {stats && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <ChartContainer
+            title="Actions by Type"
+            description="Distribution of audit log actions"
+            height={300}
+          >
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stats.byAction.slice(0, 10)}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1a0d21" />
+                <XAxis dataKey="action" stroke="#b48dc9" angle={-45} textAnchor="end" height={100} />
+                <YAxis stroke="#b48dc9" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#0a1428',
+                    border: '1px solid #341a42',
+                    borderRadius: '8px',
+                  }}
+                />
+                <Bar dataKey="count" fill="#ffd700" />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartContainer>
+
+          <ChartContainer
+            title="Resources by Type"
+            description="Distribution of resource types"
+            height={300}
+          >
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stats.byResourceType.slice(0, 10)}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1a0d21" />
+                <XAxis dataKey="resourceType" stroke="#b48dc9" angle={-45} textAnchor="end" height={100} />
+                <YAxis stroke="#b48dc9" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#0a1428',
+                    border: '1px solid #341a42',
+                    borderRadius: '8px',
+                  }}
+                />
+                <Bar dataKey="count" fill="#8241a5" />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartContainer>
         </div>
       )}
 
       {/* Filters */}
       <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            <Input
-              label="User Email"
-              value={filters.userEmail}
-              onChange={(e) => updateFilter('userEmail', e.target.value)}
-              placeholder="Search by email"
-            />
-            <Input
-              label="Action"
-              value={filters.action}
-              onChange={(e) => updateFilter('action', e.target.value)}
-              placeholder="e.g., LOGIN_SUCCESS"
-            />
-            <Input
-              label="Resource Type"
-              value={filters.resourceType}
-              onChange={(e) => updateFilter('resourceType', e.target.value)}
-              placeholder="e.g., Payment, GiftCard"
-            />
-            <Input
-              label="IP Address"
-              value={filters.ipAddress}
-              onChange={(e) => updateFilter('ipAddress', e.target.value)}
-              placeholder="Search by IP"
-            />
-            <Input
-              label="Start Date"
-              type="date"
-              value={filters.startDate}
-              onChange={(e) => updateFilter('startDate', e.target.value)}
-            />
-            <Input
-              label="End Date"
-              type="date"
-              value={filters.endDate}
-              onChange={(e) => updateFilter('endDate', e.target.value)}
-            />
-            <div className="flex items-end gap-2">
-              <Button
-                onClick={() => setFilters({
-                  userEmail: '',
-                  action: '',
-                  resourceType: '',
-                  ipAddress: '',
-                  startDate: '',
-                  endDate: '',
-                  page: 1,
-                  limit: 50,
-                })}
-                variant="outline"
-              >
-                Clear
-              </Button>
-              <Button
-                onClick={() => handleExport('csv')}
-                disabled={exporting}
-                variant="outline"
-              >
-                {exporting ? 'Exporting...' : 'Export CSV'}
-              </Button>
-              <Button
-                onClick={() => handleExport('json')}
-                disabled={exporting}
-                variant="outline"
-              >
-                {exporting ? 'Exporting...' : 'Export JSON'}
-              </Button>
-            </div>
-          </div>
+        <CardContent className="pt-6">
+          <FilterBar
+            searchPlaceholder="Search by user email..."
+            searchValue={searchQuery}
+            onSearchChange={setSearchQuery}
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+            filters={[
+              {
+                key: 'action',
+                label: 'Action',
+                options: uniqueActions.map((a) => ({ value: a, label: a })),
+                value: actionFilter,
+                onChange: setActionFilter,
+              },
+              {
+                key: 'resourceType',
+                label: 'Resource Type',
+                options: uniqueResourceTypes.map((r) => ({ value: r, label: r })),
+                value: resourceTypeFilter,
+                onChange: setResourceTypeFilter,
+              },
+            ]}
+            onClear={() => {
+              setSearchQuery('');
+              setActionFilter('');
+              setResourceTypeFilter('');
+              setDateRange({ start: null, end: null });
+            }}
+          />
         </CardContent>
       </Card>
 
       {/* Logs Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Audit Logs</CardTitle>
+          <CardTitle>Audit Logs ({pagination.total})</CardTitle>
         </CardHeader>
         <CardContent>
-          {logs.length === 0 ? (
-            <div className="text-center py-8 text-plum-300">
-              <p>No audit logs found.</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {logs.map((log) => (
-                <div
-                  key={log.id}
-                  className="p-4 bg-navy-800 rounded-lg border border-navy-700"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className={`px-2 py-1 rounded text-xs font-semibold ${getActionColor(log.action)}`}>
-                          {log.action}
-                        </span>
-                        <span className="px-2 py-1 rounded text-xs bg-navy-700 text-plum-300 border border-navy-600">
-                          {log.resourceType}
-                        </span>
-                        {log.userEmail && (
-                          <span className="text-sm text-plum-300">{log.userEmail}</span>
-                        )}
-                      </div>
-                      <div className="text-sm text-plum-200 space-y-1">
-                        <p>Timestamp: {formatDate(log.createdAt)}</p>
-                        {log.resourceId && <p>Resource ID: {log.resourceId}</p>}
-                        {log.ipAddress && <p>IP Address: {log.ipAddress}</p>}
-                      </div>
-                      {expandedLogId === log.id && log.metadata && (
-                        <div className="mt-3 p-3 bg-navy-900 rounded border border-navy-700">
-                          <pre className="text-xs text-plum-200 overflow-auto">
-                            {JSON.stringify(log.metadata, null, 2)}
-                          </pre>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {log.metadata && (
-                        <Button
-                          onClick={() => setExpandedLogId(expandedLogId === log.id ? null : log.id)}
-                          variant="outline"
-                          size="sm"
-                        >
-                          {expandedLogId === log.id ? 'Hide' : 'Details'}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Pagination */}
-          {pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between mt-6">
-              <div className="text-sm text-plum-200">
-                Page {pagination.page} of {pagination.totalPages} ({pagination.total} total)
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => updateFilter('page', pagination.page - 1)}
-                  disabled={pagination.page === 1}
-                  variant="outline"
-                >
-                  Previous
-                </Button>
-                <Button
-                  onClick={() => updateFilter('page', pagination.page + 1)}
-                  disabled={pagination.page >= pagination.totalPages}
-                  variant="outline"
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          )}
+          <DataTable
+            columns={columns}
+            data={logs}
+            isLoading={loading}
+            pagination={{
+              page: pagination.page,
+              limit: pagination.limit,
+              total: pagination.total,
+              onPageChange: (page) => setPagination((prev) => ({ ...prev, page })),
+              onLimitChange: (limit) =>
+                setPagination((prev) => ({ ...prev, limit, page: 1 })),
+            }}
+            sortable
+            onSort={handleSort}
+            sortKey={sortKey}
+            sortDirection={sortDirection}
+            exportable
+            onExport={() => handleExport('csv')}
+            emptyMessage="No audit logs found"
+            onRowClick={(row) => {
+              // Could show detailed view in a modal
+              console.log('Log clicked:', row);
+            }}
+          />
         </CardContent>
       </Card>
     </div>
   );
 }
-

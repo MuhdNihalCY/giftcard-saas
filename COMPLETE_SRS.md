@@ -11,8 +11,15 @@
 ## Table of Contents
 
 1. [Introduction](#1-introduction)
+   - 1.2.1 [Release Phases](#121-release-phases)
 2. [Overall Description](#2-overall-description)
 3. [System Features and Requirements](#3-system-features-and-requirements)
+   - 3.1.13 [Feature Release Phases Summary](#3113-feature-release-phases-summary)
+   - 3.3 [Business Rules and Edge Cases](#33-business-rules-and-edge-cases)
+     - 3.3.1 [Anti-Fraud and Abuse Prevention](#331-anti-fraud-and-abuse-prevention)
+     - 3.3.2 [Breakage and Liability Management](#332-breakage-and-liability-management)
+     - 3.3.3 [Refunds and Chargebacks](#333-refunds-and-chargebacks)
+     - 3.3.4 [Multi-Tenant and SaaS Behaviors](#334-multi-tenant-and-saas-behaviors)
 4. [Database Schema and Data Models](#4-database-schema-and-data-models)
 5. [API Specifications](#5-api-specifications)
 6. [Security Requirements](#6-security-requirements)
@@ -21,6 +28,7 @@
 9. [Testing Requirements](#9-testing-requirements)
 10. [Compliance and Legal Requirements](#10-compliance-and-legal-requirements)
 11. [Appendices](#11-appendices)
+12. [Validation Checklist](#12-validation-checklist)
 
 ---
 
@@ -40,6 +48,8 @@ The purpose of this document is to:
 ### 1.2 Scope
 
 The Digital Gift Card SaaS Platform provides a complete gift card ecosystem including:
+
+**Note:** Features are organized into three release phases (see Section 1.2.1). Phase 1 (MVP) includes core functionality for initial production release, while Phase 2 and Phase 3 add enhanced and advanced features respectively.
 
 **Core Functionality:**
 - Online gift card creation (single and bulk)
@@ -74,6 +84,56 @@ The Digital Gift Card SaaS Platform provides a complete gift card ecosystem incl
 - Cryptocurrency payments (future enhancement)
 - Blockchain-based verification (future enhancement)
 - White-label solutions (future enhancement)
+
+### 1.2.1 Release Phases
+
+This specification defines features across three release phases to clearly distinguish MVP (Minimum Viable Product) scope from future enhancements:
+
+**Phase 1 (MVP / Must-Have):**
+Core functionality required for initial production release:
+- User registration and authentication (email/password, basic security)
+- Single gift card creation and management
+- Basic gift card redemption (QR code scanning, manual code entry)
+- Single payment gateway integration (Stripe)
+- Email delivery for gift cards
+- Basic analytics (sales totals, redemption counts)
+- Admin dashboard (basic user management, system monitoring)
+- Merchant dashboard (gift card management, basic analytics)
+- Customer portal (wallet, gift card viewing)
+- Public gift card validation and balance checking
+- Basic fraud prevention (rate limiting, account lockout)
+
+**Phase 2 (Should-Have):**
+Enhanced features for improved functionality and scalability:
+- Bulk gift card creation
+- Multiple payment gateway support (PayPal, Razorpay, UPI)
+- SMS delivery
+- PDF generation and download
+- Advanced analytics and reporting (trends, breakdowns, exports)
+- Gift card templates and branding
+- Product catalog management
+- Scheduled delivery
+- Expiry reminders
+- Communication management (admin controls)
+- Comprehensive audit logging
+- Enhanced fraud detection (velocity checks, pattern detection)
+- Multi-currency support (basic)
+
+**Phase 3 (Could-Have / Future Enhancements):**
+Advanced features for competitive differentiation:
+- NFC (Near Field Communication) support
+- Advanced fraud detection (machine learning-based)
+- Multi-currency with real-time conversion
+- White-label solutions
+- Subscription management and billing
+- Advanced analytics (predictive, machine learning recommendations)
+- GraphQL API
+- Real-time updates (WebSockets)
+- Native mobile applications
+- Blockchain-based verification
+- Cryptocurrency payments
+
+**Note:** All functional requirements in Section 3.1 are tagged with their Release Phase. Priority levels (High/Medium/Low/Critical) indicate importance within each phase.
 
 ### 1.3 Definitions, Acronyms, and Abbreviations
 
@@ -126,10 +186,10 @@ The Digital Gift Card SaaS Platform provides a complete gift card ecosystem incl
 
 ### 1.5 Overview
 
-This document is organized into 11 major sections:
-1. Introduction - Purpose, scope, definitions
+This document is organized into 12 major sections:
+1. Introduction - Purpose, scope, definitions, release phases
 2. Overall Description - User needs, assumptions, dependencies
-3. System Features - Detailed functional requirements
+3. System Features - Detailed functional requirements with release phases
 4. Database Schema - Complete data model specification
 5. API Specifications - RESTful API documentation
 6. Security Requirements - Security features and compliance
@@ -138,6 +198,7 @@ This document is organized into 11 major sections:
 9. Testing Requirements - Testing strategy and requirements
 10. Compliance - Legal and regulatory requirements
 11. Appendices - Use cases, glossary, technical details
+12. Validation Checklist - SRS completeness verification
 
 ---
 
@@ -337,6 +398,7 @@ The platform provides the following major functions:
 **FR-1.1: User Registration**
 - **Description:** Users can register for new accounts
 - **Priority:** High
+- **Release Phase:** Phase 1 (MVP)
 - **Input:** Email, password, first name, last name, role (optional), business name (for merchants)
 - **Processing:**
   - Validate email format and uniqueness
@@ -351,6 +413,7 @@ The platform provides the following major functions:
 **FR-1.2: User Login**
 - **Description:** Authenticated users can log in to the system
 - **Priority:** High
+- **Release Phase:** Phase 1 (MVP)
 - **Input:** Email, password
 - **Processing:**
   - Validate credentials
@@ -367,6 +430,7 @@ The platform provides the following major functions:
 **FR-1.3: Token Refresh**
 - **Description:** Users can refresh expired access tokens
 - **Priority:** High
+- **Release Phase:** Phase 1 (MVP)
 - **Input:** Refresh token
 - **Processing:**
   - Validate refresh token
@@ -380,6 +444,7 @@ The platform provides the following major functions:
 **FR-1.4: Email Verification**
 - **Description:** Users verify their email addresses
 - **Priority:** Medium
+- **Release Phase:** Phase 1 (MVP)
 - **Input:** Verification token
 - **Processing:**
   - Validate token
@@ -392,6 +457,7 @@ The platform provides the following major functions:
 **FR-1.5: Password Reset**
 - **Description:** Users can reset forgotten passwords
 - **Priority:** High
+- **Release Phase:** Phase 1 (MVP)
 - **Input:** Email (request), token and new password (reset)
 - **Processing:**
   - Generate password reset token
@@ -407,6 +473,7 @@ The platform provides the following major functions:
 **FR-1.6: Account Lockout**
 - **Description:** System locks accounts after failed login attempts
 - **Priority:** Medium
+- **Release Phase:** Phase 1 (MVP)
 - **Input:** Failed login attempt
 - **Processing:**
   - Increment failed login attempts
@@ -419,6 +486,7 @@ The platform provides the following major functions:
 **FR-1.7: Two-Factor Authentication (2FA)**
 - **Description:** Users can enable 2FA for enhanced security
 - **Priority:** Medium
+- **Release Phase:** Phase 2
 - **Input:** TOTP code, backup codes
 - **Processing:**
   - Generate TOTP secret
@@ -432,6 +500,7 @@ The platform provides the following major functions:
 **FR-1.8: Session Management**
 - **Description:** System manages user sessions and devices
 - **Priority:** Medium
+- **Release Phase:** Phase 2
 - **Input:** Device information, user agent, IP address
 - **Processing:**
   - Track active sessions per user
@@ -445,6 +514,7 @@ The platform provides the following major functions:
 **FR-1.9: Profile Management**
 - **Description:** Users can view and update their profiles
 - **Priority:** Medium
+- **Release Phase:** Phase 2
 - **Input:** Profile data (name, business name, logo, etc.)
 - **Processing:**
   - Validate input data
@@ -459,6 +529,7 @@ The platform provides the following major functions:
 **FR-2.1: Single Gift Card Creation**
 - **Description:** Merchants/Admins can create individual gift cards
 - **Priority:** High
+- **Release Phase:** Phase 1 (MVP)
 - **Input:** Value, currency, expiry date, recipient details, template, custom message, partial redemption setting
 - **Processing:**
   - Generate unique gift card code
@@ -474,6 +545,7 @@ The platform provides the following major functions:
 **FR-2.2: Bulk Gift Card Creation**
 - **Description:** Merchants/Admins can create multiple gift cards at once
 - **Priority:** Medium
+- **Release Phase:** Phase 2
 - **Input:** Count, default values, CSV/Excel file (optional)
 - **Processing:**
   - Validate input data
@@ -488,6 +560,7 @@ The platform provides the following major functions:
 **FR-2.3: Gift Card Update**
 - **Description:** Merchants/Admins can update gift card details
 - **Priority:** Medium
+- **Release Phase:** Phase 2
 - **Input:** Gift card ID, updated fields
 - **Processing:**
   - Verify ownership/authorization
@@ -501,6 +574,7 @@ The platform provides the following major functions:
 **FR-2.4: Gift Card Deletion**
 - **Description:** Merchants/Admins can delete/cancel gift cards
 - **Priority:** Medium
+- **Release Phase:** Phase 2
 - **Input:** Gift card ID
 - **Processing:**
   - Verify ownership/authorization
@@ -513,6 +587,7 @@ The platform provides the following major functions:
 **FR-2.5: Gift Card Listing**
 - **Description:** Users can list gift cards with filtering and pagination
 - **Priority:** High
+- **Release Phase:** Phase 1 (MVP)
 - **Input:** Filters (status, merchant, date range), pagination (page, limit)
 - **Processing:**
   - Apply role-based filtering (merchants see own, admins see all)
@@ -526,6 +601,7 @@ The platform provides the following major functions:
 **FR-2.6: Gift Card Lookup**
 - **Description:** Users can search for gift cards by code or ID
 - **Priority:** High
+- **Release Phase:** Phase 1 (MVP)
 - **Input:** Gift card code or ID
 - **Processing:**
   - Search by code or ID
@@ -538,6 +614,7 @@ The platform provides the following major functions:
 **FR-2.7: QR Code Generation**
 - **Description:** System generates QR codes for gift cards
 - **Priority:** High
+- **Release Phase:** Phase 1 (MVP)
 - **Input:** Gift card ID or code
 - **Processing:**
   - Generate QR code image
@@ -549,6 +626,7 @@ The platform provides the following major functions:
 **FR-2.8: Gift Card Expiry Management**
 - **Description:** System automatically manages gift card expiry
 - **Priority:** High
+- **Release Phase:** Phase 1 (MVP)
 - **Input:** Scheduled job trigger
 - **Processing:**
   - Check gift cards for expiry
@@ -563,6 +641,7 @@ The platform provides the following major functions:
 **FR-3.1: Template Creation**
 - **Description:** Merchants/Admins can create gift card templates
 - **Priority:** Medium
+- **Release Phase:** Phase 2
 - **Input:** Template name, description, design data (colors, images, layout), public/private setting
 - **Processing:**
   - Validate design data
@@ -575,6 +654,7 @@ The platform provides the following major functions:
 **FR-3.2: Template Update**
 - **Description:** Merchants/Admins can update templates
 - **Priority:** Medium
+- **Release Phase:** Phase 2
 - **Input:** Template ID, updated fields
 - **Processing:**
   - Verify ownership/authorization
@@ -587,6 +667,7 @@ The platform provides the following major functions:
 **FR-3.3: Template Deletion**
 - **Description:** Merchants/Admins can delete templates
 - **Priority:** Low
+- **Release Phase:** Phase 2
 - **Input:** Template ID
 - **Processing:**
   - Verify ownership/authorization
@@ -599,6 +680,7 @@ The platform provides the following major functions:
 **FR-3.4: Template Listing**
 - **Description:** Users can list available templates
 - **Priority:** Medium
+- **Release Phase:** Phase 2
 - **Input:** Filters (merchant, public/private), pagination
 - **Processing:**
   - Apply filters
@@ -612,6 +694,7 @@ The platform provides the following major functions:
 **FR-4.1: Product Creation**
 - **Description:** Merchants/Admins can create sellable gift card products
 - **Priority:** High
+- **Release Phase:** Phase 2
 - **Input:** Name, description, image, pricing configuration, expiry days, category, tags, template
 - **Processing:**
   - Validate pricing configuration
@@ -625,6 +708,7 @@ The platform provides the following major functions:
 **FR-4.2: Product Update**
 - **Description:** Merchants/Admins can update products
 - **Priority:** Medium
+- **Release Phase:** Phase 2
 - **Input:** Product ID, updated fields
 - **Processing:**
   - Verify ownership/authorization
@@ -637,6 +721,7 @@ The platform provides the following major functions:
 **FR-4.3: Product Deletion**
 - **Description:** Merchants/Admins can delete products
 - **Priority:** Low
+- **Release Phase:** Phase 2
 - **Input:** Product ID
 - **Processing:**
   - Verify ownership/authorization
@@ -649,6 +734,7 @@ The platform provides the following major functions:
 **FR-4.4: Public Product Listing**
 - **Description:** Public users can browse public products
 - **Priority:** High
+- **Release Phase:** Phase 2
 - **Input:** Filters (category, search, merchant), pagination
 - **Processing:**
   - Filter by public and active products
@@ -661,6 +747,7 @@ The platform provides the following major functions:
 **FR-4.5: Product Details**
 - **Description:** Users can view product details
 - **Priority:** High
+- **Release Phase:** Phase 2
 - **Input:** Product ID
 - **Processing:**
   - Retrieve product
@@ -675,6 +762,7 @@ The platform provides the following major functions:
 **FR-5.1: Payment Intent Creation**
 - **Description:** System creates payment intents for gift card purchases
 - **Priority:** High
+- **Release Phase:** Phase 1 (MVP) - Stripe only; Phase 2 - Multiple gateways
 - **Input:** Gift card details, amount, currency, payment method, customer ID
 - **Processing:**
   - Create gift card
@@ -688,6 +776,7 @@ The platform provides the following major functions:
 **FR-5.2: Payment from Product**
 - **Description:** Customers can purchase gift cards from products
 - **Priority:** High
+- **Release Phase:** Phase 2
 - **Input:** Product ID, amount (if variable), recipient details, payment method, customer ID
 - **Processing:**
   - Retrieve product
@@ -702,6 +791,7 @@ The platform provides the following major functions:
 **FR-5.3: Bulk Purchase**
 - **Description:** Customers can purchase multiple gift cards in one transaction
 - **Priority:** Medium
+- **Release Phase:** Phase 2
 - **Input:** Product ID or merchant ID, recipients array, payment method, customer ID
 - **Processing:**
   - Validate recipients data
@@ -716,6 +806,7 @@ The platform provides the following major functions:
 **FR-5.4: Payment Confirmation**
 - **Description:** System confirms completed payments
 - **Priority:** High
+- **Release Phase:** Phase 1 (MVP)
 - **Input:** Payment intent ID, payment gateway response
 - **Processing:**
   - Verify payment with gateway
@@ -730,6 +821,7 @@ The platform provides the following major functions:
 **FR-5.5: Payment Webhook Handling**
 - **Description:** System processes webhooks from payment gateways
 - **Priority:** High
+- **Release Phase:** Phase 1 (MVP)
 - **Input:** Webhook payload, signature
 - **Processing:**
   - Verify webhook signature
@@ -744,6 +836,7 @@ The platform provides the following major functions:
 **FR-5.6: Payment Refund**
 - **Description:** Merchants/Admins can process refunds
 - **Priority:** Medium
+- **Release Phase:** Phase 1 (MVP)
 - **Input:** Payment ID, refund amount, reason
 - **Processing:**
   - Verify authorization
@@ -760,6 +853,7 @@ The platform provides the following major functions:
 **FR-5.7: Payment Listing**
 - **Description:** Users can view payment history
 - **Priority:** Medium
+- **Release Phase:** Phase 1 (MVP)
 - **Input:** Filters (status, method, date range), pagination
 - **Processing:**
   - Apply role-based filtering
@@ -774,6 +868,7 @@ The platform provides the following major functions:
 **FR-6.1: Email Delivery**
 - **Description:** System sends gift cards via email
 - **Priority:** High
+- **Release Phase:** Phase 1 (MVP)
 - **Input:** Gift card ID, recipient email, custom message
 - **Processing:**
   - Check communication settings (admin controls)
@@ -789,6 +884,7 @@ The platform provides the following major functions:
 **FR-6.2: SMS Delivery**
 - **Description:** System sends gift cards via SMS
 - **Priority:** Medium
+- **Release Phase:** Phase 2
 - **Input:** Gift card ID, recipient phone, custom message
 - **Processing:**
   - Check communication settings (admin controls)
@@ -804,6 +900,7 @@ The platform provides the following major functions:
 **FR-6.3: PDF Generation**
 - **Description:** System generates PDF gift cards
 - **Priority:** Medium
+- **Release Phase:** Phase 2
 - **Input:** Gift card ID
 - **Processing:**
   - Retrieve gift card details
@@ -817,6 +914,7 @@ The platform provides the following major functions:
 **FR-6.4: Scheduled Delivery**
 - **Description:** System can schedule gift card delivery for future dates
 - **Priority:** Low
+- **Release Phase:** Phase 2
 - **Input:** Gift card ID, delivery date/time, delivery method
 - **Processing:**
   - Validate delivery date
@@ -829,6 +927,7 @@ The platform provides the following major functions:
 **FR-6.5: Expiry Reminders**
 - **Description:** System sends reminders before gift card expiry
 - **Priority:** Medium
+- **Release Phase:** Phase 2
 - **Input:** Scheduled job trigger
 - **Processing:**
   - Find gift cards expiring soon (configurable days)
@@ -844,6 +943,7 @@ The platform provides the following major functions:
 **FR-7.1: QR Code Redemption**
 - **Description:** Merchants can redeem gift cards by scanning QR codes
 - **Priority:** High
+- **Release Phase:** Phase 1 (MVP)
 - **Input:** QR code data, redemption amount, merchant ID
 - **Processing:**
   - Decode QR code
@@ -861,6 +961,7 @@ The platform provides the following major functions:
 **FR-7.2: Manual Code Redemption**
 - **Description:** Merchants can redeem gift cards by entering codes manually
 - **Priority:** High
+- **Release Phase:** Phase 1 (MVP)
 - **Input:** Gift card code, redemption amount, merchant ID
 - **Processing:**
   - Retrieve gift card by code
@@ -877,6 +978,7 @@ The platform provides the following major functions:
 **FR-7.3: Link-Based Redemption**
 - **Description:** Public users can redeem gift cards via redemption links
 - **Priority:** High
+- **Release Phase:** Phase 1 (MVP)
 - **Input:** Gift card code, redemption amount, merchant ID
 - **Processing:**
   - Retrieve gift card by code
@@ -893,6 +995,7 @@ The platform provides the following major functions:
 **FR-7.4: API-Based Redemption**
 - **Description:** POS systems can redeem gift cards via API
 - **Priority:** Medium
+- **Release Phase:** Phase 2
 - **Input:** Gift card code, redemption amount, API key
 - **Processing:**
   - Authenticate API key
@@ -910,6 +1013,7 @@ The platform provides the following major functions:
 **FR-7.5: Partial Redemption**
 - **Description:** System supports partial redemption of gift cards
 - **Priority:** High
+- **Release Phase:** Phase 2
 - **Input:** Gift card ID/code, redemption amount
 - **Processing:**
   - Check if partial redemption allowed
@@ -924,6 +1028,7 @@ The platform provides the following major functions:
 **FR-7.6: Gift Card Validation**
 - **Description:** System validates gift card codes (public endpoint)
 - **Priority:** High
+- **Release Phase:** Phase 1 (MVP)
 - **Input:** Gift card code
 - **Processing:**
   - Retrieve gift card by code
@@ -936,6 +1041,7 @@ The platform provides the following major functions:
 **FR-7.7: Balance Checking**
 - **Description:** Users can check gift card balance (public endpoint)
 - **Priority:** High
+- **Release Phase:** Phase 1 (MVP)
 - **Input:** Gift card code
 - **Processing:**
   - Retrieve gift card by code
@@ -946,6 +1052,7 @@ The platform provides the following major functions:
 **FR-7.8: Redemption History**
 - **Description:** Users can view redemption history
 - **Priority:** Medium
+- **Release Phase:** Phase 2
 - **Input:** Filters (gift card, merchant, date range), pagination
 - **Processing:**
   - Apply role-based filtering
@@ -960,6 +1067,7 @@ The platform provides the following major functions:
 **FR-8.1: Sales Analytics**
 - **Description:** Merchants/Admins can view sales analytics
 - **Priority:** High
+- **Release Phase:** Phase 1 (MVP) - Basic totals; Phase 2 - Advanced breakdowns
 - **Input:** Filters (merchant ID, date range)
 - **Processing:**
   - Query completed payments
@@ -975,6 +1083,7 @@ The platform provides the following major functions:
 **FR-8.2: Redemption Analytics**
 - **Description:** Merchants/Admins can view redemption analytics
 - **Priority:** High
+- **Release Phase:** Phase 2
 - **Input:** Filters (merchant ID, date range)
 - **Processing:**
   - Query redemptions
@@ -989,6 +1098,7 @@ The platform provides the following major functions:
 **FR-8.3: Customer Analytics**
 - **Description:** Merchants/Admins can view customer analytics
 - **Priority:** Medium
+- **Release Phase:** Phase 2
 - **Input:** Filters (merchant ID, date range)
 - **Processing:**
   - Query customers and purchases
@@ -1003,6 +1113,7 @@ The platform provides the following major functions:
 **FR-8.4: Gift Card Statistics**
 - **Description:** Merchants/Admins can view gift card statistics
 - **Priority:** Medium
+- **Release Phase:** Phase 2
 - **Input:** Filters (merchant ID)
 - **Processing:**
   - Query gift cards
@@ -1018,6 +1129,7 @@ The platform provides the following major functions:
 **FR-9.1: Share Token Generation**
 - **Description:** Users can generate share tokens for gift cards
 - **Priority:** Medium
+- **Release Phase:** Phase 2
 - **Input:** Gift card ID, expiry hours
 - **Processing:**
   - Verify ownership/access
@@ -1031,6 +1143,7 @@ The platform provides the following major functions:
 **FR-9.2: View via Share Token**
 - **Description:** Public users can view gift cards via share tokens
 - **Priority:** Medium
+- **Release Phase:** Phase 2
 - **Input:** Share token
 - **Processing:**
   - Retrieve gift card by share token
@@ -1042,6 +1155,7 @@ The platform provides the following major functions:
 **FR-9.3: Share Token Revocation**
 - **Description:** Users can revoke share tokens
 - **Priority:** Low
+- **Release Phase:** Phase 2
 - **Input:** Gift card ID
 - **Processing:**
   - Verify ownership
@@ -1053,6 +1167,7 @@ The platform provides the following major functions:
 **FR-9.4: NFC Data Generation**
 - **Description:** System generates NFC data for gift cards
 - **Priority:** Low
+- **Release Phase:** Phase 3
 - **Input:** Gift card ID
 - **Processing:**
   - Verify ownership/access
@@ -1066,6 +1181,7 @@ The platform provides the following major functions:
 **FR-10.1: Image Upload**
 - **Description:** Merchants/Admins can upload images
 - **Priority:** Medium
+- **Release Phase:** Phase 1 (MVP)
 - **Input:** Image file(s), upload type
 - **Processing:**
   - Validate file type (images only)
@@ -1079,6 +1195,7 @@ The platform provides the following major functions:
 **FR-10.2: Multiple Image Upload**
 - **Description:** Merchants/Admins can upload multiple images
 - **Priority:** Low
+- **Release Phase:** Phase 2
 - **Input:** Multiple image files (max 10)
 - **Processing:**
   - Validate each file
@@ -1090,6 +1207,7 @@ The platform provides the following major functions:
 **FR-10.3: File Deletion**
 - **Description:** Merchants/Admins can delete uploaded files
 - **Priority:** Low
+- **Release Phase:** Phase 2
 - **Input:** Filename
 - **Processing:**
   - Verify ownership/authorization
@@ -1103,6 +1221,7 @@ The platform provides the following major functions:
 **FR-11.1: Communication Settings Management**
 - **Description:** Admins can manage communication channel settings
 - **Priority:** High
+- **Release Phase:** Phase 2
 - **Input:** Communication settings (enable/disable channels, rate limits, etc.)
 - **Processing:**
   - Update communication settings
@@ -1115,6 +1234,7 @@ The platform provides the following major functions:
 **FR-11.2: Communication Logs Viewing**
 - **Description:** Admins can view communication logs
 - **Priority:** Medium
+- **Release Phase:** Phase 2
 - **Input:** Filters (channel, recipient, status, date range), pagination
 - **Processing:**
   - Query communication logs
@@ -1127,6 +1247,7 @@ The platform provides the following major functions:
 **FR-11.3: Communication Statistics**
 - **Description:** Admins can view communication statistics
 - **Priority:** Medium
+- **Release Phase:** Phase 2
 - **Input:** Filters (channel, date range)
 - **Processing:**
   - Query communication logs
@@ -1139,6 +1260,7 @@ The platform provides the following major functions:
 **FR-11.4: Audit Log Management**
 - **Description:** Admins can view and export audit logs
 - **Priority:** High
+- **Release Phase:** Phase 2
 - **Input:** Filters (user, action, resource type, date range), pagination
 - **Processing:**
   - Query audit logs
@@ -1151,6 +1273,7 @@ The platform provides the following major functions:
 **FR-11.5: Audit Log Export**
 - **Description:** Admins can export audit logs
 - **Priority:** Medium
+- **Release Phase:** Phase 2
 - **Input:** Filters, export format (CSV, JSON)
 - **Processing:**
   - Query audit logs with filters
@@ -1163,6 +1286,7 @@ The platform provides the following major functions:
 **FR-11.6: Audit Log Statistics**
 - **Description:** Admins can view audit log statistics
 - **Priority:** Low
+- **Release Phase:** Phase 2
 - **Input:** Filters (date range)
 - **Processing:**
   - Query audit logs
@@ -1176,6 +1300,7 @@ The platform provides the following major functions:
 **FR-12.1: Gift Card Expiry Check**
 - **Description:** System automatically checks and updates expired gift cards
 - **Priority:** High
+- **Release Phase:** Phase 1 (MVP)
 - **Input:** Scheduled job trigger (daily at 2 AM)
 - **Processing:**
   - Query gift cards with expiry dates
@@ -1188,6 +1313,7 @@ The platform provides the following major functions:
 **FR-12.2: Expiry Reminder Job**
 - **Description:** System sends expiry reminders
 - **Priority:** Medium
+- **Release Phase:** Phase 2
 - **Input:** Scheduled job trigger (daily at 9 AM)
 - **Processing:**
   - Find gift cards expiring soon
@@ -1200,6 +1326,7 @@ The platform provides the following major functions:
 **FR-12.3: Token Cleanup Job**
 - **Description:** System cleans up expired tokens
 - **Priority:** Medium
+- **Release Phase:** Phase 2
 - **Input:** Scheduled job trigger (daily at 3 AM)
 - **Processing:**
   - Find expired tokens (email verification, password reset, OTP)
@@ -1207,6 +1334,31 @@ The platform provides the following major functions:
   - Log cleanup statistics
 - **Output:** Tokens cleaned up
 - **Error Handling:** Job execution errors
+
+#### 3.1.13 Feature Release Phases Summary
+
+The following table summarizes all feature clusters and their release phase assignments:
+
+| Feature Cluster | Phase 1 (MVP) Features | Phase 2 Features | Phase 3 Features |
+|----------------|------------------------|------------------|------------------|
+| **User Management** | Registration, Login, Token Refresh, Email Verification, Password Reset, Account Lockout | 2FA, Session Management, Profile Management | - |
+| **Gift Card Management** | Single Creation, Listing, Lookup, QR Code Generation, Expiry Management | Bulk Creation, Update, Deletion | - |
+| **Templates** | - | Creation, Update, Deletion, Listing | - |
+| **Products** | - | Creation, Update, Deletion, Public Listing, Details | - |
+| **Payments** | Payment Intent Creation (Stripe), Confirmation, Webhook Handling, Refund, Listing | Payment from Product, Bulk Purchase, Multiple Gateways (PayPal, Razorpay, UPI) | - |
+| **Delivery** | Email Delivery | SMS Delivery, PDF Generation, Scheduled Delivery, Expiry Reminders | - |
+| **Redemption** | QR Code Redemption, Manual Code Redemption, Link-Based Redemption, Validation, Balance Checking | API-Based Redemption, Partial Redemption, Redemption History | - |
+| **Analytics** | Basic Sales Analytics (totals, counts) | Advanced Sales Analytics, Redemption Analytics, Customer Analytics, Gift Card Statistics | Predictive Analytics, ML Recommendations |
+| **Sharing** | - | Share Token Generation, View via Share Token, Share Token Revocation | NFC Data Generation |
+| **File Management** | Image Upload | Multiple Image Upload, File Deletion | - |
+| **Admin Features** | - | Communication Settings Management, Communication Logs Viewing, Communication Statistics, Audit Log Management, Audit Log Export, Audit Log Statistics | - |
+| **Background Jobs** | Gift Card Expiry Check | Expiry Reminder Job, Token Cleanup Job | - |
+
+**Notes:**
+- Phase 1 (MVP) focuses on core functionality required for initial production release
+- Phase 2 enhances functionality with advanced features, multiple integrations, and comprehensive management tools
+- Phase 3 introduces cutting-edge features for competitive differentiation (NFC, ML-based fraud detection, etc.)
+- Some features may have partial Phase 1 implementation with Phase 2 enhancements (e.g., Payment Intent Creation supports Stripe in Phase 1, multiple gateways in Phase 2)
 
 ### 3.2 Non-Functional Requirements
 
@@ -1249,6 +1401,8 @@ The platform provides the following major functions:
 - **Target:** > 80%
 
 #### 3.2.2 Security Requirements
+
+**Note:** For detailed fraud prevention and abuse prevention business rules, including velocity limits, fraud detection rules, and validation checks, see Section 3.3.1.
 
 **NFR-2.1: Data Encryption**
 - **Requirement:** All sensitive data must be encrypted in transit (TLS 1.2+) and at rest
@@ -1440,6 +1594,135 @@ The platform provides the following major functions:
 - **Priority:** Medium
 - **Implementation:** Webhook endpoints, signature verification
 - **Target:** Secure webhook delivery
+
+### 3.3 Business Rules and Edge Cases
+
+This section defines critical business rules and edge case handling for the platform. These rules ensure proper operation, fraud prevention, financial accuracy, and compliance with legal requirements.
+
+#### 3.3.1 Anti-Fraud and Abuse Prevention
+
+**Velocity Limits:**
+The system implements velocity limits to prevent abuse and fraudulent activity:
+
+- **Max Gift Cards per User per Day:** Default limit of 10 gift cards per user account per 24-hour period
+- **Max Gift Cards per IP per Day:** Default limit of 20 gift cards per unique IP address per 24-hour period
+- **Max Total Value per User per Day:** Default limit of $5,000 USD (or equivalent in other currencies) per user account per 24-hour period
+- **Max Value per Single Gift Card:** Default limit of $10,000 USD (or equivalent in other currencies) per individual gift card
+
+**Fraud Detection Rules:**
+The system monitors and flags suspicious patterns:
+
+- **Unusual Purchase Pattern Detection:** System flags when multiple high-value gift cards are purchased in a short time period (e.g., 3+ cards > $1,000 within 1 hour)
+- **IP Address and Device Fingerprinting:** System tracks IP addresses and device fingerprints to identify suspicious patterns across accounts
+- **Blacklist Management:** System maintains a blacklist of known fraudsters (emails, IPs, payment methods) and automatically blocks transactions from blacklisted entities
+- **Manual Review Triggers:** The following conditions trigger manual review:
+  - Single transaction value > $1,000
+  - Velocity limits exceeded
+  - Multiple failed payment attempts from same source
+  - Purchase from high-risk IP address or region
+  - Unusual redemption patterns (e.g., immediate redemption after purchase)
+
+**Validation Checks:**
+The system performs the following validation checks:
+
+- **Email Domain Validation:** System validates email domains and flags disposable/temporary email services
+- **Phone Number Validation:** System validates phone numbers using international format standards
+- **Duplicate Payment Method Detection:** System detects and flags when the same payment method is used across multiple accounts
+- **Suspicious Redemption Patterns:** System monitors for patterns such as:
+  - Multiple redemptions from same merchant in short time
+  - Redemptions immediately after purchase
+  - Redemptions from different geographic locations in short time
+
+#### 3.3.2 Breakage and Liability Management
+
+**Expired Gift Cards:**
+When gift cards expire, the system handles them as follows:
+
+- **Status Change:** Gift card status automatically changes to `EXPIRED` (cards are never deleted)
+- **Balance Retention:** Expired gift card balance remains in the system for accounting and reporting purposes
+- **Merchant Visibility:** Merchants can view expired cards in their dashboard and generate expired cards reports
+- **Accounting Treatment:** Expired gift card balances are treated as unearned revenue until the grace period expires (see below)
+
+**Unredeemed Gift Cards:**
+The system tracks and reports on unredeemed gift card balances:
+
+- **Tracking:** System tracks unredeemed balances for all gift cards, including expired cards
+- **Reporting:** Merchants receive breakage reports showing unredeemed balances by period (monthly/quarterly)
+- **Liability Accounting:** Unredeemed balances are held as liability until expiry + grace period (see below)
+- **Grace Period:** 30-day grace period after expiry before considering balance as breakage
+
+**Breakage Calculation:**
+Breakage is calculated and reported as follows:
+
+- **Formula:** Breakage = Unredeemed value after (expiry date + 30-day grace period)
+- **Reporting Frequency:** Breakage reports are generated monthly and quarterly for merchants
+- **Merchant Visibility:** Merchants can view breakage metrics in their dashboard:
+  - Total breakage amount
+  - Breakage percentage (breakage / total issued value)
+  - Breakage trends over time
+- **Accounting Recognition:** After grace period, breakage is recognized as revenue (subject to local accounting regulations)
+
+#### 3.3.3 Refunds and Chargebacks
+
+**Refund Rules:**
+When a payment is refunded after a gift card has been issued:
+
+- **Automatic Invalidation:** Gift card status automatically changes to `CANCELLED`
+- **Balance Reset:** Gift card balance is set to 0
+- **Transaction Record:** A refund transaction record is created with:
+  - Original payment reference
+  - Refund amount
+  - Refund reason
+  - Timestamp
+- **Merchant Balance Adjustment:** If merchant payout has already been made, merchant balance is adjusted (deducted) accordingly
+- **Notifications:** System sends notifications to:
+  - Merchant (refund notification)
+  - Customer (gift card cancellation notification)
+- **Audit Trail:** All refund actions are logged in the audit trail
+
+**Chargeback Handling:**
+When a payment gateway notifies the system of a chargeback:
+
+- **Automatic Invalidation:** Gift card is automatically invalidated (status → `CANCELLED`, balance → 0)
+- **Merchant Notification:** Merchant receives immediate notification of the chargeback
+- **Dispute Resolution Workflow:** System supports dispute resolution workflow:
+  - Chargeback record creation
+  - Evidence submission tracking
+  - Resolution status tracking
+- **Chargeback Fee Handling:** System tracks and reports chargeback fees:
+  - Fee amount
+  - Fee deduction from merchant balance
+  - Fee reporting in merchant dashboard
+
+**Partial Refunds:**
+When a partial refund is processed:
+
+- **Balance Reduction:** Gift card balance is reduced proportionally (e.g., if 50% refunded, balance reduced by 50%)
+- **Status Maintenance:** Gift card remains in `ACTIVE` status if balance > 0
+- **Merchant Balance Update:** Merchant balance is adjusted proportionally
+- **Transaction Record:** Partial refund transaction is recorded with original and refunded amounts
+
+#### 3.3.4 Multi-Tenant and SaaS Behaviors
+
+**Tenant Isolation:**
+The system enforces strict data segregation:
+
+- **Data Segregation by Merchant ID:** All data (gift cards, payments, analytics) is segregated by merchant ID
+- **Admin Access:** Platform administrators can access all tenant data for support and monitoring purposes
+- **Merchant Access:** Merchants can only access their own data (gift cards, payments, analytics, customers)
+- **API Response Filtering:** All API responses are automatically filtered by tenant (merchant ID) based on authenticated user's role
+- **Database-Level Isolation:** Database queries include merchant ID filtering to prevent cross-tenant data access
+
+**Plan Limits (Future):**
+The system architecture supports plan-based limits (to be implemented in future phases):
+
+- **Gift Card Creation Limits:** Different plans have different limits on gift card creation per month
+- **API Rate Limits:** Different plans have different API rate limits (requests per minute/hour)
+- **Storage Limits:** Different plans have different storage limits for uploaded files (images, PDFs)
+- **Feature Flags:** Different plan tiers have access to different features:
+  - Basic Plan: Core features only
+  - Professional Plan: Advanced analytics, bulk operations
+  - Enterprise Plan: All features, white-label options, dedicated support
 
 ---
 
@@ -2821,17 +3104,18 @@ docker-compose exec backend npx prisma migrate deploy
 - No card data in logs
 
 **10.2.2 Payment Regulations**
-- Refund policies
-- Chargeback handling
+- Refund policies (see Section 3.3.3 for detailed refund and chargeback business rules)
+- Chargeback handling (see Section 3.3.3 for automatic invalidation and dispute resolution workflow)
 - Payment dispute resolution
 
 ### 10.3 Gift Card Regulations
 
 **10.3.1 Regional Compliance**
 - Gift card expiry regulations (varies by region)
-- Unused balance regulations
+- Unused balance regulations (see Section 3.3.2 for breakage and liability management)
 - Fee regulations
 - Terms and conditions requirements
+- Breakage accounting and reporting (see Section 3.3.2 for breakage calculation and merchant visibility)
 
 ### 10.4 Legal Documents
 
@@ -2839,8 +3123,8 @@ docker-compose exec backend npx prisma migrate deploy
 - Terms of Service
 - Privacy Policy
 - Cookie Policy (future)
-- Refund Policy
-- Gift Card Terms and Conditions
+- Refund Policy (must align with business rules in Section 3.3.3)
+- Gift Card Terms and Conditions (must address breakage, expiry, and refund policies as per Section 3.3.2 and 3.3.3)
 
 ### 10.5 Audit and Reporting
 
@@ -2856,6 +3140,97 @@ docker-compose exec backend npx prisma migrate deploy
 - Incident reports
 
 ---
+
+## 12. Validation Checklist
+
+This checklist verifies the completeness and quality of the Software Requirements Specification (SRS) document. Use this checklist to ensure all critical aspects are properly documented before proceeding with implementation.
+
+### 12.1 Document Structure
+
+- [ ] Structure follows IEEE 830-1998 style SRS with clear introduction, description, features, NFRs, data models, interfaces, and appendices
+- [ ] Table of Contents is complete and accurately reflects all sections and subsections
+- [ ] Document numbering is consistent throughout (sections, subsections, requirements)
+- [ ] All cross-references between sections are accurate and valid
+- [ ] Document includes proper version control and revision history
+
+### 12.2 Requirements Completeness
+
+- [ ] Every major requirement is uniquely identified (e.g., FR-1.1, NFR-2.3)
+- [ ] All requirements are written in "shall" style with clear, testable acceptance criteria
+- [ ] All functional requirements have Release Phase assignments (Phase 1, 2, or 3)
+- [ ] MVP scope is clearly flagged and distinguishable from future phases
+- [ ] Phased roadmap for advanced features is clearly defined
+- [ ] All requirements have priority levels (Critical, High, Medium, Low)
+- [ ] Input, processing, and output are specified for all functional requirements
+- [ ] Error handling is specified for all operations
+
+### 12.3 Business Rules and Edge Cases
+
+- [ ] Business rules for fraud prevention are explicitly defined (velocity limits, detection rules, validation checks)
+- [ ] Business rules for breakage and liability management are documented (expired cards, unredeemed balances, grace periods)
+- [ ] Business rules for refunds and chargebacks are clearly specified (automatic invalidation, balance adjustments, notifications)
+- [ ] Multi-tenant and SaaS behaviors are defined (tenant isolation, plan limits, feature flags)
+- [ ] Edge cases are addressed (partial refunds, expired cards, failed payments, etc.)
+
+### 12.4 Technical Specifications
+
+- [ ] API specifications are complete with request/response examples for all endpoints
+- [ ] Database schema is fully documented with all tables, relationships, and constraints
+- [ ] Data models include all required fields, types, and validation rules
+- [ ] Authentication and authorization mechanisms are fully specified
+- [ ] Integration points with external services are documented (payment gateways, email, SMS)
+- [ ] Error codes and messages are standardized and documented
+
+### 12.5 Security and Compliance
+
+- [ ] Security requirements are comprehensive (authentication, authorization, encryption, rate limiting)
+- [ ] Compliance requirements (PCI DSS, GDPR) are addressed
+- [ ] Data privacy and protection measures are documented
+- [ ] Audit logging requirements are specified
+- [ ] Security testing requirements are defined
+
+### 12.6 Non-Functional Requirements
+
+- [ ] Performance requirements are measurable and testable (response times, throughput, scalability)
+- [ ] Reliability requirements are specified (uptime, error rates, recovery procedures)
+- [ ] Usability requirements are defined (accessibility, responsive design, browser support)
+- [ ] Maintainability requirements are addressed (code quality, documentation, testing)
+- [ ] Scalability requirements are specified (concurrent users, data volume, growth projections)
+
+### 12.7 Testing and Quality Assurance
+
+- [ ] Testing strategy is defined (unit, integration, E2E, performance, security)
+- [ ] Test coverage requirements are specified
+- [ ] Test data management is addressed
+- [ ] Quality assurance processes are documented
+
+### 12.8 Deployment and Operations
+
+- [ ] Deployment procedures are documented
+- [ ] Infrastructure requirements are specified
+- [ ] Monitoring and logging requirements are defined
+- [ ] Backup and disaster recovery procedures are documented
+
+### 12.9 Documentation and Maintenance
+
+- [ ] User documentation requirements are specified
+- [ ] Developer documentation requirements are defined
+- [ ] Maintenance and support procedures are documented
+- [ ] Change management process is defined
+
+### 12.10 Validation Notes
+
+**How to Use This Checklist:**
+1. Review each item systematically
+2. Mark items as complete when verified
+3. Document any gaps or issues found
+4. Update the SRS document to address identified gaps
+5. Re-validate until all critical items are complete
+
+**Completion Criteria:**
+- All critical items (security, compliance, core functionality) must be complete
+- At least 90% of all checklist items should be complete before proceeding to implementation
+- Any incomplete items should be documented as known limitations or future enhancements
 
 ## 11. Appendices
 
