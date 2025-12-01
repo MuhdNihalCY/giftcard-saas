@@ -9,15 +9,29 @@ export const getRedisClient = (): Redis | null => {
     return redisClient;
   }
 
+  // If REDIS_URL is not set, don't try to connect
+  if (!env.REDIS_URL) {
+    logger.info('Redis URL not configured, caching disabled');
+    return null;
+  }
+
   try {
     redisClient = new Redis(env.REDIS_URL, {
       retryStrategy: (times) => {
+        // Stop retrying after 3 attempts
+        if (times > 3) {
+          logger.warn('Redis connection failed after 3 retries, disabling Redis');
+          redisClient = null;
+          return null; // Stop retrying
+        }
         const delay = Math.min(times * 50, 2000);
         return delay;
       },
-      maxRetriesPerRequest: 3,
+      maxRetriesPerRequest: null, // Don't retry on individual requests
       enableReadyCheck: true,
       lazyConnect: true,
+      connectTimeout: 5000, // 5 second timeout
+      commandTimeout: 3000, // 3 second command timeout
     });
 
     redisClient.on('connect', () => {
@@ -29,7 +43,14 @@ export const getRedisClient = (): Redis | null => {
     });
 
     redisClient.on('error', (error) => {
-      logger.error('Redis client error', { error: error.message });
+      logger.warn('Redis client error, disabling Redis', { error: error.message });
+      // Disable Redis completely on error to prevent crashes
+      try {
+        redisClient?.disconnect();
+      } catch (e) {
+        // Ignore disconnect errors
+      }
+      redisClient = null;
     });
 
     redisClient.on('close', () => {

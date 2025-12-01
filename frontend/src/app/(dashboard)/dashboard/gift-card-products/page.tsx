@@ -55,7 +55,7 @@ export default function GiftCardProductsPage() {
       }
 
       if (filters.isActive !== '') {
-        params.isActive = filters.isActive === 'true';
+        params.isActive = String(filters.isActive === 'true');
       }
 
       const response = await api.get('/gift-card-products', { params });

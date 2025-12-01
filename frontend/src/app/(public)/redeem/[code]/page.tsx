@@ -68,7 +68,7 @@ export default function RedeemPage() {
       setIsRedeeming(true);
       setError('');
 
-      const response = await api.post(`/redemptions/redeem/${code}`, {
+      await api.post(`/redemptions/redeem/${code}`, {
         ...data,
         redemptionMethod: 'LINK',
       });

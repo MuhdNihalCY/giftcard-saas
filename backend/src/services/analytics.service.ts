@@ -1,4 +1,5 @@
 import prisma from '../config/database';
+import breakageService from './breakage.service';
 
 export interface AnalyticsFilters {
   merchantId?: string;
@@ -232,6 +233,21 @@ export class AnalyticsService {
       totalOutstanding,
       totalRedeemed,
       redemptionRate: total > 0 ? (redeemed / total) * 100 : 0,
+    };
+  }
+
+  /**
+   * Get breakage analytics
+   */
+  async getBreakageAnalytics(filters: AnalyticsFilters) {
+    const { merchantId, startDate, endDate } = filters;
+
+    const calculations = await breakageService.calculateBreakage(merchantId, startDate, endDate);
+    const metrics = merchantId ? await breakageService.getBreakageMetrics(merchantId) : null;
+
+    return {
+      calculations,
+      metrics,
     };
   }
 }

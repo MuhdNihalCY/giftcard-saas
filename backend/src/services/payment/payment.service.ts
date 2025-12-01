@@ -9,6 +9,8 @@ import razorpayService from './razorpay.service';
 import giftCardService from '../giftcard.service';
 import giftCardProductService from '../giftcard-product.service';
 import deliveryService from '../delivery/delivery.service';
+import fraudPreventionService from '../fraud-prevention.service';
+import crypto from 'crypto';
 import type { PaymentMetadata, TransactionMetadata, RefundResult, ProductPaymentData } from '../../types/payment';
 
 export interface CreatePaymentData {
@@ -19,6 +21,11 @@ export interface CreatePaymentData {
   paymentMethod: PaymentMethod;
   returnUrl?: string;
   cancelUrl?: string;
+  ipAddress?: string;
+  email?: string;
+  phone?: string;
+  paymentMethodId?: string;
+  userAgent?: string;
 }
 
 export interface ConfirmPaymentData {
@@ -52,6 +59,10 @@ export interface BulkPurchaseData {
   returnUrl?: string;
   cancelUrl?: string;
   customerId?: string;
+  ipAddress?: string;
+  email?: string;
+  phone?: string;
+  paymentMethodId?: string;
 }
 
 export class PaymentService {
@@ -59,7 +70,7 @@ export class PaymentService {
    * Create payment
    */
   async createPayment(data: CreatePaymentData) {
-    const { giftCardId, customerId, amount, currency, paymentMethod, returnUrl, cancelUrl } = data;
+    const { giftCardId, customerId, amount, currency, paymentMethod, returnUrl, cancelUrl, ipAddress, email, phone, paymentMethodId } = data;
 
     // Verify gift card exists
     const giftCard = await giftCardService.getById(giftCardId);
@@ -72,6 +83,36 @@ export class PaymentService {
     const amountDiff = Math.abs(amount - Number(giftCard.value));
     if (amountDiff > 0.01) {
       throw new ValidationError('Payment amount does not match gift card value');
+    }
+
+    // Perform fraud prevention checks (if customer ID provided)
+    if (customerId) {
+      const fraudCheck = await fraudPreventionService.performFraudCheck(
+        customerId,
+        ipAddress || 'unknown',
+        amount,
+        currency,
+        email || giftCard.recipientEmail || undefined,
+        phone || undefined,
+        paymentMethodId,
+        paymentMethod
+      );
+
+      if (!fraudCheck.allowed) {
+        throw new ValidationError(fraudCheck.reason || 'Transaction blocked by fraud prevention system');
+      }
+
+      // If requires manual review, log it but allow transaction
+      if (fraudCheck.requiresManualReview) {
+        logger.warn('Transaction flagged for manual review', {
+          customerId,
+          amount,
+          currency,
+          riskScore: fraudCheck.riskScore,
+          reason: fraudCheck.reason,
+        });
+        // In production, create a review record in database
+      }
     }
 
     let paymentIntentId: string | undefined;
@@ -117,12 +158,35 @@ export class PaymentService {
         break;
 
       case PaymentMethod.UPI:
-        // UPI integration would go here
-        // For now, we'll treat it similar to Razorpay
-        throw new ValidationError('UPI payment method not yet implemented');
+        const upiService = (await import('./upi.service')).default;
+        const upiResult = await upiService.createOrder({
+          amount,
+          currency,
+          giftCardId,
+        });
+        orderId = upiResult.orderId;
+        break;
 
       default:
         throw new ValidationError('Invalid payment method');
+    }
+
+    // Track IP address
+    if (ipAddress) {
+      const ipTrackingService = (await import('../ip-tracking.service')).default;
+      // Generate device fingerprint from user agent
+      const deviceFingerprint = data.userAgent && ipAddress
+        ? this.generateDeviceFingerprint(data.userAgent, ipAddress)
+        : undefined;
+      
+      await ipTrackingService.trackIP({
+        ipAddress,
+        userId: customerId,
+        action: 'PAYMENT',
+        resourceId: giftCardId,
+        userAgent: data.userAgent,
+        deviceFingerprint,
+      });
     }
 
     // Create payment record
@@ -135,6 +199,8 @@ export class PaymentService {
         paymentMethod,
         paymentIntentId: paymentIntentId || orderId || '',
         status,
+        ipAddress: ipAddress || null,
+        userAgent: data.userAgent || null,
         metadata: {
           returnUrl,
           cancelUrl,
@@ -222,6 +288,26 @@ export class PaymentService {
         const razorpayPayment = await razorpayService.getPayment(paymentIdFromRazorpay);
         transactionId = razorpayPayment.transactionId;
         confirmed = razorpayPayment.status === 'captured';
+        break;
+
+      case PaymentMethod.UPI:
+        if (!orderId || !signature) {
+          throw new ValidationError('Order ID and signature are required for UPI');
+        }
+        const upiService = (await import('./upi.service')).default;
+        // Get payment ID from metadata or request
+        const paymentIdFromUPI = payment.paymentIntentId; // This would be the Razorpay payment ID for UPI
+        const isUPIValid = upiService.verifyPaymentSignature({
+          orderId,
+          paymentId: paymentIdFromUPI,
+          signature,
+        });
+        if (!isUPIValid) {
+          throw new ValidationError('Invalid UPI payment signature');
+        }
+        const upiPayment = await upiService.getPayment(paymentIdFromUPI);
+        transactionId = upiPayment.transactionId;
+        confirmed = upiPayment.status === 'captured';
         break;
 
       default:
@@ -452,6 +538,18 @@ export class PaymentService {
         break;
       }
 
+      case PaymentMethod.UPI: {
+        const upiService = (await import('./upi.service')).default;
+        const result = await upiService.refundPayment(payment.transactionId, amount);
+        refundResult = {
+          success: true,
+          refundId: result.refundId ? String(result.refundId) : undefined,
+          amount: result.amount,
+          status: result.status ? String(result.status) : undefined,
+        };
+        break;
+      }
+
       default:
         throw new ValidationError('Refund not supported for this payment method');
     }
@@ -492,6 +590,31 @@ export class PaymentService {
       },
     });
 
+    // Adjust merchant balance (deduct refund amount if payout already made)
+    const merchant = await prisma.user.findUnique({
+      where: { id: giftCard.merchantId },
+    });
+
+    if (merchant) {
+      const currentBalance = Number(merchant.merchantBalance);
+      // Deduct refund amount from merchant balance
+      const newMerchantBalance = Math.max(0, currentBalance - refundAmount);
+
+      await prisma.user.update({
+        where: { id: giftCard.merchantId },
+        data: {
+          merchantBalance: new Decimal(newMerchantBalance),
+        },
+      });
+
+      logger.info('Merchant balance adjusted for refund', {
+        merchantId: giftCard.merchantId,
+        refundAmount,
+        previousBalance: currentBalance,
+        newBalance: newMerchantBalance,
+      });
+    }
+
     return {
       refundId: refundResult.refundId,
       amount: refundAmount,
@@ -513,8 +636,12 @@ export class PaymentService {
     customMessage?: string;
     returnUrl?: string;
     cancelUrl?: string;
+    ipAddress?: string;
+    email?: string;
+    phone?: string;
+    paymentMethodId?: string;
   }) {
-    const { productId, amount, customerId, currency: _currency, paymentMethod, recipientEmail, recipientName, customMessage, returnUrl, cancelUrl } = data;
+    const { productId, amount, customerId, currency: _currency, paymentMethod, recipientEmail, recipientName, customMessage, returnUrl, cancelUrl, ipAddress, email, phone, paymentMethodId } = data;
 
     // Get product
     const product = await giftCardProductService.getById(productId);
@@ -595,6 +722,11 @@ export class PaymentService {
       paymentMethod,
       returnUrl,
       cancelUrl,
+      ipAddress,
+      email: email || recipientEmail,
+      phone,
+      paymentMethodId,
+      userAgent,
     });
   }
 
@@ -602,7 +734,7 @@ export class PaymentService {
    * Bulk purchase - create multiple gift cards with different recipients
    */
   async bulkPurchase(data: BulkPurchaseData) {
-    const { productId, merchantId, recipients, currency, paymentMethod, returnUrl, cancelUrl, customerId } = data;
+    const { productId, merchantId, recipients, currency, paymentMethod, returnUrl, cancelUrl, customerId, ipAddress, email, phone, paymentMethodId, userAgent } = data;
 
     if (!recipients || recipients.length === 0) {
       throw new ValidationError('At least one recipient is required');
@@ -610,6 +742,34 @@ export class PaymentService {
 
     if (recipients.length > 50) {
       throw new ValidationError('Maximum 50 recipients allowed per bulk purchase');
+    }
+
+    // Perform fraud prevention checks for bulk purchase
+    if (customerId) {
+      const totalAmount = recipients.reduce((sum, r) => sum + r.amount, 0);
+      const fraudCheck = await fraudPreventionService.performFraudCheck(
+        customerId,
+        ipAddress || 'unknown',
+        totalAmount,
+        currency,
+        email,
+        phone,
+        paymentMethodId,
+        paymentMethod
+      );
+
+      if (!fraudCheck.allowed) {
+        throw new ValidationError(fraudCheck.reason || 'Bulk purchase blocked by fraud prevention system');
+      }
+
+      if (fraudCheck.requiresManualReview) {
+        logger.warn('Bulk purchase flagged for manual review', {
+          customerId,
+          recipientCount: recipients.length,
+          totalAmount,
+          riskScore: fraudCheck.riskScore,
+        });
+      }
     }
 
     let product: ProductPaymentData | null = null;
@@ -762,10 +922,34 @@ export class PaymentService {
         break;
 
       case PaymentMethod.UPI:
-        throw new ValidationError('UPI payment method not yet implemented');
+        const upiService = (await import('./upi.service')).default;
+        const upiResult = await upiService.createOrder({
+          amount: totalSalePrice,
+          currency: product?.currency || currency,
+          giftCardId: primaryGiftCard.id,
+        });
+        orderId = upiResult.orderId;
+        break;
 
       default:
         throw new ValidationError('Invalid payment method');
+    }
+
+    // Track IP address for bulk purchase
+    if (ipAddress) {
+      const ipTrackingService = (await import('../ip-tracking.service')).default;
+      const deviceFingerprint = userAgent && ipAddress
+        ? this.generateDeviceFingerprint(userAgent, ipAddress)
+        : undefined;
+      
+      await ipTrackingService.trackIP({
+        ipAddress,
+        userId: customerId,
+        action: 'PAYMENT',
+        resourceId: primaryGiftCard.id,
+        userAgent: userAgent || undefined,
+        deviceFingerprint,
+      });
     }
 
     // Create payment record with metadata containing all gift card IDs
@@ -778,6 +962,8 @@ export class PaymentService {
         paymentMethod,
         paymentIntentId: paymentIntentId || orderId || '',
         status,
+        ipAddress: ipAddress || null,
+        userAgent: userAgent || null,
         metadata: {
           type: 'bulk_purchase',
           giftCardIds: giftCards.map(gc => gc.id),
@@ -827,6 +1013,16 @@ export class PaymentService {
       totalSalePrice, // What customer pays
       totalGiftCardValue: recipients.reduce((sum, r) => sum + r.amount, 0), // Total actual gift card values
     };
+  }
+
+  /**
+   * Generate device fingerprint from user agent and IP
+   */
+  private generateDeviceFingerprint(userAgent: string, ipAddress: string): string {
+    // Create a hash from user agent and IP address
+    // In production, you might want to include more factors like screen resolution, timezone, etc.
+    const fingerprintData = `${userAgent}|${ipAddress}`;
+    return crypto.createHash('sha256').update(fingerprintData).digest('hex').substring(0, 32);
   }
 }
 

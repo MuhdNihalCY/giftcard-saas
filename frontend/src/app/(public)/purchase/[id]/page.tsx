@@ -12,7 +12,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuthStore } from '@/store/authStore';
 import { Navigation } from '@/components/Navigation';
-import { useToast } from '@/components/ui/ToastContainer';
 import { CardSkeleton } from '@/components/ui/Skeleton';
 
 const purchaseSchema = z.object({
@@ -27,14 +26,13 @@ type PurchaseFormData = z.infer<typeof purchaseSchema>;
 export default function PurchasePage() {
   const params = useParams();
   const router = useRouter();
-  const { isAuthenticated, user } = useAuthStore();
-  const toast = useToast();
+  const { user } = useAuthStore();
   const giftCardId = params.id as string;
   const [giftCard, setGiftCard] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentIntent, setPaymentIntent] = useState<any>(null);
+  const [_paymentIntent, setPaymentIntent] = useState<any>(null);
 
   const {
     register,

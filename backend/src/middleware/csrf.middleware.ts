@@ -16,20 +16,37 @@ const tokens = new csrf();
  */
 export const generateCSRFToken = (req: Request, res: Response, next: NextFunction): void => {
   try {
-    // Get or create secret from session
-    if (!req.session?.csrfSecret) {
+    // Try to get or create secret from session
+    // If session is not available (e.g., Redis error), continue without error
+    if (!req.session) {
+      logger.warn('Session not available for CSRF token generation, skipping');
+      return next();
+    }
+
+    if (!req.session.csrfSecret) {
+      try {
       req.session.csrfSecret = tokens.secretSync();
+      } catch (sessionError) {
+        logger.warn('Failed to create CSRF secret in session', { error: sessionError });
+        // Continue without CSRF token if session save fails
+        return next();
+      }
     }
 
     const secret = req.session.csrfSecret;
     const token = tokens.create(secret);
 
     // Attach token to response
+    const isProduction = process.env.NODE_ENV === 'production';
     res.locals.csrfToken = token;
     res.cookie('XSRF-TOKEN', token, {
       httpOnly: false, // Must be accessible to JavaScript for frontend
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: isProduction,
+      // CORS with credentials requires specific sameSite settings:
+      // - 'lax' in development: Allows cross-origin GET requests and same-site POST requests
+      // - 'none' in production: Allows all cross-origin requests (requires secure: true)
+      // Note: Must match session cookie sameSite setting for consistency
+      sameSite: isProduction ? ('none' as const) : ('lax' as const),
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     });
 
@@ -39,7 +56,9 @@ export const generateCSRFToken = (req: Request, res: Response, next: NextFunctio
     next();
   } catch (error) {
     logger.error('Failed to generate CSRF token', { error });
-    next(new UnauthorizedError('Failed to generate CSRF token'));
+    // Don't fail the request if CSRF token generation fails
+    // Just continue without the token
+    next();
   }
 };
 

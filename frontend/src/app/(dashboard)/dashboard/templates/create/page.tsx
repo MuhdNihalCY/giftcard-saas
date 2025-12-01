@@ -27,7 +27,6 @@ export default function CreateTemplatePage() {
     register,
     handleSubmit,
     formState: { errors },
-    watch,
   } = useForm<TemplateFormData>({
     resolver: zodResolver(templateSchema),
     defaultValues: {

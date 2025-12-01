@@ -28,5 +28,10 @@ router.get(
   analyticsController.getGiftCardStats.bind(analyticsController)
 );
 
+router.get(
+  '/breakage',
+  analyticsController.getBreakageAnalytics.bind(analyticsController)
+);
+
 export default router;
 

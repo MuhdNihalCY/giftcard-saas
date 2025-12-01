@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { FilterBar } from '@/components/dashboard/FilterBar';
-import { Badge, getStatusBadgeVariant } from '@/components/ui/Badge';
+import { Badge } from '@/components/ui/Badge';
 import api from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';

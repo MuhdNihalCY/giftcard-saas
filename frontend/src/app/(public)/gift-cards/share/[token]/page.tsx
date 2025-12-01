@@ -14,7 +14,7 @@ import { CardSkeleton } from '@/components/ui/Skeleton';
 export default function GiftCardSharePage() {
   const params = useParams();
   const router = useRouter();
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
   const token = params.token as string;
   const [giftCard, setGiftCard] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);

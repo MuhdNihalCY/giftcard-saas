@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
-import { Search, X, Calendar, Filter } from 'lucide-react';
+import { Search, X, Filter } from 'lucide-react';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 
 interface DateRange {
@@ -39,7 +39,6 @@ export function FilterBar({
   onClear,
   className,
 }: FilterBarProps) {
-  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [localSearch, setLocalSearch] = useState(searchValue);
 
   // Sync local search with prop

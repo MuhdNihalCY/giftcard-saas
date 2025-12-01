@@ -1,8 +1,9 @@
 'use client';
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Card } from './ui/Card';
 import { Button } from './ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
+import { AlertCircle } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
@@ -12,7 +13,6 @@ interface Props {
 interface State {
   hasError: boolean;
   error: Error | null;
-  errorInfo: ErrorInfo | null;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -21,7 +21,6 @@ export class ErrorBoundary extends Component<Props, State> {
     this.state = {
       hasError: false,
       error: null,
-      errorInfo: null,
     };
   }
 
@@ -29,30 +28,18 @@ export class ErrorBoundary extends Component<Props, State> {
     return {
       hasError: true,
       error,
-      errorInfo: null,
     };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // ErrorBoundary should log errors - this is acceptable
-    if (process.env.NODE_ENV === 'development') {
-      console.error('ErrorBoundary caught an error:', error, errorInfo);
-    }
-    // In production, consider sending to error tracking service
-    this.setState({
-      error,
-      errorInfo,
-    });
-
-    // Log error to monitoring service (e.g., Sentry)
-    // Sentry.captureException(error, { contexts: { react: { componentStack: errorInfo.componentStack } } });
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    // You can log to an error reporting service here
   }
 
   handleReset = () => {
     this.setState({
       hasError: false,
       error: null,
-      errorInfo: null,
     });
   };
 
@@ -63,40 +50,36 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle className="text-red-600">Something went wrong</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-700 mb-4">
-                We're sorry, but something unexpected happened. Please try refreshing the page.
+        <div className="min-h-screen bg-navy-900 flex items-center justify-center p-4">
+          <Card className="p-8 bg-navy-800 border-navy-700 max-w-md w-full">
+            <div className="text-center">
+              <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-navy-50 mb-2">Something went wrong</h2>
+              <p className="text-navy-300 mb-6">
+                {this.state.error?.message || 'An unexpected error occurred'}
               </p>
-              
-              {process.env.NODE_ENV === 'development' && this.state.error && (
-                <details className="mb-4">
-                  <summary className="cursor-pointer text-sm text-gray-600 mb-2">
-                    Error Details (Development Only)
-                  </summary>
-                  <pre className="text-xs bg-gray-100 p-3 rounded overflow-auto max-h-48">
-                    {this.state.error.toString()}
-                    {this.state.errorInfo?.componentStack}
-                  </pre>
-                </details>
-              )}
-
-              <div className="flex gap-2">
+              <div className="flex gap-3 justify-center">
                 <Button onClick={this.handleReset} variant="primary">
                   Try Again
                 </Button>
                 <Button
-                  onClick={() => window.location.reload()}
+                  onClick={() => (window.location.href = '/dashboard')}
                   variant="outline"
                 >
-                  Refresh Page
+                  Go to Dashboard
                 </Button>
               </div>
-            </CardContent>
+              {process.env.NODE_ENV === 'development' && this.state.error && (
+                <details className="mt-6 text-left">
+                  <summary className="text-navy-400 cursor-pointer mb-2">
+                    Error Details (Development Only)
+                  </summary>
+                  <pre className="text-xs text-navy-400 bg-navy-900 p-3 rounded overflow-auto">
+                    {this.state.error.stack}
+                  </pre>
+                </details>
+              )}
+            </div>
           </Card>
         </div>
       );
@@ -105,5 +88,3 @@ export class ErrorBoundary extends Component<Props, State> {
     return this.props.children;
   }
 }
-
-

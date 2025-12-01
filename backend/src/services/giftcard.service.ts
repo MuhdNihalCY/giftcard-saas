@@ -238,8 +238,14 @@ export class GiftCardService {
       cacheKey = `giftcards:all:page:${page}:limit:${limit}:status:${status || 'all'}`;
     }
 
-    // Try to get from cache
-    const cached = await cacheService.get<{ giftCards: GiftCardWithRelations[]; pagination: PaginationResult }>(cacheKey);
+    // Try to get from cache (errors are handled internally, won't throw)
+    let cached: { giftCards: GiftCardWithRelations[]; pagination: PaginationResult } | null = null;
+    try {
+      cached = await cacheService.get<{ giftCards: GiftCardWithRelations[]; pagination: PaginationResult }>(cacheKey);
+    } catch (error) {
+      // Cache errors should not break the request - just log and continue
+      logger.warn('Cache get error in gift card list', { error });
+    }
     if (cached) {
       return cached;
     }
@@ -281,8 +287,13 @@ export class GiftCardService {
       },
     };
 
-    // Cache for 2 minutes
+    // Cache for 2 minutes (errors are handled internally, won't throw)
+    try {
     await cacheService.set(cacheKey, result, 120);
+    } catch (error) {
+      // Cache errors should not break the request - just log and continue
+      logger.warn('Cache set error in gift card list', { error });
+    }
 
     return result;
   }

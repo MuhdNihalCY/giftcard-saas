@@ -2,12 +2,9 @@
 
 import { useEffect, useState, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 import api from '@/lib/api';
-import { formatCurrency } from '@/lib/utils';
-import Link from 'next/link';
 import { Navigation } from '@/components/Navigation';
 import { GiftCardSkeleton } from '@/components/ui/Skeleton';
 import { ProductCard } from '@/components/ProductCard';

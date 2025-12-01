@@ -74,6 +74,17 @@ export const authorize = (...roles: string[]) => {
       return next(new UnauthorizedError('Authentication required'));
     }
 
+    // Debug logging in development
+    if (process.env.NODE_ENV === 'development') {
+      const logger = require('../utils/logger').default;
+      logger.debug('Authorization check', {
+        userRole: req.user.role,
+        allowedRoles: roles,
+        path: req.path,
+        matches: roles.includes(req.user.role),
+      });
+    }
+
     if (!roles.includes(req.user.role)) {
       return next(new UnauthorizedError('Insufficient permissions'));
     }

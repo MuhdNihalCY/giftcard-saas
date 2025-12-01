@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 import { Decimal } from '@prisma/client/runtime/library';
 import stripeService from '../services/payment/stripe.service';
+import chargebackService from '../services/chargeback.service';
 import { PaymentMethod, PaymentStatus } from '@prisma/client';
 import prisma from '../config/database';
 import { env } from '../config/env';
@@ -25,6 +26,11 @@ export class WebhookController {
 
         case 'charge.refunded':
           await this.handleStripeRefund(event.data.object as unknown as Record<string, unknown>);
+          break;
+
+        case 'charge.dispute.created':
+        case 'chargeback.created':
+          await this.handleStripeChargeback(event.data.object as unknown as Record<string, unknown>);
           break;
 
         default:
@@ -110,6 +116,55 @@ export class WebhookController {
     }
   }
 
+  private async handleStripeChargeback(dispute: Record<string, unknown>): Promise<void> {
+    try {
+      const disputeId = dispute.id as string | undefined;
+      const chargeId = dispute.charge as string | undefined;
+      const amount = dispute.amount as number | undefined;
+      const currency = dispute.currency as string | undefined;
+      const reason = dispute.reason as string | undefined;
+
+      if (!disputeId || !chargeId || !amount) {
+        logger.warn('Invalid chargeback webhook data', { disputeId, chargeId });
+        return;
+      }
+
+      // Find payment by charge ID (transaction ID)
+      const payment = await prisma.payment.findFirst({
+        where: {
+          transactionId: chargeId,
+          paymentMethod: PaymentMethod.STRIPE,
+        },
+      });
+
+      if (!payment) {
+        logger.warn('Payment not found for chargeback', { chargeId, disputeId });
+        return;
+      }
+
+      // Convert amount from cents to dollars
+      const chargebackAmount = amount / 100;
+      const fee = (dispute.balance_transaction as Record<string, unknown>)?.fee
+        ? Number((dispute.balance_transaction as Record<string, unknown>).fee) / 100
+        : 0;
+
+      await chargebackService.handleChargeback({
+        paymentId: payment.id,
+        paymentMethod: PaymentMethod.STRIPE,
+        chargebackId: disputeId,
+        amount: chargebackAmount,
+        currency: currency || 'USD',
+        reason: reason || 'Chargeback received from Stripe',
+        fee,
+        disputeId,
+      });
+
+      logger.info('Stripe chargeback processed', { disputeId, paymentId: payment.id });
+    } catch (error: any) {
+      logger.error('Error handling Stripe chargeback', { error: error.message });
+    }
+  }
+
   async razorpayWebhook(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const event = req.body;
@@ -137,6 +192,11 @@ export class WebhookController {
           await this.handleRazorpayPaymentFailed(event.payload.payment.entity);
           break;
 
+        case 'payment.dispute.created':
+        case 'chargeback.created':
+          await this.handleRazorpayChargeback(event.payload.dispute?.entity || event.payload.chargeback?.entity);
+          break;
+
         default:
           logger.info('Unhandled Razorpay webhook event', { eventType: event.event });
       }
@@ -151,10 +211,17 @@ export class WebhookController {
     const paymentId = payment.id as string | undefined;
     if (!paymentId) return;
     
+    // Check for both Razorpay and UPI payments (UPI uses Razorpay infrastructure)
+    const paymentMethod = (payment.method as string)?.toLowerCase() === 'upi' 
+      ? PaymentMethod.UPI 
+      : PaymentMethod.RAZORPAY;
+    
     const paymentRecord = await prisma.payment.findFirst({
       where: {
         paymentIntentId: paymentId,
-        paymentMethod: PaymentMethod.RAZORPAY,
+        paymentMethod: {
+          in: [PaymentMethod.RAZORPAY, PaymentMethod.UPI],
+        },
       },
     });
 
@@ -180,7 +247,7 @@ export class WebhookController {
         userId: paymentRecord.customerId || null,
         metadata: {
           paymentId: paymentRecord.id,
-          paymentMethod: PaymentMethod.RAZORPAY,
+          paymentMethod: paymentRecord.paymentMethod,
         } satisfies { paymentId: string; paymentMethod: PaymentMethod },
       },
     });
@@ -190,10 +257,13 @@ export class WebhookController {
     const paymentId = payment.id as string | undefined;
     if (!paymentId) return;
     
+    // Check for both Razorpay and UPI payments
     const paymentRecord = await prisma.payment.findFirst({
       where: {
         paymentIntentId: paymentId,
-        paymentMethod: PaymentMethod.RAZORPAY,
+        paymentMethod: {
+          in: [PaymentMethod.RAZORPAY, PaymentMethod.UPI],
+        },
       },
     });
 
@@ -202,6 +272,55 @@ export class WebhookController {
         where: { id: paymentRecord.id },
         data: { status: PaymentStatus.FAILED },
       });
+    }
+  }
+
+  private async handleRazorpayChargeback(dispute: Record<string, unknown>): Promise<void> {
+    try {
+      const disputeId = dispute.id as string | undefined;
+      const paymentId = dispute.payment_id as string | undefined;
+      const amount = dispute.amount as number | undefined;
+      const currency = dispute.currency as string | undefined;
+      const reason = dispute.reason as string | undefined;
+
+      if (!disputeId || !paymentId || !amount) {
+        logger.warn('Invalid Razorpay chargeback data', { disputeId, paymentId });
+        return;
+      }
+
+      // Find payment
+      const payment = await prisma.payment.findFirst({
+        where: {
+          paymentIntentId: paymentId,
+          paymentMethod: {
+            in: [PaymentMethod.RAZORPAY, PaymentMethod.UPI],
+          },
+        },
+      });
+
+      if (!payment) {
+        logger.warn('Payment not found for chargeback', { paymentId, disputeId });
+        return;
+      }
+
+      // Convert amount from paise to rupees
+      const chargebackAmount = amount / 100;
+      const fee = dispute.fee ? Number(dispute.fee) / 100 : 0;
+
+      await chargebackService.handleChargeback({
+        paymentId: payment.id,
+        paymentMethod: payment.paymentMethod,
+        chargebackId: disputeId,
+        amount: chargebackAmount,
+        currency: currency || 'INR',
+        reason: reason || 'Chargeback received from Razorpay',
+        fee,
+        disputeId,
+      });
+
+      logger.info('Razorpay chargeback processed', { disputeId, paymentId: payment.id });
+    } catch (error: any) {
+      logger.error('Error handling Razorpay chargeback', { error: error.message });
     }
   }
 }

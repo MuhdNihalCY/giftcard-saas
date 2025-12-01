@@ -107,12 +107,31 @@ export class SchedulerService {
   }
 
   /**
+   * Schedule IP tracking cleanup
+   * Runs every week on Sunday at 4 AM
+   */
+  scheduleIPTrackingCleanup() {
+    cron.schedule('0 4 * * 0', async () => {
+      logger.info('Starting scheduled IP tracking cleanup');
+
+      try {
+        const ipTrackingService = (await import('../services/ip-tracking.service')).default;
+        const deleted = await ipTrackingService.cleanOldRecords(90); // Keep 90 days
+        logger.info('IP tracking cleanup completed', { deleted });
+      } catch (error: any) {
+        logger.error('Error cleaning IP tracking records', { error: error.message });
+      }
+    });
+  }
+
+  /**
    * Start all scheduled jobs
    */
   start() {
     this.scheduleGiftCardExpiryCheck();
     this.scheduleExpiryReminders();
     this.scheduleTokenCleanup();
+    this.scheduleIPTrackingCleanup();
     logger.info('All scheduled jobs started');
   }
 }

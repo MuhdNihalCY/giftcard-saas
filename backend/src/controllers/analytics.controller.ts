@@ -67,6 +67,23 @@ export class AnalyticsController {
       next(error);
     }
   }
+
+  async getBreakageAnalytics(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { merchantId, startDate, endDate } = req.query;
+      const result = await analyticsService.getBreakageAnalytics({
+        merchantId: merchantId as string,
+        startDate: startDate ? new Date(startDate as string) : undefined,
+        endDate: endDate ? new Date(endDate as string) : undefined,
+      });
+      res.json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new AnalyticsController();

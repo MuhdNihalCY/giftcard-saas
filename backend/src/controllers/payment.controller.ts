@@ -6,9 +6,14 @@ export class PaymentController {
   async createPayment(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const customerId = req.user?.userId;
+      const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+      const userAgent = req.headers['user-agent'];
       const result = await paymentService.createPayment({
         ...req.body,
         customerId,
+        ipAddress: Array.isArray(ipAddress) ? ipAddress[0] : ipAddress,
+        email: req.user?.email || req.body.email,
+        userAgent: typeof userAgent === 'string' ? userAgent : undefined,
       });
       res.status(201).json({
         success: true,
@@ -87,9 +92,14 @@ export class PaymentController {
   async createPaymentFromProduct(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const customerId = req.user?.userId;
+      const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+      const userAgent = req.headers['user-agent'];
       const result = await paymentService.createPaymentFromProduct({
         ...req.body,
         customerId,
+        ipAddress: Array.isArray(ipAddress) ? ipAddress[0] : ipAddress,
+        email: req.user?.email || req.body.email,
+        userAgent: typeof userAgent === 'string' ? userAgent : undefined,
       });
       res.status(201).json({
         success: true,
@@ -104,9 +114,14 @@ export class PaymentController {
   async bulkPurchase(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const customerId = req.user?.userId;
+      const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+      const userAgent = req.headers['user-agent'];
       const result = await paymentService.bulkPurchase({
         ...req.body,
         customerId,
+        ipAddress: Array.isArray(ipAddress) ? ipAddress[0] : ipAddress,
+        email: req.user?.email || req.body.email,
+        userAgent: typeof userAgent === 'string' ? userAgent : undefined,
       });
       res.status(201).json({
         success: true,

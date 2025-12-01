@@ -5,13 +5,14 @@ import { UnauthorizedError } from '../utils/errors';
 
 export class CommunicationLogController {
   /**
-   * Get communication logs (Admin only)
+   * Get communication logs
+   * - Admins can view all logs
+   * - Merchants can only view their own logs
    */
   async getLogs(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      // Check if user is admin
-      if (req.user?.role !== 'ADMIN') {
-        throw new UnauthorizedError('Only administrators can view communication logs');
+      if (!req.user) {
+        throw new UnauthorizedError('Authentication required');
       }
 
       const {
@@ -19,17 +20,34 @@ export class CommunicationLogController {
         status,
         recipient,
         userId,
+        merchantId,
         startDate,
         endDate,
         page,
         limit,
       } = req.query;
 
+      // If user is a merchant, restrict to their own logs
+      let filteredUserId: string | undefined = userId as string | undefined;
+      if (req.user.role === 'MERCHANT') {
+        // Merchants can only see logs for their own user ID
+        // If merchantId is provided, ensure it matches the logged-in merchant
+        const merchantUserId = req.user.userId;
+        if (merchantId && merchantId !== merchantUserId) {
+          throw new UnauthorizedError('You can only view your own communication logs');
+        }
+        // Force userId to be the merchant's ID
+        filteredUserId = merchantUserId;
+      } else if (req.user.role !== 'ADMIN') {
+        // Only ADMIN and MERCHANT roles are allowed
+        throw new UnauthorizedError('Insufficient permissions');
+      }
+
       const result = await communicationLogService.getLogs({
         channel: channel as any,
         status: status as any,
         recipient: recipient as string,
-        userId: userId as string,
+        userId: filteredUserId,
         startDate: startDate ? new Date(startDate as string) : undefined,
         endDate: endDate ? new Date(endDate as string) : undefined,
         page: page ? parseInt(page as string) : undefined,

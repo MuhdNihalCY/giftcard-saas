@@ -7,7 +7,7 @@ import QRCode from 'react-qr-code';
 import NFCService from '@/services/nfc.service';
 import api from '@/lib/api';
 import logger from '@/lib/logger';
-import type { ShareData, NFCShareData } from '@/types/share';
+import type { ShareData } from '@/types/share';
 
 interface GiftCardShareProps {
   giftCardId: string;

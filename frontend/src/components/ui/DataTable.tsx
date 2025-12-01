@@ -3,8 +3,8 @@
 import React, { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Skeleton, TableSkeleton } from '@/components/ui/Skeleton';
-import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Download, MoreVertical } from 'lucide-react';
+import { TableSkeleton } from '@/components/ui/Skeleton';
+import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface Column<T> {

@@ -436,3 +436,6 @@ All endpoints that require `authorize('ADMIN', 'MERCHANT')` are accessible to bo
 This document was generated based on the current codebase state. Features are continuously being added and improved.
 
 
+
+
+

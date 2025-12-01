@@ -8,6 +8,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Include cookies (for CSRF token and session)
 });
 
 let isRefreshing = false;
@@ -27,13 +28,36 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = [];
 };
 
-// Request interceptor to add auth token
+// Helper function to get CSRF token from cookie
+const getCSRFToken = (): string | null => {
+  if (typeof document === 'undefined') return null;
+  const cookies = document.cookie.split(';');
+  for (const cookie of cookies) {
+    const [name, value] = cookie.trim().split('=');
+    if (name === 'XSRF-TOKEN') {
+      return decodeURIComponent(value);
+    }
+  }
+  return null;
+};
+
+// Request interceptor to add auth token and CSRF token
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    // Add auth token
     const token = auth.getAccessToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Add CSRF token for state-changing requests
+    if (config.method && ['post', 'put', 'patch', 'delete'].includes(config.method.toLowerCase())) {
+      const csrfToken = getCSRFToken();
+      if (csrfToken && config.headers) {
+        config.headers['X-CSRF-Token'] = csrfToken;
+      }
+    }
+
     return config;
   },
   (error) => {
@@ -43,7 +67,19 @@ api.interceptors.request.use(
 
 // Response interceptor for error handling and token refresh
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Extract CSRF token from response header or cookie and store it
+    const csrfToken = response.headers['x-csrf-token'];
+    if (csrfToken && typeof document !== 'undefined') {
+      // Update cookie if token is in header
+      // Use SameSite=Lax for development (matches backend) or None for production
+      const isProduction = process.env.NODE_ENV === 'production';
+      const sameSite = isProduction ? 'None' : 'Lax';
+      const secure = isProduction ? '; Secure' : '';
+      document.cookie = `XSRF-TOKEN=${encodeURIComponent(csrfToken)}; path=/; SameSite=${sameSite}${secure}`;
+    }
+    return response;
+  },
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 

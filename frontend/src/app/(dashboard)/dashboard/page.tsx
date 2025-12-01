@@ -98,7 +98,7 @@ export default function DashboardPage() {
         totalCards: giftCards.length,
         totalTransactions,
         avgTransactionValue,
-        merchantBalance: user?.merchantBalance || 0,
+        merchantBalance: (user as any)?.merchantBalance || 0,
       });
 
       setAnalytics({
@@ -308,7 +308,7 @@ export default function DashboardPage() {
                     fill="#8884d8"
                     dataKey="value"
                   >
-                    {revenueByMethodData.map((entry, index) => (
+                    {revenueByMethodData.map((_entry, index) => (
                       <Cell
                         key={`cell-${index}`}
                         fill={COLORS[index % COLORS.length]}

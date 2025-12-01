@@ -6,8 +6,6 @@ import { useAuthStore } from '@/store/authStore';
 import api from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import {
-  LineChart,
-  Line,
   BarChart,
   Bar,
   PieChart,
@@ -17,7 +15,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from 'recharts';
 
@@ -143,7 +140,7 @@ export default function AnalyticsPage() {
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {salesByMethodData.map((entry, index) => (
+                  {salesByMethodData.map((_entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>

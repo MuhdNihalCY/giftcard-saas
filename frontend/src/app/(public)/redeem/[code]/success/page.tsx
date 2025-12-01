@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
@@ -11,7 +11,6 @@ import { Navigation } from '@/components/Navigation';
 
 export default function RedeemSuccessPage() {
   const params = useParams();
-  const router = useRouter();
   const code = params.code as string;
   const [giftCard, setGiftCard] = useState<any>(null);
 

@@ -19,6 +19,7 @@ import {
   FileText,
   MessageSquare,
   Shield,
+  Activity,
   X,
   ChevronLeft,
   ChevronRight,
@@ -114,6 +115,18 @@ export function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
       icon: TrendingUp,
       roles: ['ADMIN', 'MERCHANT'],
     },
+    {
+      label: 'Breakage',
+      href: '/dashboard/breakage',
+      icon: FileText,
+      roles: ['ADMIN', 'MERCHANT'],
+    },
+    {
+      label: 'Chargebacks',
+      href: '/dashboard/chargebacks',
+      icon: CreditCard,
+      roles: ['ADMIN', 'MERCHANT'],
+    },
   ];
 
   // Admin-only navigation items
@@ -134,6 +147,18 @@ export function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
       label: 'Audit Logs',
       href: '/dashboard/admin/audit-logs',
       icon: Shield,
+      roles: ['ADMIN'],
+    },
+    {
+      label: 'Blacklist',
+      href: '/dashboard/admin/blacklist',
+      icon: Shield,
+      roles: ['ADMIN'],
+    },
+    {
+      label: 'System Status',
+      href: '/dashboard/admin/system-status',
+      icon: Activity,
       roles: ['ADMIN'],
     },
   ];

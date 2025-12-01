@@ -18,9 +18,13 @@ export class RedemptionController {
   async redeemGiftCard(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const merchantId = req.user!.userId;
+      const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+      const userAgent = req.headers['user-agent'];
       const result = await redemptionService.redeemGiftCard({
         ...req.body,
         merchantId,
+        ipAddress: Array.isArray(ipAddress) ? ipAddress[0] : ipAddress,
+        userAgent: typeof userAgent === 'string' ? userAgent : undefined,
       });
       res.json({
         success: true,

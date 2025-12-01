@@ -27,45 +27,7 @@ router.get(
   giftCardController.list.bind(giftCardController)
 );
 
-router.get(
-  '/:id',
-  giftCardController.getById.bind(giftCardController)
-);
-
-router.get(
-  '/code/:code',
-  giftCardController.getByCode.bind(giftCardController)
-);
-
-router.get(
-  '/:id/qr',
-  giftCardController.getQRCode.bind(giftCardController)
-);
-
-router.put(
-  '/:id',
-  authenticate,
-  authorize('ADMIN', 'MERCHANT'),
-  validate(updateGiftCardSchema),
-  giftCardController.update.bind(giftCardController)
-);
-
-router.delete(
-  '/:id',
-  authenticate,
-  authorize('ADMIN', 'MERCHANT'),
-  giftCardController.delete.bind(giftCardController)
-);
-
-router.post(
-  '/bulk',
-  authenticate,
-  authorize('ADMIN', 'MERCHANT'),
-  validate(bulkCreateGiftCardSchema),
-  giftCardController.bulkCreate.bind(giftCardController)
-);
-
-// Template Routes
+// Template Routes - MUST be defined before /:id routes to avoid route conflicts
 router.post(
   '/templates',
   authenticate,
@@ -97,6 +59,45 @@ router.delete(
   authenticate,
   authorize('ADMIN', 'MERCHANT'),
   giftCardController.deleteTemplate.bind(giftCardController)
+);
+
+// Gift Card specific routes - defined after templates to avoid conflicts
+router.get(
+  '/code/:code',
+  giftCardController.getByCode.bind(giftCardController)
+);
+
+router.get(
+  '/:id/qr',
+  giftCardController.getQRCode.bind(giftCardController)
+);
+
+router.get(
+  '/:id',
+  giftCardController.getById.bind(giftCardController)
+);
+
+router.put(
+  '/:id',
+  authenticate,
+  authorize('ADMIN', 'MERCHANT'),
+  validate(updateGiftCardSchema),
+  giftCardController.update.bind(giftCardController)
+);
+
+router.delete(
+  '/:id',
+  authenticate,
+  authorize('ADMIN', 'MERCHANT'),
+  giftCardController.delete.bind(giftCardController)
+);
+
+router.post(
+  '/bulk',
+  authenticate,
+  authorize('ADMIN', 'MERCHANT'),
+  validate(bulkCreateGiftCardSchema),
+  giftCardController.bulkCreate.bind(giftCardController)
 );
 
 export default router;

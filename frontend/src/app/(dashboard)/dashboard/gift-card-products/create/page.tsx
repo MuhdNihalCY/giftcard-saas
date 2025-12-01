@@ -49,7 +49,6 @@ export default function CreateProductPage() {
     register,
     handleSubmit,
     formState: { errors },
-    setValue,
     watch,
     control,
   } = useForm<ProductFormData>({

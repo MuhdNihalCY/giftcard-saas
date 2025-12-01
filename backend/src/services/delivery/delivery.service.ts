@@ -39,8 +39,33 @@ export class DeliveryService {
 
     // If scheduled for future, queue it
     if (scheduleFor && new Date(scheduleFor) > new Date()) {
-      // TODO: Implement job queue for scheduled delivery
-      // For now, we'll just store the schedule info
+      const { scheduledDeliveryQueue } = await import('../../config/queue');
+      
+      // Calculate delay in milliseconds
+      const delay = scheduleFor.getTime() - Date.now();
+      
+      // Queue the delivery job
+      await scheduledDeliveryQueue.add(
+        'scheduled-delivery',
+        {
+          giftCardId,
+          deliveryMethod,
+          recipientEmail,
+          recipientPhone,
+          recipientName,
+        },
+        {
+          delay, // Delay in milliseconds
+          jobId: `scheduled-delivery-${giftCardId}-${scheduleFor.getTime()}`,
+        }
+      );
+
+      logger.info('Gift card delivery scheduled', {
+        giftCardId,
+        scheduledFor: scheduleFor.toISOString(),
+        delayMs: delay,
+      });
+
       return {
         scheduled: true,
         scheduledFor: scheduleFor,
@@ -173,7 +198,27 @@ export class DeliveryService {
       }
     }
 
-    // TODO: Add SMS reminder if phone number is stored
+    // Note: SMS reminders would require recipientPhone field in GiftCard schema
+    // Currently, only recipientEmail is stored. To enable SMS reminders:
+    // 1. Add recipientPhone field to GiftCard model
+    // 2. Update gift card creation/update services to accept phone
+    // 3. Uncomment the SMS reminder code below
+    // if (giftCard.recipientPhone) {
+    //   try {
+    //     const smsService = (await import('./sms.service')).default;
+    //     await smsService.sendReminderSMS({
+    //       to: giftCard.recipientPhone,
+    //       giftCardCode: giftCard.code,
+    //       giftCardValue: Number(giftCard.value),
+    //       currency: giftCard.currency,
+    //       daysUntilExpiry,
+    //       redemptionUrl,
+    //     });
+    //     results.push({ method: 'sms', status: 'success' });
+    //   } catch (error: any) {
+    //     results.push({ method: 'sms', status: 'failed', error: error.message });
+    //   }
+    // }
 
     return {
       sent: true,

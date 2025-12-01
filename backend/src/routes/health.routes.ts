@@ -1,54 +1,21 @@
 import { Router, Request, Response } from 'express';
-import prisma from '../config/database';
+import healthController from '../controllers/health.controller';
+import apiDocsController from '../controllers/api-docs.controller';
 
 const router = Router();
 
-/**
- * Health check endpoint
- * GET /health
- */
-router.get('/health', async (_req: Request, res: Response) => {
-  try {
-    // Check database connection
-    await prisma.$queryRaw`SELECT 1`;
-    
-    res.status(200).json({
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      environment: process.env.NODE_ENV || 'development',
-    });
-  } catch (error) {
-    res.status(503).json({
-      status: 'unhealthy',
-      timestamp: new Date().toISOString(),
-      error: 'Database connection failed',
-    });
-  }
+// Handle OPTIONS for all health routes
+router.options('*', (_req: Request, res: Response) => {
+  res.status(204).end();
 });
 
-/**
- * Readiness check endpoint
- * GET /ready
- */
-router.get('/ready', async (_req: Request, res: Response) => {
-  try {
-    // Check database connection
-    await prisma.$queryRaw`SELECT 1`;
-    
-    res.status(200).json({
-      status: 'ready',
-      timestamp: new Date().toISOString(),
-    });
-  } catch (error) {
-    res.status(503).json({
-      status: 'not ready',
-      timestamp: new Date().toISOString(),
-      error: 'Database connection failed',
-    });
-  }
-});
+// Health check endpoints (no authentication required)
+router.get('/', healthController.healthCheck.bind(healthController));
+router.get('/detailed', healthController.detailedHealthCheck.bind(healthController));
+router.get('/metrics', healthController.getMetrics.bind(healthController));
+router.get('/status', healthController.getStatus.bind(healthController));
+
+// API documentation endpoint
+router.get('/docs', apiDocsController.getApiDocs.bind(apiDocsController));
 
 export default router;
-
-

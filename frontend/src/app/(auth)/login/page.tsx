@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
 import api from '@/lib/api';
+import axios from 'axios';
 import { useAuthStore } from '@/store/authStore';
 import Link from 'next/link';
 import logger from '@/lib/logger';
@@ -35,6 +36,45 @@ export default function LoginPage() {
   // Check if already authenticated on mount
   useEffect(() => {
     const check = async () => {
+      try {
+      // Fetch CSRF token first by making a GET request
+      // This will trigger the backend to generate and set the CSRF token cookie
+        // Add timeout to prevent hanging
+      try {
+        // Use the base health endpoint (not under /api/v1)
+          // Get backend URL from environment or use default
+          // Check both NEXT_PUBLIC_API_URL and NEXT_PUBLIC_BACKEND_URL
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+          let backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+          if (!backendUrl && apiUrl) {
+            backendUrl = apiUrl.replace('/api/v1', '');
+          }
+          if (!backendUrl) {
+            backendUrl = 'http://localhost:8000';
+          }
+          
+          // Log in development for debugging
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Health check URL:', `${backendUrl}/health`);
+          }
+          
+          await Promise.race([
+            axios.get(`${backendUrl}/health`, { 
+              withCredentials: true,
+              timeout: 5000, // 5 second timeout
+            }),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Request timeout')), 5000)
+            ),
+          ]);
+      } catch (error) {
+        // Ignore errors - we just need the CSRF token cookie
+          // Log in development for debugging
+          if (process.env.NODE_ENV === 'development') {
+            logger.warn('Health check failed, continuing anyway', { error });
+          }
+      }
+
       // Check localStorage directly first for immediate check
       if (typeof window !== 'undefined') {
         const token = localStorage.getItem('accessToken');
@@ -72,7 +112,13 @@ export default function LoginPage() {
               window.location.replace(redirectUrl);
         return;
       }
+      } catch (error) {
+        // Ensure we always clear the loading state even on error
+        logger.error('Error during auth check', { error });
+      } finally {
+        // Always clear loading state
       setIsChecking(false);
+      }
     };
     check();
   }, [router, checkAuth]);

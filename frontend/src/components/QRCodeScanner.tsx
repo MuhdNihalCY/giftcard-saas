@@ -60,7 +60,7 @@ export function QRCodeScanner({ onScanSuccess, onError }: QRCodeScannerProps) {
 
       setIsScanning(true);
         } catch (err: unknown) {
-      let errorMsg = err.message || 'Failed to start camera';
+      let errorMsg = (err instanceof Error ? err.message : String(err)) || 'Failed to start camera';
       
       // Provide more helpful error messages
       if (errorMsg.includes('Permission') || errorMsg.includes('NotAllowedError')) {

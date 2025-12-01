@@ -11,13 +11,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuthStore } from '@/store/authStore';
 import { Navigation } from '@/components/Navigation';
-import { useToast } from '@/components/ui/ToastContainer';
 import { RecipientForm, Recipient } from '@/components/RecipientForm';
 import { AmountSelector } from '@/components/AmountSelector';
 
 const bulkPurchaseSchema = z.object({
   paymentMethod: z.enum(['STRIPE', 'PAYPAL', 'RAZORPAY', 'UPI']),
-}).refine((data) => true, {
+}).refine((_data) => true, {
   message: 'At least one recipient is required',
 });
 
@@ -26,8 +25,7 @@ type BulkPurchaseFormData = z.infer<typeof bulkPurchaseSchema>;
 export default function BulkPurchasePage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { isAuthenticated, user } = useAuthStore();
-  const toast = useToast();
+  const { isAuthenticated } = useAuthStore();
   const productId = searchParams?.get('productId');
   const [product, setProduct] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,7 +44,6 @@ export default function BulkPurchasePage() {
   const {
     register,
     handleSubmit,
-    formState: { errors },
   } = useForm<BulkPurchaseFormData>({
     resolver: zodResolver(bulkPurchaseSchema),
     defaultValues: {

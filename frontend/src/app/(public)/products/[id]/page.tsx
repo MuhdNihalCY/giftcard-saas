@@ -8,11 +8,10 @@ import { Input } from '@/components/ui/Input';
 import api from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { useForm } from 'react-hook-form';
+import { useAuthStore } from '@/store/authStore';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuthStore } from '@/store/authStore';
 import { Navigation } from '@/components/Navigation';
-import { useToast } from '@/components/ui/ToastContainer';
 import { CardSkeleton } from '@/components/ui/Skeleton';
 import { AmountSelector } from '@/components/AmountSelector';
 import Image from 'next/image';
@@ -30,8 +29,7 @@ type PurchaseFormData = z.infer<typeof purchaseSchema>;
 export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { isAuthenticated, user } = useAuthStore();
-  const toast = useToast();
+  const { user } = useAuthStore();
   const productId = params.id as string;
   const [product, setProduct] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -45,7 +43,6 @@ export default function ProductDetailPage() {
     handleSubmit,
     formState: { errors },
     setValue,
-    watch,
   } = useForm<PurchaseFormData>({
     resolver: zodResolver(purchaseSchema),
     defaultValues: {

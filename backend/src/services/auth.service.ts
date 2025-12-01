@@ -93,6 +93,12 @@ export class AuthService {
   async login(data: LoginData) {
     const { email, password } = data;
 
+    // Verify prisma is initialized
+    if (!prisma || !prisma.user) {
+      logger.error('Prisma client is not initialized', { prisma: typeof prisma });
+      throw new Error('Database connection not available');
+    }
+
     // Find user
     const user = await prisma.user.findUnique({
       where: { email },

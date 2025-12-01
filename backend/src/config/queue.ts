@@ -8,6 +8,7 @@ export const QUEUE_NAMES = {
   EXPIRY_REMINDERS: 'expiry-reminders',
   EMAIL_DELIVERY: 'email-delivery',
   SMS_DELIVERY: 'sms-delivery',
+  SCHEDULED_DELIVERY: 'scheduled-delivery',
   CLEANUP_TOKENS: 'cleanup-tokens',
 } as const;
 
@@ -37,6 +38,7 @@ export const giftCardExpiryQueue = new Queue(QUEUE_NAMES.GIFT_CARD_EXPIRY, queue
 export const expiryRemindersQueue = new Queue(QUEUE_NAMES.EXPIRY_REMINDERS, queueOptions);
 export const emailDeliveryQueue = new Queue(QUEUE_NAMES.EMAIL_DELIVERY, queueOptions);
 export const smsDeliveryQueue = new Queue(QUEUE_NAMES.SMS_DELIVERY, queueOptions);
+export const scheduledDeliveryQueue = new Queue(QUEUE_NAMES.SCHEDULED_DELIVERY, queueOptions);
 export const cleanupTokensQueue = new Queue(QUEUE_NAMES.CLEANUP_TOKENS, queueOptions);
 
 // Queue events for monitoring
@@ -45,6 +47,7 @@ export const queueEvents = {
   expiryReminders: new QueueEvents(QUEUE_NAMES.EXPIRY_REMINDERS, queueOptions),
   emailDelivery: new QueueEvents(QUEUE_NAMES.EMAIL_DELIVERY, queueOptions),
   smsDelivery: new QueueEvents(QUEUE_NAMES.SMS_DELIVERY, queueOptions),
+  scheduledDelivery: new QueueEvents(QUEUE_NAMES.SCHEDULED_DELIVERY, queueOptions),
   cleanupTokens: new QueueEvents(QUEUE_NAMES.CLEANUP_TOKENS, queueOptions),
 };
 
@@ -70,6 +73,7 @@ export const closeQueues = async () => {
     expiryRemindersQueue.close(),
     emailDeliveryQueue.close(),
     smsDeliveryQueue.close(),
+    scheduledDeliveryQueue.close(),
     cleanupTokensQueue.close(),
   ]);
   
@@ -78,6 +82,7 @@ export const closeQueues = async () => {
     queueEvents.expiryReminders.close(),
     queueEvents.emailDelivery.close(),
     queueEvents.smsDelivery.close(),
+    queueEvents.scheduledDelivery.close(),
     queueEvents.cleanupTokens.close(),
   ]);
   

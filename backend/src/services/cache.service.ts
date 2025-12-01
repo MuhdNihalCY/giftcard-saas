@@ -3,12 +3,38 @@ import logger from '../utils/logger';
 
 export class CacheService {
   private client = getRedisClient();
+  private isRedisAvailable = false;
+  private redisErrorCount = 0;
+  private readonly MAX_REDIS_ERRORS = 3;
+
+  constructor() {
+    // Check Redis availability on initialization
+    if (this.client) {
+      this.client.on('ready', () => {
+        this.isRedisAvailable = true;
+        this.redisErrorCount = 0; // Reset error count on successful connection
+      });
+      this.client.on('error', () => {
+        this.redisErrorCount++;
+        // Disable Redis after too many errors
+        if (this.redisErrorCount >= this.MAX_REDIS_ERRORS) {
+          this.isRedisAvailable = false;
+          logger.warn(`Redis disabled after ${this.MAX_REDIS_ERRORS} errors`);
+        }
+      });
+      // Check initial status
+      this.isRedisAvailable = this.client.status === 'ready';
+    } else {
+      // No Redis client available
+      this.isRedisAvailable = false;
+    }
+  }
 
   /**
    * Get value from cache
    */
   async get<T>(key: string): Promise<T | null> {
-    if (!this.client) {
+    if (!this.client || !this.isRedisAvailable) {
       return null;
     }
 
@@ -18,8 +44,13 @@ export class CacheService {
         return JSON.parse(value) as T;
       }
       return null;
-    } catch (error) {
-      logger.error('Cache get error', { key, error });
+    } catch (error: any) {
+      // Mark Redis as unavailable if we get errors
+      this.isRedisAvailable = false;
+      // Silently fail - cache is optional
+      if (error.message && !error.message.includes('Connection') && !error.message.includes('syntax')) {
+        logger.warn('Cache get error', { key, error: error.message });
+      }
       return null;
     }
   }
@@ -28,7 +59,7 @@ export class CacheService {
    * Set value in cache
    */
   async set(key: string, value: any, ttlSeconds?: number): Promise<boolean> {
-    if (!this.client) {
+    if (!this.client || !this.isRedisAvailable) {
       return false;
     }
 
@@ -40,8 +71,13 @@ export class CacheService {
         await this.client.set(key, serialized);
       }
       return true;
-    } catch (error) {
-      logger.error('Cache set error', { key, error });
+    } catch (error: any) {
+      // Mark Redis as unavailable if we get errors
+      this.isRedisAvailable = false;
+      // Silently fail - cache is optional
+      if (error.message && !error.message.includes('Connection') && !error.message.includes('syntax')) {
+        logger.warn('Cache set error', { key, error: error.message });
+      }
       return false;
     }
   }
@@ -50,15 +86,20 @@ export class CacheService {
    * Delete value from cache
    */
   async delete(key: string): Promise<boolean> {
-    if (!this.client) {
+    if (!this.client || !this.isRedisAvailable) {
       return false;
     }
 
     try {
       await this.client.del(key);
       return true;
-    } catch (error) {
-      logger.error('Cache delete error', { key, error });
+    } catch (error: any) {
+      // Mark Redis as unavailable if we get errors
+      this.isRedisAvailable = false;
+      // Silently fail - cache is optional
+      if (error.message && !error.message.includes('Connection') && !error.message.includes('syntax')) {
+        logger.warn('Cache delete error', { key, error: error.message });
+      }
       return false;
     }
   }
@@ -67,7 +108,7 @@ export class CacheService {
    * Delete multiple keys matching pattern
    */
   async deletePattern(pattern: string): Promise<number> {
-    if (!this.client) {
+    if (!this.client || !this.isRedisAvailable) {
       return 0;
     }
 
@@ -76,10 +117,22 @@ export class CacheService {
       if (keys.length === 0) {
         return 0;
       }
-      await this.client.del(...keys);
+      // Use pipeline for multiple deletions to avoid syntax errors
+      if (keys.length === 1) {
+        await this.client.del(keys[0]);
+      } else {
+        const pipeline = this.client.pipeline();
+        keys.forEach(key => pipeline.del(key));
+        await pipeline.exec();
+      }
       return keys.length;
-    } catch (error) {
-      logger.error('Cache delete pattern error', { pattern, error });
+    } catch (error: any) {
+      // Mark Redis as unavailable if we get errors
+      this.isRedisAvailable = false;
+      // Silently fail - cache is optional
+      if (error.message && !error.message.includes('Connection') && !error.message.includes('syntax')) {
+        logger.warn('Cache delete pattern error', { pattern, error: error.message });
+      }
       return 0;
     }
   }
@@ -88,15 +141,20 @@ export class CacheService {
    * Check if key exists
    */
   async exists(key: string): Promise<boolean> {
-    if (!this.client) {
+    if (!this.client || !this.isRedisAvailable) {
       return false;
     }
 
     try {
       const result = await this.client.exists(key);
       return result === 1;
-    } catch (error) {
-      logger.error('Cache exists error', { key, error });
+    } catch (error: any) {
+      // Mark Redis as unavailable if we get errors
+      this.isRedisAvailable = false;
+      // Silently fail - cache is optional
+      if (error.message && !error.message.includes('Connection') && !error.message.includes('syntax')) {
+        logger.warn('Cache exists error', { key, error: error.message });
+      }
       return false;
     }
   }

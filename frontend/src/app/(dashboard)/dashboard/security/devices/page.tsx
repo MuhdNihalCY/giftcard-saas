@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
-import { useAuthStore } from '@/store/authStore';
 import logger from '@/lib/logger';
 
 interface Device {
@@ -18,7 +17,6 @@ interface Device {
 }
 
 export default function DeviceManagementPage() {
-  const { user } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [devices, setDevices] = useState<Device[]>([]);
   const [error, setError] = useState('');
@@ -126,7 +124,7 @@ export default function DeviceManagementPage() {
               <Button
                 onClick={handleRevokeAllDevices}
                 disabled={revokingAll}
-                variant="destructive"
+                variant="danger"
               >
                 {revokingAll ? 'Revoking...' : 'Logout All Devices'}
               </Button>

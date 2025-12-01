@@ -4,7 +4,9 @@ import { NotFoundError, ValidationError } from '../utils/errors';
 import { RedemptionMethod } from '@prisma/client';
 import giftCardService from './giftcard.service';
 import cacheService, { CacheKeys } from './cache.service';
+import fraudPreventionService from './fraud-prevention.service';
 import { isExpired } from '../utils/helpers';
+import logger from '../utils/logger';
 
 export interface RedeemGiftCardData {
   giftCardId?: string;
@@ -14,6 +16,8 @@ export interface RedeemGiftCardData {
   redemptionMethod: RedemptionMethod;
   location?: string;
   notes?: string;
+  ipAddress?: string;
+  userAgent?: string;
 }
 
 export interface ValidateGiftCardData {
@@ -107,6 +111,31 @@ export class RedemptionService {
       );
     }
 
+    // Perform fraud prevention checks for redemption patterns
+    try {
+      const fraudCheck = await fraudPreventionService.checkRedemptionPatterns(
+        giftCard.id,
+        merchantId
+      );
+
+      if (fraudCheck.requiresManualReview) {
+        logger.warn('Redemption flagged for manual review', {
+          giftCardId: giftCard.id,
+          merchantId,
+          amount,
+          riskScore: fraudCheck.riskScore,
+          reason: fraudCheck.reason,
+        });
+        // Continue with redemption but log for review
+      }
+    } catch (error) {
+      // Don't block redemption if fraud check fails, just log it
+      logger.error('Fraud check error during redemption', {
+        giftCardId: giftCard.id,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+
     // Calculate new balance
     const newBalance = currentBalance - amount;
     const balanceBefore = new Decimal(currentBalance);
@@ -120,6 +149,18 @@ export class RedemptionService {
         status: newBalance <= 0 ? 'REDEEMED' : 'ACTIVE',
       },
     });
+
+    // Track IP address for redemption
+    if (data.ipAddress) {
+      const ipTrackingService = (await import('./ip-tracking.service')).default;
+      await ipTrackingService.trackIP({
+        ipAddress: data.ipAddress,
+        userId: merchantId,
+        action: 'REDEMPTION',
+        resourceId: giftCard.id,
+        userAgent: data.userAgent,
+      });
+    }
 
     // Create redemption record
     const redemption = await prisma.redemption.create({

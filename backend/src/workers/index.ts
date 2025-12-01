@@ -4,6 +4,7 @@ import { QUEUE_NAMES } from '../config/queue';
 import { processGiftCardExpiry } from '../jobs/giftCardExpiry.job';
 import { processExpiryReminder } from '../jobs/expiryReminders.job';
 import { processCleanupTokens } from '../jobs/cleanupTokens.job';
+import { processScheduledDelivery } from '../jobs/scheduledDelivery.job';
 import logger from '../utils/logger';
 
 const workerOptions = {
@@ -36,6 +37,12 @@ export const cleanupTokensWorker = new Worker(
   workerOptions
 );
 
+export const scheduledDeliveryWorker = new Worker(
+  QUEUE_NAMES.SCHEDULED_DELIVERY,
+  processScheduledDelivery,
+  workerOptions
+);
+
 // Worker event handlers
 const setupWorkerEvents = (worker: Worker, name: string) => {
   worker.on('completed', (job) => {
@@ -54,6 +61,7 @@ const setupWorkerEvents = (worker: Worker, name: string) => {
 setupWorkerEvents(giftCardExpiryWorker, 'giftCardExpiry');
 setupWorkerEvents(expiryRemindersWorker, 'expiryReminders');
 setupWorkerEvents(cleanupTokensWorker, 'cleanupTokens');
+setupWorkerEvents(scheduledDeliveryWorker, 'scheduledDelivery');
 
 // Graceful shutdown
 export const closeWorkers = async () => {
@@ -61,6 +69,7 @@ export const closeWorkers = async () => {
     giftCardExpiryWorker.close(),
     expiryRemindersWorker.close(),
     cleanupTokensWorker.close(),
+    scheduledDeliveryWorker.close(),
   ]);
   logger.info('All workers closed');
 };

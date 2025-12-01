@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -17,7 +16,6 @@ interface TwoFactorSetup {
 }
 
 export default function TwoFactorSetupPage() {
-  const router = useRouter();
   const { user } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [setup, setSetup] = useState<TwoFactorSetup | null>(null);
@@ -178,7 +176,7 @@ export default function TwoFactorSetupPage() {
                 <Button
                   onClick={handleDisable}
                   disabled={loading}
-                  variant="destructive"
+                  variant="danger"
                 >
                   Disable 2FA
                 </Button>
