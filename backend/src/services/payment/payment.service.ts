@@ -79,11 +79,17 @@ export class PaymentService {
       throw new ValidationError('Gift card is not active');
     }
 
-    // Validate amount matches gift card value (allow small floating point differences)
-    const amountDiff = Math.abs(amount - Number(giftCard.value));
-    if (amountDiff > 0.01) {
-      throw new ValidationError('Payment amount does not match gift card value');
+    // Validate amount: must be less than or equal to gift card value (allows discounts)
+    // Allow small floating point differences for exact matches
+    const giftCardValue = Number(giftCard.value);
+    const amountDiff = Math.abs(amount - giftCardValue);
+    
+    if (amount > giftCardValue + 0.01) {
+      throw new ValidationError(`Payment amount (${amount}) cannot exceed gift card value (${giftCardValue})`);
     }
+    
+    // If amount is significantly less than gift card value (more than 0.01 difference),
+    // it's likely a discount, which is allowed. We only validate that it doesn't exceed.
 
     // Perform fraud prevention checks (if customer ID provided)
     if (customerId) {
@@ -640,8 +646,9 @@ export class PaymentService {
     email?: string;
     phone?: string;
     paymentMethodId?: string;
+    userAgent?: string;
   }) {
-    const { productId, amount, customerId, currency: _currency, paymentMethod, recipientEmail, recipientName, customMessage, returnUrl, cancelUrl, ipAddress, email, phone, paymentMethodId } = data;
+    const { productId, amount, customerId, currency: _currency, paymentMethod, recipientEmail, recipientName, customMessage, returnUrl, cancelUrl, ipAddress, email, phone, paymentMethodId, userAgent } = data;
 
     // Get product
     const product = await giftCardProductService.getById(productId);

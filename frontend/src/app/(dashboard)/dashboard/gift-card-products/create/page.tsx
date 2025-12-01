@@ -9,12 +9,14 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { CurrencySelector } from '@/components/CurrencySelector';
+import { TemplateSelector } from '@/components/TemplateSelector';
 import api from '@/lib/api';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
   image: z.string().url().optional().or(z.literal('')),
+  templateId: z.string().uuid().optional().or(z.literal('')),
   minAmount: z.number().positive().optional(), // Gift card value
   maxAmount: z.number().positive().optional(), // Gift card value
   minSalePrice: z.number().positive().optional(), // What customer pays
@@ -71,6 +73,7 @@ export default function CreateProductPage() {
         name: data.name,
         description: data.description || undefined,
         image: data.image || undefined,
+        templateId: data.templateId || undefined,
         currency: data.currency,
         expiryDays: data.expiryDays ? Number(data.expiryDays) : undefined,
         category: data.category || undefined,
@@ -195,6 +198,22 @@ export default function CreateProductPage() {
                 placeholder="365"
                 error={errors.expiryDays?.message}
                 {...register('expiryDays', { valueAsNumber: true })}
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <Controller
+                name="templateId"
+                control={control}
+                render={({ field }) => (
+                  <TemplateSelector
+                    value={field.value}
+                    onChange={field.onChange}
+                    label="Gift Card Template"
+                    showPreview={true}
+                    error={errors.templateId?.message}
+                  />
+                )}
               />
             </div>
 

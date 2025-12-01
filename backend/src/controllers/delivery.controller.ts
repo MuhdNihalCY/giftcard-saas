@@ -50,6 +50,7 @@ export class DeliveryController {
         recipientName: giftCard.recipientName || undefined,
         customMessage: giftCard.customMessage || undefined,
         expiryDate: giftCard.expiryDate || undefined,
+        template: giftCard.template || null,
       });
 
       // Set response headers
@@ -79,6 +80,7 @@ export class DeliveryController {
         recipientName: giftCard.recipientName || undefined,
         customMessage: giftCard.customMessage || undefined,
         expiryDate: giftCard.expiryDate || undefined,
+        template: giftCard.template || null,
       });
 
       // Save to file and return URL

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Playfair_Display, Montserrat } from 'next/font/google'
+import { Playfair_Display, Montserrat, Poppins, Merriweather, Roboto, Open_Sans } from 'next/font/google'
 import './globals.css'
 import { ClientProviders } from '@/components/ClientProviders'
 
@@ -12,6 +12,34 @@ const playfairDisplay = Playfair_Display({
 const montserrat = Montserrat({ 
   subsets: ['latin'],
   variable: '--font-sans',
+  display: 'swap',
+})
+
+const poppins = Poppins({ 
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-poppins',
+  display: 'swap',
+})
+
+const merriweather = Merriweather({ 
+  subsets: ['latin'],
+  weight: ['300', '400', '700'],
+  variable: '--font-merriweather',
+  display: 'swap',
+})
+
+const roboto = Roboto({ 
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '700'],
+  variable: '--font-roboto',
+  display: 'swap',
+})
+
+const openSans = Open_Sans({ 
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-open-sans',
   display: 'swap',
 })
 
@@ -28,7 +56,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="light">
       <body 
-        className={`${montserrat.variable} ${playfairDisplay.variable} font-sans text-gray-100 bg-navy-900 antialiased`}
+        className={`${montserrat.variable} ${playfairDisplay.variable} ${poppins.variable} ${merriweather.variable} ${roboto.variable} ${openSans.variable} font-sans text-gray-100 bg-navy-900 antialiased`}
         suppressHydrationWarning
       >
         <ClientProviders>

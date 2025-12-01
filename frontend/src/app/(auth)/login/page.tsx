@@ -13,6 +13,7 @@ import axios from 'axios';
 import { useAuthStore } from '@/store/authStore';
 import Link from 'next/link';
 import logger from '@/lib/logger';
+import { Eye, EyeOff } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -32,6 +33,7 @@ export default function LoginPage() {
   const [twoFactorToken, setTwoFactorToken] = useState('');
   const [useBackupCode, setUseBackupCode] = useState(false);
   const [backupCode, setBackupCode] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   // Check if already authenticated on mount
   useEffect(() => {
@@ -301,13 +303,28 @@ export default function LoginPage() {
                     error={errors.email?.message}
                     {...register('email')}
                   />
-                  <Input
-                    label="Password"
-                    type="password"
-                    autoComplete="current-password"
-                    error={errors.password?.message}
-                    {...register('password')}
-                  />
+                  <div className="relative">
+                    <Input
+                      label="Password"
+                      type={showPassword ? 'text' : 'password'}
+                      autoComplete="current-password"
+                      error={errors.password?.message}
+                      {...register('password')}
+                      className="pr-12"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-[3.25rem] text-plum-300 hover:text-gold-400 transition-colors focus:outline-none rounded p-1"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <Button type="submit" variant="gold" className="w-full text-lg py-3" isLoading={isLoading}>

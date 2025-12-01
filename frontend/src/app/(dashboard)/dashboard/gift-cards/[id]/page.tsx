@@ -8,6 +8,7 @@ import api from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import Link from 'next/link';
 import QRCode from 'react-qr-code';
+import { GiftCardDisplay } from '@/components/GiftCardDisplay';
 
 interface GiftCard {
   id: string;
@@ -26,7 +27,11 @@ interface GiftCard {
   merchant: {
     id: string;
     businessName: string;
+    businessLogo?: string | null;
   };
+  template?: {
+    designData: any;
+  } | null;
 }
 
 export default function GiftCardDetailsPage() {

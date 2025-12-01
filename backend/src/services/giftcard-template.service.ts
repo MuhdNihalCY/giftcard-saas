@@ -1,42 +1,58 @@
 import prisma from '../config/database';
 import { NotFoundError, ValidationError } from '../utils/errors';
+import logger from '../utils/logger';
+
+// Verify Prisma is initialized at module load
+if (!prisma) {
+  logger.error('Prisma client is not initialized in giftcard-template.service');
+  throw new Error('Prisma client is not initialized');
+}
+
+if (!prisma.giftCardTemplate) {
+  logger.error('Prisma giftCardTemplate model is not available');
+  throw new Error('Prisma giftCardTemplate model is not available. Run: npx prisma generate');
+}
+
+export interface TemplateDesignData {
+  colors?: {
+    primary?: string;
+    secondary?: string;
+    background?: string;
+    text?: string;
+    accent?: string;
+  };
+  typography?: {
+    fontFamily?: string;
+    headingSize?: string;
+    bodySize?: string;
+    fontWeight?: string;
+  };
+  images?: {
+    logo?: string;
+    background?: string;
+    pattern?: string;
+  };
+  layout?: 'classic' | 'card' | 'minimal' | 'premium' | 'modern' | 'bold' | 'elegant' | 'default';
+  spacing?: {
+    padding?: string;
+    margin?: string;
+  };
+  borderRadius?: string;
+  shadows?: boolean;
+}
 
 export interface CreateTemplateData {
   merchantId: string;
   name: string;
   description?: string;
-  designData: {
-    colors?: {
-      primary?: string;
-      secondary?: string;
-      background?: string;
-      text?: string;
-    };
-    images?: {
-      logo?: string;
-      background?: string;
-    };
-    layout?: string;
-  };
+  designData: TemplateDesignData;
   isPublic?: boolean;
 }
 
 export interface UpdateTemplateData {
   name?: string;
   description?: string;
-  designData?: {
-    colors?: {
-      primary?: string;
-      secondary?: string;
-      background?: string;
-      text?: string;
-    };
-    images?: {
-      logo?: string;
-      background?: string;
-    };
-    layout?: string;
-  };
+  designData?: TemplateDesignData;
   isPublic?: boolean;
 }
 
@@ -51,15 +67,28 @@ export class GiftCardTemplateService {
       throw new ValidationError('Template name is required');
     }
 
-    // Provide default designData if not provided
-    const defaultDesignData = {
+    // Provide default designData if not provided - Modern, impressive design
+    const defaultDesignData: TemplateDesignData = {
       colors: {
-        primary: '#667eea',
-        secondary: '#764ba2',
-        background: '#ffffff',
-        text: '#000000',
+        primary: '#1a365d',      // Deep navy - professional and modern
+        secondary: '#2d3748',    // Charcoal - sophisticated
+        background: '#ffffff',   // Pure white - clean
+        text: '#1a202c',         // Dark gray - excellent readability
+        accent: '#d69e2e',       // Gold accent - premium feel
       },
-      layout: 'default',
+      typography: {
+        fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        headingSize: '32px',
+        bodySize: '16px',
+        fontWeight: '700',
+      },
+      layout: 'modern',
+      spacing: {
+        padding: '32px',
+        margin: '16px',
+      },
+      borderRadius: '16px',
+      shadows: true,
     };
 
     const template = await prisma.giftCardTemplate.create({
@@ -215,6 +244,123 @@ export class GiftCardTemplateService {
     });
 
     return { message: 'Template deleted successfully' };
+  }
+
+  /**
+   * Get default template for merchant
+   */
+  async getDefaultTemplate(merchantId: string) {
+    try {
+      if (!prisma) {
+        throw new Error('Prisma client is not initialized');
+      }
+      
+      if (!prisma.giftCardTemplate) {
+        throw new Error('Prisma giftCardTemplate model is not available. Run: npx prisma generate');
+      }
+
+      // Try to find merchant's default template (first template or one marked as default)
+      const templates = await prisma.giftCardTemplate.findMany({
+        where: { merchantId },
+        orderBy: { createdAt: 'asc' },
+        take: 1,
+      });
+
+      if (templates.length > 0) {
+        return templates[0];
+      }
+
+      // Create a default template if none exists
+      return this.createDefaultTemplate(merchantId);
+    } catch (error: any) {
+      throw new Error(`Failed to get default template: ${error.message}`);
+    }
+  }
+
+  /**
+   * Create default template for merchant
+   */
+  async createDefaultTemplate(merchantId: string) {
+    const defaultDesignData = {
+      colors: {
+        primary: '#1a365d',      // Deep navy - professional and modern
+        secondary: '#2d3748',    // Charcoal - sophisticated
+        background: '#ffffff',   // Pure white - clean
+        text: '#1a202c',         // Dark gray - excellent readability
+        accent: '#d69e2e',       // Gold accent - premium feel
+      },
+      typography: {
+        fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        headingSize: '32px',
+        bodySize: '16px',
+        fontWeight: '700',
+      },
+      layout: 'modern',
+      spacing: {
+        padding: '32px',
+        margin: '16px',
+      },
+      borderRadius: '16px',
+      shadows: true,
+    };
+
+    return this.create({
+      merchantId,
+      name: 'Default Template',
+      description: 'Default gift card template',
+      designData: defaultDesignData,
+      isPublic: false,
+    });
+  }
+
+  /**
+   * Set template as default for merchant
+   */
+  async setAsDefault(templateId: string, merchantId: string) {
+    const template = await this.getById(templateId);
+
+    if (template.merchantId !== merchantId) {
+      throw new ValidationError('You can only set your own templates as default');
+    }
+
+    // For now, we'll just return the template
+    // In the future, you could add an `isDefault` field to the schema
+    return template;
+  }
+
+  /**
+   * Get template usage statistics
+   */
+  async getUsageStats(templateId: string) {
+    const [giftCardCount, productCount] = await Promise.all([
+      prisma.giftCard.count({
+        where: { templateId },
+      }),
+      prisma.giftCardProduct.count({
+        where: { templateId },
+      }),
+    ]);
+
+    return {
+      giftCardCount,
+      productCount,
+      totalUsage: giftCardCount + productCount,
+    };
+  }
+
+  /**
+   * Duplicate template
+   */
+  async duplicate(templateId: string, merchantId: string, newName?: string) {
+    const template = await this.getById(templateId);
+
+    return this.create({
+      merchantId,
+      name: newName || `${template.name} (Copy)`,
+      description: template.description || undefined,
+      designData: template.designData as any,
+      isPublic: template.isPublic,
+    });
   }
 }
 

@@ -7,6 +7,7 @@ import qrCodeService from './qrcode.service';
 import { GiftCardStatus, GiftCard, Prisma } from '@prisma/client';
 import cacheService, { CacheKeys } from './cache.service';
 import type { PaginationResult } from '../types';
+import giftCardTemplateService from './giftcard-template.service';
 
 export interface CreateGiftCardData {
   merchantId: string;
@@ -89,6 +90,26 @@ export class GiftCardService {
       throw new Error('Failed to generate unique gift card code');
     }
 
+    // Get template ID - use provided, product's template, or merchant's default
+    let finalTemplateId = templateId;
+    
+    if (!finalTemplateId && productId) {
+      // Get product's template if gift card is created from product
+      const product = await prisma.giftCardProduct.findUnique({
+        where: { id: productId },
+        select: { templateId: true },
+      });
+      if (product?.templateId) {
+        finalTemplateId = product.templateId;
+      }
+    }
+    
+    if (!finalTemplateId) {
+      // Get merchant's default template
+      const defaultTemplate = await giftCardTemplateService.getDefaultTemplate(merchantId);
+      finalTemplateId = defaultTemplate.id;
+    }
+
     // Generate QR code
     const giftCardId = crypto.randomUUID();
     const qrCodeData = qrCodeService.generateGiftCardData(giftCardId, code);
@@ -105,7 +126,7 @@ export class GiftCardService {
         currency,
         balance: new Decimal(value),
         expiryDate,
-        templateId,
+        templateId: finalTemplateId,
         productId,
         customMessage,
         recipientEmail,

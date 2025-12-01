@@ -8,20 +8,48 @@ import { z } from 'zod';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { TemplateEditor } from '@/components/TemplateEditor';
 import api from '@/lib/api';
+import type { TemplateDesignData } from '@/lib/template-design';
+import { TEMPLATE_PRESETS } from '@/lib/template-presets';
 
 const templateSchema = z.object({
   name: z.string().min(1, 'Template name is required'),
   description: z.string().optional(),
-  isDefault: z.boolean().default(false),
+  isPublic: z.boolean().default(false),
 });
 
 type TemplateFormData = z.infer<typeof templateSchema>;
+
+const defaultDesignData: TemplateDesignData = {
+  colors: {
+    primary: '#1a365d',      // Deep navy - professional and modern
+    secondary: '#2d3748',    // Charcoal - sophisticated
+    background: '#ffffff',   // Pure white - clean
+    text: '#1a202c',         // Dark gray - excellent readability
+    accent: '#d69e2e',       // Gold accent - premium feel
+  },
+  typography: {
+    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    headingSize: '32px',
+    bodySize: '16px',
+    fontWeight: '700',
+  },
+  layout: 'modern',
+  spacing: {
+    padding: '32px',
+    margin: '16px',
+  },
+  borderRadius: '16px',
+  shadows: true,
+};
 
 export default function CreateTemplatePage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
+  const [designData, setDesignData] = useState<TemplateDesignData>(defaultDesignData);
+  const [showPresets, setShowPresets] = useState(true);
 
   const {
     register,
@@ -30,7 +58,7 @@ export default function CreateTemplatePage() {
   } = useForm<TemplateFormData>({
     resolver: zodResolver(templateSchema),
     defaultValues: {
-      isDefault: false,
+      isPublic: false,
     },
   });
 
@@ -41,12 +69,7 @@ export default function CreateTemplatePage() {
 
       const payload = {
         ...data,
-        design: {
-          // Default design - can be enhanced with color pickers, etc.
-          primaryColor: '#667eea',
-          secondaryColor: '#764ba2',
-          fontFamily: 'Inter',
-        },
+        designData,
       };
 
       await api.post('/gift-cards/templates', payload);
@@ -61,18 +84,72 @@ export default function CreateTemplatePage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Create Template</h1>
-        <p className="text-gray-600 mt-2">Create a new gift card template</p>
+        <h1 className="text-3xl font-bold text-plum-300">Create Template</h1>
+        <p className="text-plum-200 mt-2">Create a new gift card template with custom design</p>
       </div>
 
-      <Card>
+      {/* Template Presets */}
+      {showPresets && (
+        <Card className="mb-6">
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle>Start from Template</CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowPresets(false)}
+              >
+                Skip
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-plum-200 mb-4">
+              Choose a preset template to get started quickly, or start from scratch
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {TEMPLATE_PRESETS.map((preset) => (
+                <button
+                  key={preset.name}
+                  onClick={() => {
+                    setDesignData(preset.designData);
+                    setShowPresets(false);
+                  }}
+                  className="group p-4 rounded-lg border-2 border-navy-600 hover:border-gold-400 transition-all text-left"
+                >
+                  <div
+                    className="w-full h-20 rounded mb-2"
+                    style={{
+                      background: `linear-gradient(135deg, ${preset.designData.colors?.primary} 0%, ${preset.designData.colors?.secondary} 100%)`,
+                    }}
+                  />
+                  <h4 className="font-semibold text-plum-300 text-sm mb-1">{preset.name}</h4>
+                  <p className="text-xs text-plum-400 mb-2">{preset.category}</p>
+                  <p className="text-xs text-plum-500">{preset.preview}</p>
+                </button>
+              ))}
+            </div>
+            <div className="mt-4 pt-4 border-t border-navy-700">
+              <Button
+                variant="outline"
+                onClick={() => setShowPresets(false)}
+                className="w-full"
+              >
+                Start from Scratch
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card className="mb-6">
         <CardHeader>
           <CardTitle>Template Details</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+              <div className="bg-red-900/30 border border-red-500/50 text-red-300 px-4 py-3 rounded">
                 {error}
               </div>
             )}
@@ -84,11 +161,11 @@ export default function CreateTemplatePage() {
             />
 
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-1">
+              <label className="block text-sm font-medium text-plum-300 mb-1">
                 Description (Optional)
               </label>
               <textarea
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white"
+                className="w-full px-4 py-2 border border-navy-600 rounded-lg text-navy-50 bg-navy-800"
                 rows={4}
                 {...register('description')}
               />
@@ -97,30 +174,34 @@ export default function CreateTemplatePage() {
             <div className="flex items-center">
               <input
                 type="checkbox"
-                id="isDefault"
+                id="isPublic"
                 className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                {...register('isDefault')}
+                {...register('isPublic')}
               />
-              <label htmlFor="isDefault" className="ml-2 block text-sm text-gray-900">
-                Set as default template
+              <label htmlFor="isPublic" className="ml-2 block text-sm text-plum-300">
+                Make template public (visible to all merchants)
               </label>
-            </div>
-
-            <div className="flex space-x-4">
-              <Button type="submit" isLoading={isLoading}>
-                Create Template
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.back()}
-              >
-                Cancel
-              </Button>
             </div>
           </form>
         </CardContent>
       </Card>
+
+      {/* Visual Editor */}
+      <TemplateEditor designData={designData} onChange={setDesignData} />
+
+      {/* Submit Button */}
+      <div className="mt-6 flex space-x-4">
+        <Button onClick={handleSubmit(onSubmit)} isLoading={isLoading}>
+          Create Template
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => router.back()}
+        >
+          Cancel
+        </Button>
+      </div>
     </div>
   );
 }

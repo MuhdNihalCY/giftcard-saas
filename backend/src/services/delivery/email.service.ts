@@ -165,6 +165,9 @@ export class EmailService {
     merchantName?: string;
     expiryDate?: Date;
     redemptionUrl: string;
+    template?: {
+      designData: any;
+    } | null;
   }): Promise<void> {
     const {
       to,
@@ -177,6 +180,7 @@ export class EmailService {
       merchantName,
       expiryDate,
       redemptionUrl,
+      template,
     } = data;
 
     const subject = `🎁 You've received a gift card!`;
@@ -190,6 +194,7 @@ export class EmailService {
       merchantName,
       expiryDate,
       redemptionUrl,
+      template,
     });
 
     await this.sendEmail({
@@ -212,6 +217,9 @@ export class EmailService {
     merchantName?: string;
     expiryDate?: Date;
     redemptionUrl: string;
+    template?: {
+      designData: any;
+    } | null;
   }): string {
     const {
       recipientName,
@@ -223,7 +231,26 @@ export class EmailService {
       merchantName,
       expiryDate,
       redemptionUrl,
+      template,
     } = data;
+
+    // Import template utilities
+    const { mergeDesignWithDefaults, getBackgroundGradient } = require('../../utils/template-design.util');
+    const design = mergeDesignWithDefaults(template?.designData);
+    
+    const primaryColor = design.colors.primary;
+    const secondaryColor = design.colors.secondary;
+    const backgroundColor = design.colors.background;
+    const textColor = design.colors.text;
+    const borderRadius = design.borderRadius || '10px';
+    const fontFamily = design.typography.fontFamily || 'Arial, sans-serif';
+    const headingSize = design.typography.headingSize || '24px';
+    const bodySize = design.typography.bodySize || '16px';
+    
+    // Use gradient for header if template has both primary and secondary colors
+    const headerBackground = secondaryColor 
+      ? `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`
+      : primaryColor;
 
     const formattedValue = new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -231,7 +258,12 @@ export class EmailService {
     }).format(giftCardValue);
 
     const expiryText = expiryDate
-      ? `<p style="color: #666; font-size: 14px;">Expires: ${new Date(expiryDate).toLocaleDateString()}</p>`
+      ? `<p style="color: ${textColor}; font-size: 14px; opacity: 0.7;">Expires: ${new Date(expiryDate).toLocaleDateString()}</p>`
+      : '';
+
+    // Logo if available
+    const logoHtml = design.images?.logo 
+      ? `<img src="${design.images.logo}" alt="${merchantName || 'Logo'}" style="max-width: 120px; margin-bottom: 20px;" />`
       : '';
 
     return `
@@ -242,20 +274,21 @@ export class EmailService {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Gift Card</title>
       </head>
-      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-          <h1 style="color: white; margin: 0;">🎁 You've Received a Gift Card!</h1>
+      <body style="font-family: ${fontFamily}; line-height: 1.6; color: ${textColor}; max-width: 600px; margin: 0 auto; padding: 20px; background: ${backgroundColor};">
+        <div style="background: ${headerBackground}; padding: 30px; text-align: center; border-radius: ${borderRadius} ${borderRadius} 0 0;">
+          ${logoHtml}
+          <h1 style="color: white; margin: 0; font-size: ${headingSize};">🎁 You've Received a Gift Card!</h1>
         </div>
         
-        <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
-          <p style="font-size: 18px;">Hi ${recipientName},</p>
+        <div style="background: ${backgroundColor}; padding: 30px; border-radius: 0 0 ${borderRadius} ${borderRadius};">
+          <p style="font-size: ${bodySize};">Hi ${recipientName},</p>
           
-          ${customMessage ? `<p style="font-size: 16px; font-style: italic; color: #555;">"${customMessage}"</p>` : ''}
+          ${customMessage ? `<p style="font-size: ${bodySize}; font-style: italic; color: ${textColor}; opacity: 0.8;">"${customMessage}"</p>` : ''}
           
-          <div style="background: white; border: 2px dashed #667eea; border-radius: 10px; padding: 30px; margin: 20px 0; text-align: center;">
-            <h2 style="color: #667eea; margin: 0 0 10px 0;">${formattedValue}</h2>
-            <p style="color: #666; margin: 5px 0;">Gift Card Code:</p>
-            <p style="font-size: 24px; font-weight: bold; letter-spacing: 2px; color: #333; margin: 10px 0;">${giftCardCode}</p>
+          <div style="background: ${backgroundColor === '#ffffff' ? '#f9f9f9' : backgroundColor}; border: 2px dashed ${primaryColor}; border-radius: ${borderRadius}; padding: 30px; margin: 20px 0; text-align: center;">
+            <h2 style="color: ${primaryColor}; margin: 0 0 10px 0; font-size: ${headingSize};">${formattedValue}</h2>
+            <p style="color: ${textColor}; opacity: 0.7; margin: 5px 0;">Gift Card Code:</p>
+            <p style="font-size: 24px; font-weight: bold; letter-spacing: 2px; color: ${textColor}; margin: 10px 0;">${giftCardCode}</p>
             
             ${qrCodeUrl ? `<img src="${qrCodeUrl}" alt="QR Code" style="max-width: 200px; margin: 20px 0;" />` : ''}
             
@@ -263,15 +296,15 @@ export class EmailService {
           </div>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${redemptionUrl}" style="background: #667eea; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">Redeem Gift Card</a>
+            <a href="${redemptionUrl}" style="background: ${primaryColor}; color: white; padding: 15px 30px; text-decoration: none; border-radius: ${borderRadius}; display: inline-block; font-weight: bold;">Redeem Gift Card</a>
           </div>
           
-          <p style="color: #666; font-size: 14px; margin-top: 30px;">
+          <p style="color: ${textColor}; opacity: 0.7; font-size: 14px; margin-top: 30px;">
             ${merchantName ? `This gift card is from ${merchantName}. ` : ''}
             You can use this gift card code at checkout or show the QR code at the store.
           </p>
           
-          <p style="color: #999; font-size: 12px; margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px;">
+          <p style="color: ${textColor}; opacity: 0.5; font-size: 12px; margin-top: 30px; border-top: 1px solid ${textColor}; opacity: 0.2; padding-top: 20px;">
             If you have any questions, please contact our support team.
           </p>
         </div>

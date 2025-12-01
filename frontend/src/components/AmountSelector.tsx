@@ -37,15 +37,27 @@ export function AmountSelector({
     if (!fixedAmounts || fixedAmounts.length === 0) {
       // Custom amount - use linear interpolation
       if (minSalePrice && maxSalePrice && minAmount && maxAmount && maxAmount > minAmount) {
-        const ratio = (giftCardValue - minAmount) / (maxAmount - minAmount);
-        return minSalePrice + (maxSalePrice - minSalePrice) * ratio;
+        const minSale = Number(minSalePrice);
+        const maxSale = Number(maxSalePrice);
+        const minVal = Number(minAmount);
+        const maxVal = Number(maxAmount);
+        
+        // Validate that sale prices are reasonable (not greater than gift card values)
+        if (minSale <= minVal && maxSale <= maxVal) {
+          const ratio = (giftCardValue - minVal) / (maxVal - minVal);
+          const calculatedPrice = minSale + (maxSale - minSale) * ratio;
+          // Ensure calculated price doesn't exceed gift card value
+          return Math.min(calculatedPrice, giftCardValue);
+        }
       }
       return giftCardValue; // No discount
     } else {
       // Fixed amount - find corresponding sale price
       const index = fixedAmounts.indexOf(giftCardValue);
       if (index !== -1 && fixedSalePrices && fixedSalePrices.length > index) {
-        return fixedSalePrices[index];
+        const fixedSalePrice = Number(fixedSalePrices[index]);
+        // Only use sale price if it's less than or equal to the gift card value
+        return fixedSalePrice <= giftCardValue ? fixedSalePrice : giftCardValue;
       }
       return giftCardValue; // No discount
     }

@@ -93,6 +93,7 @@ export class DeliveryService {
           merchantName: giftCard.merchant.businessName || undefined,
           expiryDate: giftCard.expiryDate || undefined,
           redemptionUrl,
+          template: giftCard.template || null,
         });
 
         deliveryResults.push({

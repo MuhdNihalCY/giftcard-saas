@@ -64,7 +64,7 @@ export default function ProductDetailPage() {
       setValue('amount', selectedAmount);
       
       // Calculate sale price
-      let salePrice = selectedAmount;
+      let salePrice = selectedAmount; // Default: no discount
       
       if (product.allowCustomAmount) {
         // Linear interpolation for custom amounts
@@ -74,22 +74,28 @@ export default function ProductDetailPage() {
           const minVal = Number(product.minAmount);
           const maxVal = Number(product.maxAmount);
           
-          if (maxVal > minVal) {
+          // Validate that sale prices are reasonable (not greater than gift card values)
+          if (minSale <= minVal && maxSale <= maxVal && maxVal > minVal) {
             const ratio = (selectedAmount - minVal) / (maxVal - minVal);
             salePrice = minSale + (maxSale - minSale) * ratio;
-          } else {
-            salePrice = minSale;
           }
+          // If sale prices are invalid, use gift card value (no discount)
         }
       } else if (product.fixedAmounts && product.fixedAmounts.length > 0) {
         // Get corresponding sale price from fixed amounts
         const index = product.fixedAmounts.indexOf(selectedAmount);
         if (index !== -1 && product.fixedSalePrices && product.fixedSalePrices.length > index) {
-          salePrice = product.fixedSalePrices[index];
+          const fixedSalePrice = Number(product.fixedSalePrices[index]);
+          // Only use sale price if it's less than or equal to the gift card value
+          if (fixedSalePrice <= selectedAmount) {
+            salePrice = fixedSalePrice;
+          }
         }
       }
       
       setCalculatedSalePrice(salePrice);
+    } else {
+      setCalculatedSalePrice(0);
     }
   }, [selectedAmount, product, setValue]);
 
@@ -263,7 +269,7 @@ export default function ProductDetailPage() {
                     allowCustomAmount={product.allowCustomAmount}
                     currency={product.currency}
                     error={errors.amount?.message}
-                    showSalePrice={true}
+                    showSalePrice={false}
                   />
 
                   <Input

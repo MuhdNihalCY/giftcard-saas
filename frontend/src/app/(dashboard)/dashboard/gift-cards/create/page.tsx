@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { CurrencySelector } from '@/components/CurrencySelector';
+import { TemplateSelector } from '@/components/TemplateSelector';
 import api from '@/lib/api';
 import { currencies } from '@/lib/currencies';
 
@@ -16,6 +17,7 @@ const giftCardSchema = z.object({
   value: z.number().min(1, 'Value must be at least 1'),
   currency: z.string().min(1, 'Currency is required'),
   expiryDate: z.string().optional(),
+  templateId: z.string().uuid().optional().or(z.literal('')),
   customMessage: z.string().optional(),
   recipientEmail: z.string().email('Invalid email').optional().or(z.literal('')),
   recipientName: z.string().optional(),
@@ -75,6 +77,7 @@ export default function CreateGiftCardPage() {
         ...data,
         value: Number(data.value),
         expiryDate: data.expiryDate ? new Date(data.expiryDate).toISOString() : undefined,
+        templateId: data.templateId || undefined,
         recipientEmail: data.recipientEmail || undefined,
       };
 
@@ -155,6 +158,22 @@ export default function CreateGiftCardPage() {
                 type="text"
                 error={errors.customMessage?.message}
                 {...register('customMessage')}
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <Controller
+                name="templateId"
+                control={control}
+                render={({ field }) => (
+                  <TemplateSelector
+                    value={field.value}
+                    onChange={field.onChange}
+                    label="Gift Card Template"
+                    showPreview={true}
+                    error={errors.templateId?.message}
+                  />
+                )}
               />
             </div>
 
