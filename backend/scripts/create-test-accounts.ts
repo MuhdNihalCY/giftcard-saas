@@ -12,6 +12,7 @@ interface TestAccount {
 }
 
 const testAccounts: TestAccount[] = [
+  // Admin Accounts
   {
     email: 'admin@giftcard.com',
     password: 'admin123',
@@ -20,6 +21,23 @@ const testAccounts: TestAccount[] = [
     businessName: 'Gift Card SaaS Admin',
     role: 'ADMIN',
   },
+  {
+    email: 'admin2@giftcard.com',
+    password: 'admin123',
+    firstName: 'Super',
+    lastName: 'Admin',
+    businessName: 'System Administrator',
+    role: 'ADMIN',
+  },
+  {
+    email: 'admin3@giftcard.com',
+    password: 'admin123',
+    firstName: 'Master',
+    lastName: 'Admin',
+    businessName: 'Platform Manager',
+    role: 'ADMIN',
+  },
+  // Merchant Accounts
   {
     email: 'merchant@giftcard.com',
     password: 'merchant123',
@@ -37,10 +55,78 @@ const testAccounts: TestAccount[] = [
     role: 'MERCHANT',
   },
   {
+    email: 'merchant3@giftcard.com',
+    password: 'merchant123',
+    firstName: 'Retail',
+    lastName: 'Owner',
+    businessName: 'Fashion Boutique',
+    role: 'MERCHANT',
+  },
+  {
+    email: 'merchant4@giftcard.com',
+    password: 'merchant123',
+    firstName: 'Restaurant',
+    lastName: 'Manager',
+    businessName: 'Fine Dining Restaurant',
+    role: 'MERCHANT',
+  },
+  {
+    email: 'merchant5@giftcard.com',
+    password: 'merchant123',
+    firstName: 'Spa',
+    lastName: 'Director',
+    businessName: 'Luxury Spa & Wellness',
+    role: 'MERCHANT',
+  },
+  {
+    email: 'merchant6@giftcard.com',
+    password: 'merchant123',
+    firstName: 'Tech',
+    lastName: 'Store',
+    businessName: 'Electronics Hub',
+    role: 'MERCHANT',
+  },
+  // Customer Accounts
+  {
     email: 'customer@giftcard.com',
     password: 'customer123',
     firstName: 'Customer',
     lastName: 'User',
+    role: 'CUSTOMER',
+  },
+  {
+    email: 'customer2@giftcard.com',
+    password: 'customer123',
+    firstName: 'John',
+    lastName: 'Doe',
+    role: 'CUSTOMER',
+  },
+  {
+    email: 'customer3@giftcard.com',
+    password: 'customer123',
+    firstName: 'Jane',
+    lastName: 'Smith',
+    role: 'CUSTOMER',
+  },
+  {
+    email: 'customer4@giftcard.com',
+    password: 'customer123',
+    firstName: 'Mike',
+    lastName: 'Johnson',
+    role: 'CUSTOMER',
+  },
+  {
+    email: 'customer5@giftcard.com',
+    password: 'customer123',
+    firstName: 'Sarah',
+    lastName: 'Williams',
+    role: 'CUSTOMER',
+  },
+  {
+    email: 'customer6@giftcard.com',
+    password: 'customer123',
+    firstName: 'David',
+    lastName: 'Brown',
     role: 'CUSTOMER',
   },
 ];

@@ -18,79 +18,110 @@ echo ""
 echo "Creating test accounts..."
 echo ""
 
-# Admin
-echo "Creating Admin account..."
+# Admin Accounts
+echo "Creating Admin accounts..."
 curl -s -X POST http://localhost:5000/api/v1/auth/register \
   -H "Content-Type: application/json" \
-  -d '{
-    "email": "admin@giftcard.com",
-    "password": "admin123",
-    "firstName": "Admin",
-    "lastName": "User",
-    "businessName": "Gift Card SaaS Admin",
-    "role": "ADMIN"
-  }' | python3 -m json.tool 2>/dev/null || echo "Response received"
+  -d '{"email": "admin@giftcard.com", "password": "admin123", "firstName": "Admin", "lastName": "User", "businessName": "Gift Card SaaS Admin", "role": "ADMIN"}' | python3 -m json.tool 2>/dev/null || echo "Response received"
 echo ""
 
-# Merchant 1
-echo "Creating Merchant 1 account..."
 curl -s -X POST http://localhost:5000/api/v1/auth/register \
   -H "Content-Type: application/json" \
-  -d '{
-    "email": "merchant@giftcard.com",
-    "password": "merchant123",
-    "firstName": "Merchant",
-    "lastName": "Business",
-    "businessName": "Test Merchant Store",
-    "role": "MERCHANT"
-  }' | python3 -m json.tool 2>/dev/null || echo "Response received"
+  -d '{"email": "admin2@giftcard.com", "password": "admin123", "firstName": "Super", "lastName": "Admin", "businessName": "System Administrator", "role": "ADMIN"}' | python3 -m json.tool 2>/dev/null || echo "Response received"
 echo ""
 
-# Merchant 2
-echo "Creating Merchant 2 account..."
 curl -s -X POST http://localhost:5000/api/v1/auth/register \
   -H "Content-Type: application/json" \
-  -d '{
-    "email": "merchant2@giftcard.com",
-    "password": "merchant123",
-    "firstName": "Another",
-    "lastName": "Merchant",
-    "businessName": "Coffee Shop",
-    "role": "MERCHANT"
-  }' | python3 -m json.tool 2>/dev/null || echo "Response received"
+  -d '{"email": "admin3@giftcard.com", "password": "admin123", "firstName": "Master", "lastName": "Admin", "businessName": "Platform Manager", "role": "ADMIN"}' | python3 -m json.tool 2>/dev/null || echo "Response received"
 echo ""
 
-# Customer
-echo "Creating Customer account..."
+# Merchant Accounts
+echo "Creating Merchant accounts..."
 curl -s -X POST http://localhost:5000/api/v1/auth/register \
   -H "Content-Type: application/json" \
-  -d '{
-    "email": "customer@giftcard.com",
-    "password": "customer123",
-    "firstName": "Customer",
-    "lastName": "User",
-    "role": "CUSTOMER"
-  }' | python3 -m json.tool 2>/dev/null || echo "Response received"
+  -d '{"email": "merchant@giftcard.com", "password": "merchant123", "firstName": "Merchant", "lastName": "Business", "businessName": "Test Merchant Store", "role": "MERCHANT"}' | python3 -m json.tool 2>/dev/null || echo "Response received"
+echo ""
+
+curl -s -X POST http://localhost:5000/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email": "merchant2@giftcard.com", "password": "merchant123", "firstName": "Another", "lastName": "Merchant", "businessName": "Coffee Shop", "role": "MERCHANT"}' | python3 -m json.tool 2>/dev/null || echo "Response received"
+echo ""
+
+curl -s -X POST http://localhost:5000/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email": "merchant3@giftcard.com", "password": "merchant123", "firstName": "Retail", "lastName": "Owner", "businessName": "Fashion Boutique", "role": "MERCHANT"}' | python3 -m json.tool 2>/dev/null || echo "Response received"
+echo ""
+
+curl -s -X POST http://localhost:5000/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email": "merchant4@giftcard.com", "password": "merchant123", "firstName": "Restaurant", "lastName": "Manager", "businessName": "Fine Dining Restaurant", "role": "MERCHANT"}' | python3 -m json.tool 2>/dev/null || echo "Response received"
+echo ""
+
+curl -s -X POST http://localhost:5000/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email": "merchant5@giftcard.com", "password": "merchant123", "firstName": "Spa", "lastName": "Director", "businessName": "Luxury Spa & Wellness", "role": "MERCHANT"}' | python3 -m json.tool 2>/dev/null || echo "Response received"
+echo ""
+
+curl -s -X POST http://localhost:5000/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email": "merchant6@giftcard.com", "password": "merchant123", "firstName": "Tech", "lastName": "Store", "businessName": "Electronics Hub", "role": "MERCHANT"}' | python3 -m json.tool 2>/dev/null || echo "Response received"
+echo ""
+
+# Customer Accounts
+echo "Creating Customer accounts..."
+curl -s -X POST http://localhost:5000/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email": "customer@giftcard.com", "password": "customer123", "firstName": "Customer", "lastName": "User", "role": "CUSTOMER"}' | python3 -m json.tool 2>/dev/null || echo "Response received"
+echo ""
+
+curl -s -X POST http://localhost:5000/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email": "customer2@giftcard.com", "password": "customer123", "firstName": "John", "lastName": "Doe", "role": "CUSTOMER"}' | python3 -m json.tool 2>/dev/null || echo "Response received"
+echo ""
+
+curl -s -X POST http://localhost:5000/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email": "customer3@giftcard.com", "password": "customer123", "firstName": "Jane", "lastName": "Smith", "role": "CUSTOMER"}' | python3 -m json.tool 2>/dev/null || echo "Response received"
+echo ""
+
+curl -s -X POST http://localhost:5000/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email": "customer4@giftcard.com", "password": "customer123", "firstName": "Mike", "lastName": "Johnson", "role": "CUSTOMER"}' | python3 -m json.tool 2>/dev/null || echo "Response received"
+echo ""
+
+curl -s -X POST http://localhost:5000/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email": "customer5@giftcard.com", "password": "customer123", "firstName": "Sarah", "lastName": "Williams", "role": "CUSTOMER"}' | python3 -m json.tool 2>/dev/null || echo "Response received"
+echo ""
+
+curl -s -X POST http://localhost:5000/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email": "customer6@giftcard.com", "password": "customer123", "firstName": "David", "lastName": "Brown", "role": "CUSTOMER"}' | python3 -m json.tool 2>/dev/null || echo "Response received"
 echo ""
 
 echo "✅ Test accounts creation completed!"
 echo ""
 echo "📋 Test Account Credentials:"
 echo ""
-echo "👑 ADMIN:"
-echo "   Email: admin@giftcard.com"
-echo "   Password: admin123"
+echo "👑 ADMIN ACCOUNTS (3):"
+echo "   admin@giftcard.com / admin123"
+echo "   admin2@giftcard.com / admin123"
+echo "   admin3@giftcard.com / admin123"
 echo ""
-echo "🏪 MERCHANT 1:"
-echo "   Email: merchant@giftcard.com"
-echo "   Password: merchant123"
+echo "🏪 MERCHANT ACCOUNTS (6):"
+echo "   merchant@giftcard.com / merchant123"
+echo "   merchant2@giftcard.com / merchant123"
+echo "   merchant3@giftcard.com / merchant123"
+echo "   merchant4@giftcard.com / merchant123"
+echo "   merchant5@giftcard.com / merchant123"
+echo "   merchant6@giftcard.com / merchant123"
 echo ""
-echo "🏪 MERCHANT 2:"
-echo "   Email: merchant2@giftcard.com"
-echo "   Password: merchant123"
-echo ""
-echo "👤 CUSTOMER:"
-echo "   Email: customer@giftcard.com"
-echo "   Password: customer123"
+echo "👤 CUSTOMER ACCOUNTS (6):"
+echo "   customer@giftcard.com / customer123"
+echo "   customer2@giftcard.com / customer123"
+echo "   customer3@giftcard.com / customer123"
+echo "   customer4@giftcard.com / customer123"
+echo "   customer5@giftcard.com / customer123"
+echo "   customer6@giftcard.com / customer123"
 echo ""
 
