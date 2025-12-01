@@ -211,7 +211,9 @@ app.use((req, res, next) => {
 // - Health checks (public endpoint)
 // - Auth endpoints (login/register - public endpoints, users not authenticated yet)
 // - OPTIONS requests (preflight)
+// - JWT-authenticated requests (JWT in Authorization header provides CSRF protection)
 app.use((req, res, next) => {
+  // Skip CSRF for public endpoints
   if (
     req.path.includes('/webhook/') || 
     req.path.startsWith('/health') || 
@@ -224,6 +226,14 @@ app.use((req, res, next) => {
   ) {
     return next(); // Skip CSRF for public/auth endpoints
   }
+  
+  // Skip CSRF for JWT-authenticated requests (JWT tokens in headers are not vulnerable to CSRF)
+  // CSRF attacks rely on browsers automatically sending cookies, but JWT tokens in Authorization
+  // headers are NOT sent automatically, so they provide inherent CSRF protection
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+    return next(); // Skip CSRF for JWT-authenticated requests
+  }
+  
   return validateCSRF(req, res, next);
 });
 

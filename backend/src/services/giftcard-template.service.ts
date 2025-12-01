@@ -51,12 +51,23 @@ export class GiftCardTemplateService {
       throw new ValidationError('Template name is required');
     }
 
+    // Provide default designData if not provided
+    const defaultDesignData = {
+      colors: {
+        primary: '#667eea',
+        secondary: '#764ba2',
+        background: '#ffffff',
+        text: '#000000',
+      },
+      layout: 'default',
+    };
+
     const template = await prisma.giftCardTemplate.create({
       data: {
         merchantId,
         name,
         description,
-        designData: designData as any,
+        designData: (designData || defaultDesignData) as any,
         isPublic,
       },
       include: {

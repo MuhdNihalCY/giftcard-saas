@@ -41,9 +41,48 @@ const getCSRFToken = (): string | null => {
   return null;
 };
 
+// Helper to fetch CSRF token by making a GET request
+const fetchCSRFToken = async (): Promise<string | null> => {
+  try {
+    // If user is authenticated, use an authenticated endpoint to ensure same session
+    // Otherwise, use health endpoint
+    const token = auth.getAccessToken();
+    let response;
+    
+    if (token) {
+      // Use authenticated endpoint to get CSRF token with the same session
+      response = await axios.get(`${API_URL}/gift-cards`, {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
+        params: { limit: 1 }, // Minimal request
+      });
+    } else {
+      // Use health endpoint for unauthenticated requests
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '') || 'http://localhost:8000';
+      response = await axios.get(`${backendUrl}/health`, {
+        withCredentials: true,
+      });
+    }
+    
+    const csrfToken = response.headers['x-csrf-token'];
+    if (csrfToken && typeof document !== 'undefined') {
+      const isProduction = process.env.NODE_ENV === 'production';
+      const sameSite = isProduction ? 'None' : 'Lax';
+      const secure = isProduction ? '; Secure' : '';
+      document.cookie = `XSRF-TOKEN=${encodeURIComponent(csrfToken)}; path=/; SameSite=${sameSite}${secure}`;
+      return csrfToken;
+    }
+    // Also check cookie
+    return getCSRFToken();
+  } catch (err) {
+    console.warn('Failed to fetch CSRF token', err);
+    return null;
+  }
+};
+
 // Request interceptor to add auth token and CSRF token
 api.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
+  async (config: InternalAxiosRequestConfig) => {
     // Add auth token
     const token = auth.getAccessToken();
     if (token && config.headers) {
@@ -52,7 +91,13 @@ api.interceptors.request.use(
 
     // Add CSRF token for state-changing requests
     if (config.method && ['post', 'put', 'patch', 'delete'].includes(config.method.toLowerCase())) {
-      const csrfToken = getCSRFToken();
+      let csrfToken = getCSRFToken();
+      
+      // If CSRF token is missing, try to fetch it first
+      if (!csrfToken) {
+        csrfToken = await fetchCSRFToken();
+      }
+      
       if (csrfToken && config.headers) {
         config.headers['X-CSRF-Token'] = csrfToken;
       }
@@ -81,7 +126,23 @@ api.interceptors.response.use(
     return response;
   },
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean; _csrfRetry?: boolean };
+
+    // Check if this is a CSRF token error
+    const errorMessage = (error.response?.data as any)?.error?.message?.toLowerCase() || '';
+    const isCSRFError = 
+      error.response?.status === 401 && 
+      (errorMessage.includes('csrf') || errorMessage.includes('invalid csrf'));
+
+    // If CSRF error and we haven't retried yet, fetch token and retry
+    if (isCSRFError && !originalRequest._csrfRetry) {
+      originalRequest._csrfRetry = true;
+      const csrfToken = await fetchCSRFToken();
+      if (csrfToken && originalRequest.headers) {
+        originalRequest.headers['X-CSRF-Token'] = csrfToken;
+        return api(originalRequest);
+      }
+    }
 
     // If error is 401 and we haven't tried to refresh yet
     if (error.response?.status === 401 && !originalRequest._retry) {

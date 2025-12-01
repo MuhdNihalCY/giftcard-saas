@@ -151,8 +151,22 @@ export class GiftCardController {
   async createTemplate(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const userId = req.user!.userId;
+      const { design, ...rest } = req.body;
+      
+      // Map 'design' to 'designData' if provided, otherwise use default
+      const designData = design || {
+        colors: {
+          primary: '#667eea',
+          secondary: '#764ba2',
+          background: '#ffffff',
+          text: '#000000',
+        },
+        layout: 'default',
+      };
+      
       const template = await giftCardTemplateService.create({
-        ...req.body,
+        ...rest,
+        designData,
         merchantId: userId,
       });
       res.status(201).json({
