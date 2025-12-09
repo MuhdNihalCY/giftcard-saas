@@ -30,8 +30,21 @@ cd backend
 npx prisma generate
 
 if docker ps | grep -q postgres; then
-    echo "Running database migrations..."
-    npx prisma migrate dev --name init
+    echo "Checking database migration status..."
+    # Check migration status - if already up to date, skip migration
+    MIGRATION_STATUS=$(npx prisma migrate status 2>&1)
+    if echo "$MIGRATION_STATUS" | grep -q "Database schema is up to date"; then
+        echo "✅ Database schema is up to date"
+    else
+        echo "Applying database migrations..."
+        # Use migrate deploy (like CI/CD) which doesn't require shadow database
+        # This applies pending migrations without validation
+        npx prisma migrate deploy || {
+            echo "⚠️  No pending migrations or deploy failed, syncing schema..."
+            # Fallback to db push for development if migrations don't exist
+            npx prisma db push --skip-generate --accept-data-loss
+        }
+    fi
 else
     echo "⚠️  PostgreSQL not available. Please:"
     echo "1. Start Docker Desktop and run: docker-compose up -d"

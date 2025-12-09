@@ -1,10 +1,11 @@
 import { Decimal } from '@prisma/client/runtime/library';
 import prisma from '../config/database';
 import { NotFoundError, ValidationError } from '../utils/errors';
-import { RedemptionMethod } from '@prisma/client';
+import { RedemptionMethod, PaymentMethod } from '@prisma/client';
 import giftCardService from './giftcard.service';
 import cacheService, { CacheKeys } from './cache.service';
 import fraudPreventionService from './fraud-prevention.service';
+import commissionService from './commission.service';
 import { isExpired } from '../utils/helpers';
 import logger from '../utils/logger';
 
@@ -210,6 +211,43 @@ export class RedemptionService {
       },
     });
 
+    // Calculate commission and update merchant balance
+    // Commission is calculated on redemption amount (what merchant receives)
+    const commissionResult = await commissionService.calculateCommission(
+      amount,
+      merchantId,
+      PaymentMethod.STRIPE // Default, commission is same regardless of payment method
+    );
+
+    const netAmount = commissionResult.netAmount;
+
+    // Update merchant balance with net amount (after commission)
+    const merchant = await prisma.user.findUnique({
+      where: { id: merchantId },
+      select: { merchantBalance: true },
+    });
+
+    if (merchant) {
+      const currentBalance = Number(merchant.merchantBalance);
+      const newMerchantBalance = currentBalance + netAmount;
+
+      await prisma.user.update({
+        where: { id: merchantId },
+        data: {
+          merchantBalance: new Decimal(newMerchantBalance),
+        },
+      });
+
+      logger.info('Merchant balance updated after redemption', {
+        merchantId,
+        redemptionAmount: amount,
+        commissionAmount: commissionResult.commissionAmount,
+        netAmount,
+        previousBalance: currentBalance,
+        newBalance: newMerchantBalance,
+      });
+    }
+
     // Invalidate cache
     await cacheService.delete(CacheKeys.giftCard(giftCard.id));
     await cacheService.delete(CacheKeys.giftCardByCode(giftCard.code));
@@ -219,6 +257,11 @@ export class RedemptionService {
       redemption,
       remainingBalance: newBalance,
       isFullyRedeemed: newBalance <= 0,
+      commission: {
+        amount: commissionResult.commissionAmount,
+        rate: commissionResult.commissionRate,
+        netAmount,
+      },
     };
   }
 

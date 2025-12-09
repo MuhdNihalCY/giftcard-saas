@@ -30,6 +30,31 @@ enum PaymentMethod {
   UPI
 }
 
+enum GatewayType {
+  STRIPE
+  PAYPAL
+  RAZORPAY
+  UPI
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  FAILED
+}
+
+enum CommissionType {
+  PERCENTAGE
+  FIXED
+}
+
+enum PayoutSchedule {
+  IMMEDIATE
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
 enum PaymentStatus {
   PENDING
   COMPLETED
@@ -84,6 +109,9 @@ model User {
   passwordResetTokens     PasswordResetToken[]
   payouts                 Payout[]
   refreshTokens           RefreshToken[]
+  merchantPaymentGateways MerchantPaymentGateway[]
+  payoutSettings          PayoutSettings?
+  commissionSettings      CommissionSettings[]
 
   @@map("users")
 }
@@ -140,7 +168,6 @@ model GiftCard {
   @@index([code])
   @@index([status])
   @@index([productId])
-  @@index([shareToken])
   @@map("gift_cards")
 }
 
@@ -189,6 +216,11 @@ model Payment {
   paymentIntentId String        @map("payment_intent_id")
   status          PaymentStatus @default(PENDING)
   transactionId   String?       @map("transaction_id")
+  commissionAmount Decimal?     @map("commission_amount") @db.Decimal(10, 2)
+  netAmount       Decimal?      @map("net_amount") @db.Decimal(10, 2)
+  ipAddress       String?       @map("ip_address")
+  userAgent       String?       @map("user_agent") @db.Text
+  deviceFingerprint String?     @map("device_fingerprint")
   metadata        Json?
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
@@ -317,9 +349,14 @@ model Payout {
   amount          Decimal      @db.Decimal(10, 2)
   currency        String       @default("USD")
   status          PayoutStatus @default(PENDING)
-  payoutMethod    String       @map("payout_method") // STRIPE, PAYPAL, BANK
+  payoutMethod    String       @map("payout_method") // STRIPE_CONNECT, PAYPAL, BANK_TRANSFER
   payoutAccountId String?      @map("payout_account_id")
   transactionId   String?      @map("transaction_id")
+  commissionAmount Decimal?    @map("commission_amount") @db.Decimal(10, 2)
+  netAmount       Decimal      @map("net_amount") @db.Decimal(10, 2)
+  scheduledFor    DateTime?    @map("scheduled_for")
+  retryCount      Int          @default(0) @map("retry_count")
+  webhookData     Json?        @map("webhook_data")
   processedAt     DateTime?    @map("processed_at")
   failureReason   String?      @map("failure_reason") @db.Text
   createdAt       DateTime     @default(now()) @map("created_at")
@@ -331,6 +368,7 @@ model Payout {
   @@index([merchantId])
   @@index([status])
   @@index([createdAt])
+  @@index([scheduledFor])
   @@map("payouts")
 }
 
@@ -459,4 +497,64 @@ model OTP {
   @@index([type])
   @@index([expiresAt])
   @@map("otps")
+}
+
+model MerchantPaymentGateway {
+  id                String            @id @default(uuid())
+  merchantId        String            @map("merchant_id")
+  gatewayType       GatewayType       @map("gateway_type")
+  isActive          Boolean           @default(false) @map("is_active")
+  credentials       String            @db.Text // Encrypted JSON
+  connectAccountId  String?           @map("connect_account_id")
+  verificationStatus VerificationStatus @default(PENDING) @map("verification_status")
+  metadata          Json?
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  merchant User @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@unique([merchantId, gatewayType])
+  @@index([merchantId])
+  @@index([gatewayType])
+  @@index([isActive])
+  @@index([verificationStatus])
+  @@map("merchant_payment_gateways")
+}
+
+model CommissionSettings {
+  id            String         @id @default(uuid())
+  merchantId    String?        @map("merchant_id") // null for global settings
+  commissionRate Decimal       @map("commission_rate") @db.Decimal(5, 2) // e.g., 5.00 for 5%
+  commissionType CommissionType @map("commission_type")
+  isActive      Boolean        @default(true) @map("is_active")
+  appliesTo     Json?          @map("applies_to") // Array of payment methods
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  merchant User? @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@index([merchantId])
+  @@index([isActive])
+  @@map("commission_settings")
+}
+
+model PayoutSettings {
+  id                 String         @id @default(uuid())
+  merchantId         String         @unique @map("merchant_id")
+  payoutMethod       String         @map("payout_method") // STRIPE_CONNECT, PAYPAL, BANK_TRANSFER
+  payoutSchedule     PayoutSchedule @default(IMMEDIATE) @map("payout_schedule")
+  minimumPayoutAmount Decimal       @default(10) @map("minimum_payout_amount") @db.Decimal(10, 2)
+  payoutAccountId    String?       @map("payout_account_id")
+  isActive           Boolean        @default(true) @map("is_active")
+  createdAt          DateTime       @default(now()) @map("created_at")
+  updatedAt          DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  merchant User @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@index([merchantId])
+  @@index([isActive])
+  @@map("payout_settings")
 }

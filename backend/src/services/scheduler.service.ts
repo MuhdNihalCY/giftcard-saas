@@ -125,6 +125,265 @@ export class SchedulerService {
   }
 
   /**
+   * Schedule payout processing
+   * Runs every hour to process scheduled payouts
+   */
+  schedulePayoutProcessing() {
+    cron.schedule('0 * * * *', async () => {
+      logger.info('Starting scheduled payout processing');
+
+      try {
+        const payoutService = (await import('./payout.service')).default;
+        const result = await payoutService.processScheduledPayouts();
+
+        logger.info('Scheduled payout processing completed', {
+          processed: result.processed,
+          failed: result.failed,
+        });
+
+        if (result.errors.length > 0) {
+          logger.warn('Payout processing errors', { errors: result.errors });
+        }
+      } catch (error: any) {
+        logger.error('Error processing scheduled payouts', { error: error.message });
+      }
+    });
+  }
+
+  /**
+   * Schedule daily payouts (for merchants with DAILY schedule)
+   * Runs every day at 8 AM
+   */
+  scheduleDailyPayouts() {
+    cron.schedule('0 8 * * *', async () => {
+      logger.info('Starting daily payout processing');
+
+      try {
+        const payoutService = (await import('./payout.service')).default;
+        const payoutSettingsService = (await import('./payout-settings.service')).default;
+        const prisma = (await import('../config/database')).default;
+
+        // Find merchants with DAILY payout schedule
+        const settings = await prisma.payoutSettings.findMany({
+          where: {
+            payoutSchedule: 'DAILY',
+            isActive: true,
+          },
+          include: {
+            merchant: {
+              select: {
+                id: true,
+                merchantBalance: true,
+              },
+            },
+          },
+        });
+
+        for (const setting of settings) {
+          try {
+            const availableBalance = await payoutService.calculateAvailableBalance(
+              setting.merchantId
+            );
+            const minimumAmount = Number(setting.minimumPayoutAmount);
+
+            if (availableBalance >= minimumAmount) {
+              await payoutService.requestPayout({
+                merchantId: setting.merchantId,
+                amount: availableBalance,
+                method: setting.payoutMethod,
+              });
+              logger.info('Daily payout requested', {
+                merchantId: setting.merchantId,
+                amount: availableBalance,
+              });
+            }
+          } catch (error: any) {
+            logger.error('Failed to process daily payout', {
+              merchantId: setting.merchantId,
+              error: error.message,
+            });
+          }
+        }
+
+        logger.info('Daily payout processing completed', { count: settings.length });
+      } catch (error: any) {
+        logger.error('Error processing daily payouts', { error: error.message });
+      }
+    });
+  }
+
+  /**
+   * Schedule weekly payouts (for merchants with WEEKLY schedule)
+   * Runs every Monday at 8 AM
+   */
+  scheduleWeeklyPayouts() {
+    cron.schedule('0 8 * * 1', async () => {
+      logger.info('Starting weekly payout processing');
+
+      try {
+        const payoutService = (await import('./payout.service')).default;
+        const prisma = (await import('../config/database')).default;
+
+        // Find merchants with WEEKLY payout schedule
+        const settings = await prisma.payoutSettings.findMany({
+          where: {
+            payoutSchedule: 'WEEKLY',
+            isActive: true,
+          },
+          include: {
+            merchant: {
+              select: {
+                id: true,
+                merchantBalance: true,
+              },
+            },
+          },
+        });
+
+        for (const setting of settings) {
+          try {
+            const availableBalance = await payoutService.calculateAvailableBalance(
+              setting.merchantId
+            );
+            const minimumAmount = Number(setting.minimumPayoutAmount);
+
+            if (availableBalance >= minimumAmount) {
+              await payoutService.requestPayout({
+                merchantId: setting.merchantId,
+                amount: availableBalance,
+                method: setting.payoutMethod,
+              });
+              logger.info('Weekly payout requested', {
+                merchantId: setting.merchantId,
+                amount: availableBalance,
+              });
+            }
+          } catch (error: any) {
+            logger.error('Failed to process weekly payout', {
+              merchantId: setting.merchantId,
+              error: error.message,
+            });
+          }
+        }
+
+        logger.info('Weekly payout processing completed', { count: settings.length });
+      } catch (error: any) {
+        logger.error('Error processing weekly payouts', { error: error.message });
+      }
+    });
+  }
+
+  /**
+   * Schedule monthly payouts (for merchants with MONTHLY schedule)
+   * Runs on the 1st of every month at 8 AM
+   */
+  scheduleMonthlyPayouts() {
+    cron.schedule('0 8 1 * *', async () => {
+      logger.info('Starting monthly payout processing');
+
+      try {
+        const payoutService = (await import('./payout.service')).default;
+        const prisma = (await import('../config/database')).default;
+
+        // Find merchants with MONTHLY payout schedule
+        const settings = await prisma.payoutSettings.findMany({
+          where: {
+            payoutSchedule: 'MONTHLY',
+            isActive: true,
+          },
+          include: {
+            merchant: {
+              select: {
+                id: true,
+                merchantBalance: true,
+              },
+            },
+          },
+        });
+
+        for (const setting of settings) {
+          try {
+            const availableBalance = await payoutService.calculateAvailableBalance(
+              setting.merchantId
+            );
+            const minimumAmount = Number(setting.minimumPayoutAmount);
+
+            if (availableBalance >= minimumAmount) {
+              await payoutService.requestPayout({
+                merchantId: setting.merchantId,
+                amount: availableBalance,
+                method: setting.payoutMethod,
+              });
+              logger.info('Monthly payout requested', {
+                merchantId: setting.merchantId,
+                amount: availableBalance,
+              });
+            }
+          } catch (error: any) {
+            logger.error('Failed to process monthly payout', {
+              merchantId: setting.merchantId,
+              error: error.message,
+            });
+          }
+        }
+
+        logger.info('Monthly payout processing completed', { count: settings.length });
+      } catch (error: any) {
+        logger.error('Error processing monthly payouts', { error: error.message });
+      }
+    });
+  }
+
+  /**
+   * Schedule retry of failed payouts
+   * Runs every 6 hours
+   */
+  scheduleRetryFailedPayouts() {
+    cron.schedule('0 */6 * * *', async () => {
+      logger.info('Starting retry of failed payouts');
+
+      try {
+        const payoutService = (await import('./payout.service')).default;
+        const prisma = (await import('../config/database')).default;
+
+        // Find failed payouts with retry count < 3
+        const failedPayouts = await prisma.payout.findMany({
+          where: {
+            status: 'FAILED',
+            retryCount: {
+              lt: 3,
+            },
+          },
+          select: {
+            id: true,
+            merchantId: true,
+            retryCount: true,
+          },
+        });
+
+        for (const payout of failedPayouts) {
+          try {
+            await payoutService.retryFailedPayout(payout.id);
+            logger.info('Failed payout retried', {
+              payoutId: payout.id,
+              retryCount: payout.retryCount + 1,
+            });
+          } catch (error: any) {
+            logger.error('Failed to retry payout', {
+              payoutId: payout.id,
+              error: error.message,
+            });
+          }
+        }
+
+        logger.info('Failed payout retry completed', { count: failedPayouts.length });
+      } catch (error: any) {
+        logger.error('Error retrying failed payouts', { error: error.message });
+      }
+    });
+  }
+
+  /**
    * Start all scheduled jobs
    */
   start() {
@@ -132,6 +391,11 @@ export class SchedulerService {
     this.scheduleExpiryReminders();
     this.scheduleTokenCleanup();
     this.scheduleIPTrackingCleanup();
+    this.schedulePayoutProcessing();
+    this.scheduleDailyPayouts();
+    this.scheduleWeeklyPayouts();
+    this.scheduleMonthlyPayouts();
+    this.scheduleRetryFailedPayouts();
     logger.info('All scheduled jobs started');
   }
 }

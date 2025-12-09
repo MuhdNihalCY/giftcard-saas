@@ -273,6 +273,9 @@ import deviceRoutes from './routes/device.routes';
 import auditLogRoutes from './routes/audit-log.routes';
 import breakageRoutes from './routes/breakage.routes';
 import chargebackRoutes from './routes/chargeback.routes';
+import merchantPaymentGatewayRoutes from './routes/merchant-payment-gateway.routes';
+import payoutRoutes from './routes/payout.routes';
+import adminPayoutRoutes from './routes/admin-payout.routes';
 
 app.use(`/api/${env.API_VERSION}/auth`, authRoutes);
 app.use(`/api/${env.API_VERSION}/auth/2fa`, twoFactorRoutes);
@@ -295,6 +298,9 @@ app.use(`/api/${env.API_VERSION}/breakage`, breakageRoutes);
 app.use(`/api/${env.API_VERSION}/chargebacks`, chargebackRoutes);
 import blacklistRoutes from './routes/blacklist.routes';
 app.use(`/api/${env.API_VERSION}/admin/blacklist`, blacklistRoutes);
+app.use(`/api/${env.API_VERSION}/merchant/payment-gateways`, merchantPaymentGatewayRoutes);
+app.use(`/api/${env.API_VERSION}/payouts`, payoutRoutes);
+app.use(`/api/${env.API_VERSION}/admin/payouts`, adminPayoutRoutes);
 
 // Serve uploaded files
 app.use('/uploads', express.static('uploads'));

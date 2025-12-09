@@ -1,0 +1,27 @@
+Payouts (planned)
+Payout model exists but automation is not implemented
+Merchants can request payouts
+Payout methods: Stripe Connect, PayPal, Bank Transfer
+
+2. How merchants can add payment methods
+Merchants cannot add their own payment gateways. Payment gateways are configured at the system level by the admin.
+Current system
+All merchants use the same payment gateways
+Configured in environment variables by admin
+No merchant-specific payment gateway settings in the database
+
+need to fix this.
+
+What merchants cannot do - customer should able to do.
+Add their own payment gateways
+Configure payment gateway credentials
+Set up merchant-specific payment methods
+Connect their own Stripe/PayPal accounts
+
+
+this how this saas should works
+Multi-tenant model (common in SaaS)
+Each merchant has their own payment gateway credentials
+Merchants connect their Stripe/PayPal accounts
+Payments go directly to merchant accounts
+Platform takes a commission

@@ -75,5 +75,11 @@ router.post(
   webhookController.razorpayWebhook.bind(webhookController)
 );
 
+router.post(
+  '/webhook/paypal/payout',
+  express.json(),
+  webhookController.paypalPayoutWebhook.bind(webhookController)
+);
+
 export default router;
 

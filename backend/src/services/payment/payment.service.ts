@@ -1,7 +1,7 @@
 import { Decimal } from '@prisma/client/runtime/library';
 import prisma from '../../config/database';
 import { NotFoundError, ValidationError } from '../../utils/errors';
-import { PaymentMethod, PaymentStatus, Prisma } from '@prisma/client';
+import { PaymentMethod, PaymentStatus, Prisma, GatewayType } from '@prisma/client';
 import logger from '../../utils/logger';
 import stripeService from './stripe.service';
 import paypalService from './paypal.service';
@@ -10,6 +10,10 @@ import giftCardService from '../giftcard.service';
 import giftCardProductService from '../giftcard-product.service';
 import deliveryService from '../delivery/delivery.service';
 import fraudPreventionService from '../fraud-prevention.service';
+import merchantPaymentGatewayService from '../merchant-payment-gateway.service';
+import stripeConnectService from './stripe-connect.service';
+import paypalConnectService from './paypal-connect.service';
+import commissionService from '../commission.service';
 import crypto from 'crypto';
 import type { PaymentMetadata, TransactionMetadata, RefundResult, ProductPaymentData } from '../../types/payment';
 
@@ -121,6 +125,37 @@ export class PaymentService {
       }
     }
 
+    // Get merchant ID from gift card
+    const merchantId = giftCard.merchantId;
+
+    // Calculate commission
+    const commissionResult = await commissionService.calculateCommission(
+      amount,
+      merchantId,
+      paymentMethod
+    );
+
+    const commissionAmount = commissionResult.commissionAmount;
+    const netAmount = commissionResult.netAmount;
+
+    // Check if merchant has their own payment gateway configured
+    let useMerchantGateway = false;
+    let merchantGateway = null;
+
+    if (paymentMethod === PaymentMethod.STRIPE) {
+      merchantGateway = await merchantPaymentGatewayService.getGatewayForMerchant(
+        merchantId,
+        GatewayType.STRIPE
+      );
+      useMerchantGateway = merchantGateway?.isActive && merchantGateway?.connectAccountId ? true : false;
+    } else if (paymentMethod === PaymentMethod.PAYPAL) {
+      merchantGateway = await merchantPaymentGatewayService.getGatewayForMerchant(
+        merchantId,
+        GatewayType.PAYPAL
+      );
+      useMerchantGateway = merchantGateway?.isActive ? true : false;
+    }
+
     let paymentIntentId: string | undefined;
     let orderId: string | undefined;
     let clientSecret: string | null | undefined;
@@ -129,29 +164,63 @@ export class PaymentService {
     // Create payment based on method
     switch (paymentMethod) {
       case PaymentMethod.STRIPE:
-        const stripeResult = await stripeService.createPaymentIntent({
-          amount,
-          currency,
-          giftCardId,
-          customerId,
-        });
-        paymentIntentId = stripeResult.paymentIntentId;
-        clientSecret = stripeResult.clientSecret;
-        status = stripeResult.status === 'succeeded' ? PaymentStatus.COMPLETED : PaymentStatus.PENDING;
+        if (useMerchantGateway && merchantGateway?.connectAccountId) {
+          // Use merchant's Stripe Connect account
+          const stripeConnectResult = await stripeConnectService.createPaymentIntentForMerchant({
+            merchantId,
+            amount,
+            currency,
+            giftCardId,
+            customerId,
+            applicationFeeAmount: commissionAmount, // Platform commission
+            metadata: {
+              giftCardId,
+              customerId: customerId || '',
+            },
+          });
+          paymentIntentId = stripeConnectResult.paymentIntentId;
+          clientSecret = stripeConnectResult.clientSecret;
+          status = stripeConnectResult.status === 'succeeded' ? PaymentStatus.COMPLETED : PaymentStatus.PENDING;
+        } else {
+          // Use platform Stripe (backward compatibility)
+          const stripeResult = await stripeService.createPaymentIntent({
+            amount,
+            currency,
+            giftCardId,
+            customerId,
+          });
+          paymentIntentId = stripeResult.paymentIntentId;
+          clientSecret = stripeResult.clientSecret;
+          status = stripeResult.status === 'succeeded' ? PaymentStatus.COMPLETED : PaymentStatus.PENDING;
+        }
         break;
 
       case PaymentMethod.PAYPAL:
         if (!returnUrl || !cancelUrl) {
           throw new ValidationError('Return URL and Cancel URL are required for PayPal');
         }
-        const paypalResult = await paypalService.createOrder({
-          amount,
-          currency,
-          giftCardId,
-          returnUrl,
-          cancelUrl,
-        });
-        orderId = paypalResult.orderId;
+        if (useMerchantGateway) {
+          // Use merchant's PayPal account
+          const paypalConnectResult = await paypalConnectService.createOrderForMerchant({
+            merchantId,
+            amount,
+            currency,
+            giftCardId,
+            returnUrl,
+            cancelUrl,
+          });
+          orderId = paypalConnectResult.orderId;
+        } else {
+          // Use platform PayPal (backward compatibility)
+          const paypalResult = await paypalService.createOrder({
+            amount,
+            currency,
+            giftCardId,
+            returnUrl,
+            cancelUrl,
+          });
+          orderId = paypalResult.orderId;
+        }
         break;
 
       case PaymentMethod.RAZORPAY:
@@ -205,11 +274,16 @@ export class PaymentService {
         paymentMethod,
         paymentIntentId: paymentIntentId || orderId || '',
         status,
+        commissionAmount: new Decimal(commissionAmount),
+        netAmount: new Decimal(netAmount),
         ipAddress: ipAddress || null,
         userAgent: data.userAgent || null,
         metadata: {
           returnUrl,
           cancelUrl,
+          useMerchantGateway,
+          commissionRate: commissionResult.commissionRate,
+          commissionType: commissionResult.commissionType,
         } satisfies PaymentMetadata,
       },
       include: {
@@ -260,21 +334,63 @@ export class PaymentService {
         if (!paymentIntentId) {
           throw new ValidationError('Payment intent ID is required for Stripe');
         }
-        const stripeResult = await stripeService.confirmPaymentIntent({
-          paymentIntentId,
-          paymentMethodId,
-        });
-        transactionId = stripeResult.transactionId;
-        confirmed = stripeResult.status === 'succeeded';
+        // Check if this was created with merchant gateway
+        const paymentMetadata = payment.metadata as PaymentMetadata | null;
+        const useMerchantStripe = paymentMetadata?.useMerchantGateway === true;
+
+        if (useMerchantStripe) {
+          // Confirm using merchant's Stripe Connect account
+          const merchantId = payment.giftCard.merchantId;
+          const gateway = await merchantPaymentGatewayService.getGatewayForMerchant(
+            merchantId,
+            GatewayType.STRIPE
+          );
+          if (gateway?.connectAccountId) {
+            // For Connect accounts, payment is already confirmed on creation
+            // Just retrieve the payment intent to get transaction ID
+            const stripePayment = await stripeService.getPaymentIntent(paymentIntentId);
+            transactionId = stripePayment.transactionId;
+            confirmed = stripePayment.status === 'succeeded';
+          } else {
+            // Fallback to platform Stripe
+            const stripeResult = await stripeService.confirmPaymentIntent({
+              paymentIntentId,
+              paymentMethodId,
+            });
+            transactionId = stripeResult.transactionId;
+            confirmed = stripeResult.status === 'succeeded';
+          }
+        } else {
+          // Use platform Stripe
+          const stripeResult = await stripeService.confirmPaymentIntent({
+            paymentIntentId,
+            paymentMethodId,
+          });
+          transactionId = stripeResult.transactionId;
+          confirmed = stripeResult.status === 'succeeded';
+        }
         break;
 
       case PaymentMethod.PAYPAL:
         if (!orderId) {
           throw new ValidationError('Order ID is required for PayPal');
         }
-        const paypalResult = await paypalService.captureOrder(orderId);
-        transactionId = paypalResult.transactionId;
-        confirmed = paypalResult.status === 'COMPLETED';
+        // Check if this was created with merchant gateway
+        const paypalPaymentMetadata = payment.metadata as PaymentMetadata | null;
+        const useMerchantPayPal = paypalPaymentMetadata?.useMerchantGateway === true;
+
+        if (useMerchantPayPal) {
+          // Capture using merchant's PayPal account
+          const merchantId = payment.giftCard.merchantId;
+          const paypalConnectResult = await paypalConnectService.captureOrder(merchantId, orderId);
+          transactionId = paypalConnectResult.transactionId;
+          confirmed = paypalConnectResult.status === 'COMPLETED';
+        } else {
+          // Use platform PayPal
+          const paypalResult = await paypalService.captureOrder(orderId);
+          transactionId = paypalResult.transactionId;
+          confirmed = paypalResult.status === 'COMPLETED';
+        }
         break;
 
       case PaymentMethod.RAZORPAY:
@@ -886,6 +1002,34 @@ export class PaymentService {
     // In a real system, you might want to create a separate bulk purchase record
     const primaryGiftCard = giftCards[0];
     
+    // Calculate commission for bulk purchase
+    const commissionResult = await commissionService.calculateCommission(
+      totalSalePrice,
+      finalMerchantId,
+      paymentMethod
+    );
+
+    const commissionAmount = commissionResult.commissionAmount;
+    const netAmount = commissionResult.netAmount;
+
+    // Check if merchant has their own payment gateway configured
+    let useMerchantGateway = false;
+    let merchantGateway = null;
+
+    if (paymentMethod === PaymentMethod.STRIPE) {
+      merchantGateway = await merchantPaymentGatewayService.getGatewayForMerchant(
+        finalMerchantId!,
+        GatewayType.STRIPE
+      );
+      useMerchantGateway = merchantGateway?.isActive && merchantGateway?.connectAccountId ? true : false;
+    } else if (paymentMethod === PaymentMethod.PAYPAL) {
+      merchantGateway = await merchantPaymentGatewayService.getGatewayForMerchant(
+        finalMerchantId!,
+        GatewayType.PAYPAL
+      );
+      useMerchantGateway = merchantGateway?.isActive ? true : false;
+    }
+
     let paymentIntentId: string | undefined;
     let orderId: string | undefined;
     let clientSecret: string | null | undefined;
@@ -894,29 +1038,64 @@ export class PaymentService {
     // Create payment based on method using total sale price
     switch (paymentMethod) {
       case PaymentMethod.STRIPE:
-        const stripeResult = await stripeService.createPaymentIntent({
-          amount: totalSalePrice, // Customer pays total sale price
-          currency: product?.currency || currency,
-          giftCardId: primaryGiftCard.id,
-          customerId,
-        });
-        paymentIntentId = stripeResult.paymentIntentId;
-        clientSecret = stripeResult.clientSecret;
-        status = stripeResult.status === 'succeeded' ? PaymentStatus.COMPLETED : PaymentStatus.PENDING;
+        if (useMerchantGateway && merchantGateway?.connectAccountId) {
+          // Use merchant's Stripe Connect account
+          const stripeConnectResult = await stripeConnectService.createPaymentIntentForMerchant({
+            merchantId: finalMerchantId!,
+            amount: totalSalePrice,
+            currency: product?.currency || currency,
+            giftCardId: primaryGiftCard.id,
+            customerId,
+            applicationFeeAmount: commissionAmount,
+            metadata: {
+              giftCardId: primaryGiftCard.id,
+              customerId: customerId || '',
+              type: 'bulk_purchase',
+            },
+          });
+          paymentIntentId = stripeConnectResult.paymentIntentId;
+          clientSecret = stripeConnectResult.clientSecret;
+          status = stripeConnectResult.status === 'succeeded' ? PaymentStatus.COMPLETED : PaymentStatus.PENDING;
+        } else {
+          // Use platform Stripe (backward compatibility)
+          const stripeResult = await stripeService.createPaymentIntent({
+            amount: totalSalePrice,
+            currency: product?.currency || currency,
+            giftCardId: primaryGiftCard.id,
+            customerId,
+          });
+          paymentIntentId = stripeResult.paymentIntentId;
+          clientSecret = stripeResult.clientSecret;
+          status = stripeResult.status === 'succeeded' ? PaymentStatus.COMPLETED : PaymentStatus.PENDING;
+        }
         break;
 
       case PaymentMethod.PAYPAL:
         if (!returnUrl || !cancelUrl) {
           throw new ValidationError('Return URL and Cancel URL are required for PayPal');
         }
-        const paypalResult = await paypalService.createOrder({
-          amount: totalSalePrice, // Customer pays total sale price
-          currency: product?.currency || currency,
-          giftCardId: primaryGiftCard.id,
-          returnUrl,
-          cancelUrl,
-        });
-        orderId = paypalResult.orderId;
+        if (useMerchantGateway) {
+          // Use merchant's PayPal account
+          const paypalConnectResult = await paypalConnectService.createOrderForMerchant({
+            merchantId: finalMerchantId!,
+            amount: totalSalePrice,
+            currency: product?.currency || currency,
+            giftCardId: primaryGiftCard.id,
+            returnUrl,
+            cancelUrl,
+          });
+          orderId = paypalConnectResult.orderId;
+        } else {
+          // Use platform PayPal (backward compatibility)
+          const paypalResult = await paypalService.createOrder({
+            amount: totalSalePrice,
+            currency: product?.currency || currency,
+            giftCardId: primaryGiftCard.id,
+            returnUrl,
+            cancelUrl,
+          });
+          orderId = paypalResult.orderId;
+        }
         break;
 
       case PaymentMethod.RAZORPAY:
@@ -969,8 +1148,13 @@ export class PaymentService {
         paymentMethod,
         paymentIntentId: paymentIntentId || orderId || '',
         status,
+        commissionAmount: new Decimal(commissionAmount),
+        netAmount: new Decimal(netAmount),
         ipAddress: ipAddress || null,
         userAgent: userAgent || null,
+        deviceFingerprint: userAgent && ipAddress
+          ? this.generateDeviceFingerprint(userAgent, ipAddress)
+          : null,
         metadata: {
           type: 'bulk_purchase',
           giftCardIds: giftCards.map(gc => gc.id),
@@ -979,6 +1163,9 @@ export class PaymentService {
           totalSalePrice, // Total what customer paid
           returnUrl,
           cancelUrl,
+          useMerchantGateway,
+          commissionRate: commissionResult.commissionRate,
+          commissionType: commissionResult.commissionType,
         } as any,
       },
       include: {

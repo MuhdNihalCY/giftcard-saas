@@ -2,8 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 import { Decimal } from '@prisma/client/runtime/library';
 import stripeService from '../services/payment/stripe.service';
-import chargebackService from '../services/chargeback.service';
-import { PaymentMethod, PaymentStatus } from '@prisma/client';
+import { PaymentMethod, PaymentStatus, PayoutStatus } from '@prisma/client';
 import prisma from '../config/database';
 import { env } from '../config/env';
 import logger from '../utils/logger';
@@ -28,9 +27,14 @@ export class WebhookController {
           await this.handleStripeRefund(event.data.object as unknown as Record<string, unknown>);
           break;
 
-        case 'charge.dispute.created':
-        case 'chargeback.created':
-          await this.handleStripeChargeback(event.data.object as unknown as Record<string, unknown>);
+        case 'payout.paid':
+        case 'payout.failed':
+        case 'payout.canceled':
+          await this.handleStripePayoutStatus(event.data.object as unknown as Record<string, unknown>, event.type);
+          break;
+
+        case 'account.updated':
+          await this.handleStripeAccountUpdate(event.data.object as unknown as Record<string, unknown>);
           break;
 
         default:
@@ -116,55 +120,6 @@ export class WebhookController {
     }
   }
 
-  private async handleStripeChargeback(dispute: Record<string, unknown>): Promise<void> {
-    try {
-      const disputeId = dispute.id as string | undefined;
-      const chargeId = dispute.charge as string | undefined;
-      const amount = dispute.amount as number | undefined;
-      const currency = dispute.currency as string | undefined;
-      const reason = dispute.reason as string | undefined;
-
-      if (!disputeId || !chargeId || !amount) {
-        logger.warn('Invalid chargeback webhook data', { disputeId, chargeId });
-        return;
-      }
-
-      // Find payment by charge ID (transaction ID)
-      const payment = await prisma.payment.findFirst({
-        where: {
-          transactionId: chargeId,
-          paymentMethod: PaymentMethod.STRIPE,
-        },
-      });
-
-      if (!payment) {
-        logger.warn('Payment not found for chargeback', { chargeId, disputeId });
-        return;
-      }
-
-      // Convert amount from cents to dollars
-      const chargebackAmount = amount / 100;
-      const fee = (dispute.balance_transaction as Record<string, unknown>)?.fee
-        ? Number((dispute.balance_transaction as Record<string, unknown>).fee) / 100
-        : 0;
-
-      await chargebackService.handleChargeback({
-        paymentId: payment.id,
-        paymentMethod: PaymentMethod.STRIPE,
-        chargebackId: disputeId,
-        amount: chargebackAmount,
-        currency: currency || 'USD',
-        reason: reason || 'Chargeback received from Stripe',
-        fee,
-        disputeId,
-      });
-
-      logger.info('Stripe chargeback processed', { disputeId, paymentId: payment.id });
-    } catch (error: any) {
-      logger.error('Error handling Stripe chargeback', { error: error.message });
-    }
-  }
-
   async razorpayWebhook(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const event = req.body;
@@ -192,11 +147,6 @@ export class WebhookController {
           await this.handleRazorpayPaymentFailed(event.payload.payment.entity);
           break;
 
-        case 'payment.dispute.created':
-        case 'chargeback.created':
-          await this.handleRazorpayChargeback(event.payload.dispute?.entity || event.payload.chargeback?.entity);
-          break;
-
         default:
           logger.info('Unhandled Razorpay webhook event', { eventType: event.event });
       }
@@ -211,17 +161,10 @@ export class WebhookController {
     const paymentId = payment.id as string | undefined;
     if (!paymentId) return;
     
-    // Check for both Razorpay and UPI payments (UPI uses Razorpay infrastructure)
-    const paymentMethod = (payment.method as string)?.toLowerCase() === 'upi' 
-      ? PaymentMethod.UPI 
-      : PaymentMethod.RAZORPAY;
-    
     const paymentRecord = await prisma.payment.findFirst({
       where: {
         paymentIntentId: paymentId,
-        paymentMethod: {
-          in: [PaymentMethod.RAZORPAY, PaymentMethod.UPI],
-        },
+        paymentMethod: PaymentMethod.RAZORPAY,
       },
     });
 
@@ -247,7 +190,7 @@ export class WebhookController {
         userId: paymentRecord.customerId || null,
         metadata: {
           paymentId: paymentRecord.id,
-          paymentMethod: paymentRecord.paymentMethod,
+          paymentMethod: PaymentMethod.RAZORPAY,
         } satisfies { paymentId: string; paymentMethod: PaymentMethod },
       },
     });
@@ -257,13 +200,10 @@ export class WebhookController {
     const paymentId = payment.id as string | undefined;
     if (!paymentId) return;
     
-    // Check for both Razorpay and UPI payments
     const paymentRecord = await prisma.payment.findFirst({
       where: {
         paymentIntentId: paymentId,
-        paymentMethod: {
-          in: [PaymentMethod.RAZORPAY, PaymentMethod.UPI],
-        },
+        paymentMethod: PaymentMethod.RAZORPAY,
       },
     });
 
@@ -275,53 +215,258 @@ export class WebhookController {
     }
   }
 
-  private async handleRazorpayChargeback(dispute: Record<string, unknown>): Promise<void> {
-    try {
-      const disputeId = dispute.id as string | undefined;
-      const paymentId = dispute.payment_id as string | undefined;
-      const amount = dispute.amount as number | undefined;
-      const currency = dispute.currency as string | undefined;
-      const reason = dispute.reason as string | undefined;
+  /**
+   * Handle Stripe Connect payout status updates
+   */
+  private async handleStripePayoutStatus(
+    payout: Record<string, unknown>,
+    eventType: string
+  ): Promise<void> {
+    const payoutId = payout.id as string | undefined;
+    if (!payoutId) return;
 
-      if (!disputeId || !paymentId || !amount) {
-        logger.warn('Invalid Razorpay chargeback data', { disputeId, paymentId });
+    // Find payout by transaction ID (Stripe payout ID)
+    const payoutRecord = await prisma.payout.findFirst({
+      where: {
+        transactionId: payoutId,
+        payoutMethod: 'STRIPE_CONNECT',
+      },
+    });
+
+    if (!payoutRecord) {
+      logger.warn('Payout not found for Stripe webhook', { payoutId, eventType });
+      return;
+    }
+
+    let status: PayoutStatus;
+    let failureReason: string | null = null;
+
+    switch (eventType) {
+      case 'payout.paid':
+        status = PayoutStatus.COMPLETED;
+        break;
+      case 'payout.failed':
+        status = PayoutStatus.FAILED;
+        failureReason = (payout.failure_message as string) || 'Payout failed';
+        break;
+      case 'payout.canceled':
+        status = PayoutStatus.CANCELLED;
+        failureReason = 'Payout was canceled';
+        break;
+      default:
         return;
+    }
+
+    await prisma.payout.update({
+      where: { id: payoutRecord.id },
+      data: {
+        status,
+        failureReason,
+        processedAt: status === PayoutStatus.COMPLETED ? new Date() : payoutRecord.processedAt,
+        webhookData: {
+          eventType,
+          payoutId,
+          status: payout.status,
+          failureCode: payout.failure_code || null,
+          failureMessage: payout.failure_message || null,
+          updatedAt: new Date().toISOString(),
+        },
+      },
+    });
+
+    logger.info('Payout status updated from Stripe webhook', {
+      payoutId: payoutRecord.id,
+      status,
+      eventType,
+    });
+  }
+
+  /**
+   * Handle Stripe Connect account updates
+   */
+  private async handleStripeAccountUpdate(
+    account: Record<string, unknown>
+  ): Promise<void> {
+    const accountId = account.id as string | undefined;
+    if (!accountId) return;
+
+    // Find gateway by connect account ID
+    const gateway = await prisma.merchantPaymentGateway.findFirst({
+      where: {
+        connectAccountId: accountId,
+        gatewayType: 'STRIPE',
+      },
+    });
+
+    if (!gateway) {
+      return;
+    }
+
+    const chargesEnabled = account.charges_enabled as boolean | undefined;
+    const payoutsEnabled = account.payouts_enabled as boolean | undefined;
+    const detailsSubmitted = account.details_submitted as boolean | undefined;
+
+    // Update verification status based on account status
+    let verificationStatus = gateway.verificationStatus;
+    if (chargesEnabled && payoutsEnabled && detailsSubmitted) {
+      verificationStatus = 'VERIFIED';
+    } else if (!detailsSubmitted) {
+      verificationStatus = 'PENDING';
+    }
+
+    await prisma.merchantPaymentGateway.update({
+      where: { id: gateway.id },
+      data: {
+        verificationStatus,
+        isActive: verificationStatus === 'VERIFIED' && gateway.isActive,
+        metadata: {
+          ...((gateway.metadata as Record<string, unknown>) || {}),
+          chargesEnabled,
+          payoutsEnabled,
+          detailsSubmitted,
+          updatedAt: new Date().toISOString(),
+        },
+      },
+    });
+
+    logger.info('Stripe Connect account updated', {
+      gatewayId: gateway.id,
+      accountId,
+      verificationStatus,
+    });
+  }
+
+  /**
+   * Handle PayPal payout webhooks
+   */
+  async paypalPayoutWebhook(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+    try {
+      const event = req.body;
+
+      // Verify webhook signature (PayPal provides verification mechanism)
+      // For now, we'll process the webhook
+      // In production, verify the webhook signature from PayPal
+
+      switch (event.event_type) {
+        case 'PAYMENT.PAYOUTSBATCH':
+          await this.handlePayPalPayoutBatch(event.resource);
+          break;
+
+        case 'PAYMENT.PAYOUTS-ITEM':
+          await this.handlePayPalPayoutItem(event.resource);
+          break;
+
+        default:
+          logger.info('Unhandled PayPal webhook event type', { eventType: event.event_type });
       }
 
-      // Find payment
-      const payment = await prisma.payment.findFirst({
-        where: {
-          paymentIntentId: paymentId,
-          paymentMethod: {
-            in: [PaymentMethod.RAZORPAY, PaymentMethod.UPI],
+      return res.json({ received: true });
+    } catch (error) {
+      return next(error);
+    }
+  }
+
+  private async handlePayPalPayoutBatch(batch: Record<string, unknown>): Promise<void> {
+    const batchId = batch.payout_batch_id as string | undefined;
+    if (!batchId) return;
+
+    // Find payouts by batch ID
+    const payouts = await prisma.payout.findMany({
+      where: {
+        transactionId: batchId,
+        payoutMethod: 'PAYPAL',
+      },
+    });
+
+    const batchStatus = batch.batch_status as string | undefined;
+
+    for (const payout of payouts) {
+      let status: PayoutStatus = payout.status;
+      let failureReason: string | null = payout.failureReason;
+
+      if (batchStatus === 'SUCCESS') {
+        status = PayoutStatus.COMPLETED;
+      } else if (batchStatus === 'DENIED' || batchStatus === 'FAILED') {
+        status = PayoutStatus.FAILED;
+        failureReason = (batch.batch_status as string) || 'Payout batch failed';
+      }
+
+      await prisma.payout.update({
+        where: { id: payout.id },
+        data: {
+          status,
+          failureReason,
+          processedAt: status === PayoutStatus.COMPLETED ? new Date() : payout.processedAt,
+          webhookData: {
+            batchId,
+            batchStatus,
+            updatedAt: new Date().toISOString(),
           },
         },
       });
-
-      if (!payment) {
-        logger.warn('Payment not found for chargeback', { paymentId, disputeId });
-        return;
-      }
-
-      // Convert amount from paise to rupees
-      const chargebackAmount = amount / 100;
-      const fee = dispute.fee ? Number(dispute.fee) / 100 : 0;
-
-      await chargebackService.handleChargeback({
-        paymentId: payment.id,
-        paymentMethod: payment.paymentMethod,
-        chargebackId: disputeId,
-        amount: chargebackAmount,
-        currency: currency || 'INR',
-        reason: reason || 'Chargeback received from Razorpay',
-        fee,
-        disputeId,
-      });
-
-      logger.info('Razorpay chargeback processed', { disputeId, paymentId: payment.id });
-    } catch (error: any) {
-      logger.error('Error handling Razorpay chargeback', { error: error.message });
     }
+
+    logger.info('PayPal payout batch processed', {
+      batchId,
+      batchStatus,
+      payoutCount: payouts.length,
+    });
+  }
+
+  private async handlePayPalPayoutItem(item: Record<string, unknown>): Promise<void> {
+    const transactionId = item.payout_item_id as string | undefined;
+    if (!transactionId) return;
+
+    const payout = await prisma.payout.findFirst({
+      where: {
+        transactionId,
+        payoutMethod: 'PAYPAL',
+      },
+    });
+
+    if (!payout) {
+      return;
+    }
+
+    const transactionStatus = item.transaction_status as string | undefined;
+    let status: PayoutStatus = payout.status;
+    let failureReason: string | null = payout.failureReason;
+
+    switch (transactionStatus) {
+      case 'SUCCESS':
+        status = PayoutStatus.COMPLETED;
+        break;
+      case 'FAILED':
+      case 'DENIED':
+        status = PayoutStatus.FAILED;
+        failureReason = (item.transaction_status as string) || 'Payout failed';
+        break;
+      case 'PENDING':
+        status = PayoutStatus.PROCESSING;
+        break;
+      default:
+        return;
+    }
+
+    await prisma.payout.update({
+      where: { id: payout.id },
+      data: {
+        status,
+        failureReason,
+        processedAt: status === PayoutStatus.COMPLETED ? new Date() : payout.processedAt,
+        webhookData: {
+          transactionId,
+          transactionStatus,
+          updatedAt: new Date().toISOString(),
+        },
+      },
+    });
+
+    logger.info('PayPal payout item processed', {
+      payoutId: payout.id,
+      transactionId,
+      status,
+    });
   }
 }
 

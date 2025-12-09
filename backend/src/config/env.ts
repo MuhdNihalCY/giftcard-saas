@@ -21,7 +21,7 @@ export const env = {
   JWT_REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN || '30d',
 
   // CORS
-  CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:3001,http://localhost:3000',
+  CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:3000',
 
   // Payment Gateways
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '',
