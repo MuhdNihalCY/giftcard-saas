@@ -5,12 +5,39 @@ import breakageService from '../services/breakage.service';
 export class BreakageController {
   async getBreakageMetrics(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const merchantId = req.user?.role === 'ADMIN' ? (req.query.merchantId as string) : req.user?.userId;
+      const merchantId = req.user?.role === 'ADMIN' 
+        ? (req.query.merchantId as string | undefined) 
+        : req.user?.userId;
       
       if (!merchantId && req.user?.role !== 'ADMIN') {
         return res.status(403).json({
           success: false,
           error: { message: 'Merchant ID required' },
+        });
+      }
+
+      // For admin without merchantId, return empty metrics
+      if (!merchantId && req.user?.role === 'ADMIN') {
+        return res.json({
+          success: true,
+          data: {
+            current: {
+              breakageAmount: 0,
+              breakagePercentage: 0,
+              totalIssued: 0,
+              totalUnredeemed: 0,
+            },
+            previous: {
+              breakageAmount: 0,
+              breakagePercentage: 0,
+              totalIssued: 0,
+            },
+            trend: {
+              breakageAmountChange: 0,
+              breakagePercentageChange: 0,
+              trendDirection: 'stable' as const,
+            },
+          },
         });
       }
 
@@ -27,11 +54,13 @@ export class BreakageController {
 
   async getBreakageReport(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const merchantId = req.user?.role === 'ADMIN' ? (req.query.merchantId as string) : req.user?.userId;
+      const merchantId = req.user?.role === 'ADMIN' 
+        ? (req.query.merchantId as string | undefined) 
+        : req.user?.userId;
       const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
       const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
 
-      const report = await breakageService.generateBreakageReport(merchantId, startDate, endDate);
+      const report = await breakageService.generateBreakageReport(merchantId || undefined, startDate, endDate);
       
       res.json({
         success: true,
@@ -60,6 +89,11 @@ export class BreakageController {
 }
 
 export default new BreakageController();
+
+
+
+
+
 
 
 

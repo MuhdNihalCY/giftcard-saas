@@ -6,6 +6,7 @@ import { DataTable, Column } from '@/components/ui/DataTable';
 import { FilterBar } from '@/components/dashboard/FilterBar';
 import { Badge, getStatusBadgeVariant } from '@/components/ui/Badge';
 import { useAuthStore } from '@/store/authStore';
+import { FeatureFlagGuard } from '@/components/FeatureFlagGuard';
 import api from '@/lib/api';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import { CreditCard, Download, RefreshCw } from 'lucide-react';
@@ -37,6 +38,17 @@ interface Payment {
 
 export default function PaymentsPage() {
   const { user } = useAuthStore();
+  
+  // Redirect customers - they should never access payments page
+  useEffect(() => {
+    if (user?.role === 'CUSTOMER') {
+      window.location.href = '/dashboard';
+    }
+  }, [user]);
+  
+  if (user?.role === 'CUSTOMER') {
+    return null;
+  }
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -230,9 +242,10 @@ export default function PaymentsPage() {
   ];
 
   return (
-    <div className="page-transition">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-8">
+    <FeatureFlagGuard feature="payments" redirectTo="/dashboard">
+      <div className="page-transition">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-4xl font-serif font-bold text-plum-300 mb-2 flex items-center space-x-3">
             <CreditCard className="w-8 h-8" />
@@ -327,9 +340,15 @@ export default function PaymentsPage() {
           />
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </FeatureFlagGuard>
   );
 }
+
+
+
+
+
 
 
 

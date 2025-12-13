@@ -6,9 +6,19 @@ import merchantPaymentGatewayService from '../merchant-payment-gateway.service';
 import { GatewayType } from '@prisma/client';
 
 // Platform Stripe instance (for managing Connect accounts)
-const platformStripe = new Stripe(env.STRIPE_SECRET_KEY, {
-  apiVersion: '2023-10-16',
-});
+// Only create if STRIPE_SECRET_KEY is configured
+let platformStripe: Stripe | null = null;
+
+if (env.STRIPE_SECRET_KEY) {
+  try {
+    platformStripe = new Stripe(env.STRIPE_SECRET_KEY, {
+      apiVersion: '2023-10-16',
+    });
+  } catch (error: any) {
+    logger.error('Failed to initialize Stripe', { error: error.message });
+    platformStripe = null;
+  }
+}
 
 export interface CreateConnectAccountData {
   merchantId: string;
@@ -48,6 +58,11 @@ export class StripeConnectService {
   private async getMerchantStripe(merchantId: string, connectAccountId?: string): Promise<Stripe> {
     // If connectAccountId is provided, use Connect account
     if (connectAccountId) {
+      if (!platformStripe) {
+        throw new ValidationError(
+          'Stripe is not configured. Please set STRIPE_SECRET_KEY in environment variables.'
+        );
+      }
       return platformStripe; // Use platform key with on_behalf_of parameter
     }
 
@@ -67,6 +82,11 @@ export class StripeConnectService {
     }
 
     // Fallback to platform Stripe
+    if (!platformStripe) {
+      throw new ValidationError(
+        'Stripe is not configured. Please set STRIPE_SECRET_KEY in environment variables.'
+      );
+    }
     return platformStripe;
   }
 
@@ -75,6 +95,19 @@ export class StripeConnectService {
    */
   async createConnectAccount(data: CreateConnectAccountData) {
     const { merchantId, email, country, type = 'express' } = data;
+
+    // Check if Stripe is configured
+    if (!platformStripe) {
+      throw new ValidationError(
+        'Stripe is not configured. Please set STRIPE_SECRET_KEY in environment variables.'
+      );
+    }
+
+    if (!env.STRIPE_SECRET_KEY) {
+      throw new ValidationError(
+        'Stripe secret key is not configured. Please contact the administrator.'
+      );
+    }
 
     try {
       const accountData: Stripe.AccountCreateParams = {
@@ -121,8 +154,28 @@ export class StripeConnectService {
       logger.error('Failed to create Stripe Connect account', {
         merchantId,
         error: error.message,
+        stripeError: error.type,
+        stripeCode: error.code,
       });
-      throw new ValidationError(`Failed to create Stripe Connect account: ${error.message}`);
+
+      // Provide more helpful error messages
+      if (error.type === 'StripeAuthenticationError') {
+        throw new ValidationError(
+          'Invalid Stripe API key. Please check your STRIPE_SECRET_KEY configuration.'
+        );
+      } else if (error.type === 'StripeInvalidRequestError') {
+        throw new ValidationError(
+          `Invalid request to Stripe: ${error.message}. Please check your input parameters.`
+        );
+      } else if (error.message?.includes('No API key provided')) {
+        throw new ValidationError(
+          'Stripe API key is missing. Please configure STRIPE_SECRET_KEY in environment variables.'
+        );
+      }
+
+      throw new ValidationError(
+        `Failed to create Stripe Connect account: ${error.message || 'Unknown error'}`
+      );
     }
   }
 
@@ -131,6 +184,12 @@ export class StripeConnectService {
    */
   async getConnectAccountLink(data: CreateAccountLinkData) {
     const { accountId, returnUrl, refreshUrl, type = 'account_onboarding' } = data;
+
+    if (!platformStripe) {
+      throw new ValidationError(
+        'Stripe is not configured. Please set STRIPE_SECRET_KEY in environment variables.'
+      );
+    }
 
     try {
       const accountLink = await platformStripe.accountLinks.create({
@@ -157,6 +216,12 @@ export class StripeConnectService {
    * Verify Connect account status
    */
   async verifyConnectAccount(accountId: string) {
+    if (!platformStripe) {
+      throw new ValidationError(
+        'Stripe is not configured. Please set STRIPE_SECRET_KEY in environment variables.'
+      );
+    }
+
     try {
       const account = await platformStripe.accounts.retrieve(accountId);
 
@@ -194,6 +259,12 @@ export class StripeConnectService {
     } = data;
 
     try {
+      if (!platformStripe) {
+        throw new ValidationError(
+          'Stripe is not configured. Please set STRIPE_SECRET_KEY in environment variables.'
+        );
+      }
+
       // Get merchant's Connect account ID
       const gateway = await merchantPaymentGatewayService.getGatewayForMerchant(
         merchantId,
@@ -256,6 +327,12 @@ export class StripeConnectService {
   async transferToMerchant(data: TransferToMerchantData) {
     const { accountId, amount, currency, metadata = {} } = data;
 
+    if (!platformStripe) {
+      throw new ValidationError(
+        'Stripe is not configured. Please set STRIPE_SECRET_KEY in environment variables.'
+      );
+    }
+
     try {
       const transfer = await platformStripe.transfers.create({
         amount: Math.round(amount * 100), // Convert to cents
@@ -290,6 +367,12 @@ export class StripeConnectService {
    * Get account balance for merchant's Connect account
    */
   async getAccountBalance(accountId: string) {
+    if (!platformStripe) {
+      throw new ValidationError(
+        'Stripe is not configured. Please set STRIPE_SECRET_KEY in environment variables.'
+      );
+    }
+
     try {
       const balance = await platformStripe.balance.retrieve({
         stripeAccount: accountId,
@@ -318,6 +401,12 @@ export class StripeConnectService {
    * Create payout to merchant's bank account (via Connect)
    */
   async createPayout(accountId: string, amount: number, currency: string) {
+    if (!platformStripe) {
+      throw new ValidationError(
+        'Stripe is not configured. Please set STRIPE_SECRET_KEY in environment variables.'
+      );
+    }
+
     try {
       const payout = await platformStripe.payouts.create(
         {
@@ -356,6 +445,12 @@ export class StripeConnectService {
    * Retrieve payout status
    */
   async getPayout(payoutId: string, accountId: string) {
+    if (!platformStripe) {
+      throw new ValidationError(
+        'Stripe is not configured. Please set STRIPE_SECRET_KEY in environment variables.'
+      );
+    }
+
     try {
       const payout = await platformStripe.payouts.retrieve(payoutId, {
         stripeAccount: accountId,

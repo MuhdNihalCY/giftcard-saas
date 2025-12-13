@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store/authStore';
 import api from '@/lib/api';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
 import { MetricCard } from '@/components/dashboard/MetricCard';
 import { Activity, Database, Mail, MessageSquare, CreditCard, Server } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
@@ -56,6 +57,7 @@ export default function SystemStatusPage() {
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
   useEffect(() => {
@@ -72,6 +74,7 @@ export default function SystemStatusPage() {
 
   const fetchSystemStatus = async () => {
     try {
+      setError(null);
       const [statusRes, metricsRes] = await Promise.all([
         api.get('/health/status'),
         api.get('/health/metrics'),
@@ -82,6 +85,7 @@ export default function SystemStatusPage() {
       setLastUpdated(new Date());
     } catch (error: any) {
       console.error('Failed to fetch system status:', error);
+      setError(error?.response?.data?.message || error?.message || 'Failed to fetch system status');
     } finally {
       setLoading(false);
     }
@@ -132,7 +136,7 @@ export default function SystemStatusPage() {
     );
   }
 
-  if (loading && !status) {
+  if (loading && !status && !error) {
     return (
       <div className="space-y-6">
         <div className="animate-pulse">
@@ -156,13 +160,34 @@ export default function SystemStatusPage() {
             Monitor platform health and service status
           </p>
         </div>
-        <div className="text-sm text-navy-400">
-          Last updated: {formatDate(lastUpdated.toISOString())}
+        <div className="flex items-center gap-4">
+          {error && (
+            <Button
+              onClick={fetchSystemStatus}
+              variant="outline"
+              size="sm"
+            >
+              Retry
+            </Button>
+          )}
+          <div className="text-sm text-navy-400">
+            Last updated: {formatDate(lastUpdated.toISOString())}
+          </div>
         </div>
       </div>
 
+      {/* Error Message */}
+      {error && (
+        <Card className="p-6 bg-red-900/20 border-red-700">
+          <div className="flex items-center gap-2 text-red-400">
+            <span className="font-semibold">Error:</span>
+            <span>{error}</span>
+          </div>
+        </Card>
+      )}
+
       {/* System Status */}
-      {status && (
+      {status ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="p-6 bg-navy-800 border-navy-700">
             <h2 className="text-xl font-semibold text-navy-50 mb-4 flex items-center gap-2">
@@ -198,10 +223,14 @@ export default function SystemStatusPage() {
             </div>
           </Card>
         </div>
+      ) : (
+        <Card className="p-6 bg-navy-800 border-navy-700">
+          <p className="text-navy-300">No status data available. Please try refreshing.</p>
+        </Card>
       )}
 
       {/* Service Status */}
-      {status && (
+      {status ? (
         <Card className="p-6 bg-navy-800 border-navy-700">
           <h2 className="text-xl font-semibold text-navy-50 mb-4">Service Status</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
@@ -242,10 +271,14 @@ export default function SystemStatusPage() {
             </div>
           </div>
         </Card>
+      ) : (
+        <Card className="p-6 bg-navy-800 border-navy-700">
+          <p className="text-navy-300">No service status data available.</p>
+        </Card>
       )}
 
       {/* System Metrics */}
-      {metrics && (
+      {metrics ? (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <MetricCard
@@ -312,6 +345,10 @@ export default function SystemStatusPage() {
             </Card>
           </div>
         </>
+      ) : (
+        <Card className="p-6 bg-navy-800 border-navy-700">
+          <p className="text-navy-300">No metrics data available. Please try refreshing.</p>
+        </Card>
       )}
     </div>
   );

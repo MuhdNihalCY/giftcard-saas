@@ -11,6 +11,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { formatDateTime } from '@/lib/utils';
 import { GiftCardSkeleton } from '@/components/ui/Skeleton';
 import { GiftCardShare } from '@/components/GiftCardShare';
+import { FeatureFlagGuard } from '@/components/FeatureFlagGuard';
 import logger from '@/lib/logger';
 import type { Transaction } from '@/types/transaction';
 
@@ -116,11 +117,12 @@ export default function WalletPage() {
   }
 
   return (
-    <div className="page-transition">
-      <div className="mb-8">
-        <h1 className="text-4xl font-serif font-bold text-plum-300">My Gift Card Wallet</h1>
-        <p className="text-navy-200 mt-2 text-lg">Manage and redeem your gift cards</p>
-      </div>
+    <FeatureFlagGuard feature="wallet">
+      <div className="page-transition">
+        <div className="mb-8">
+          <h1 className="text-4xl font-serif font-bold text-plum-300">My Gift Card Wallet</h1>
+          <p className="text-navy-200 mt-2 text-lg">Manage and redeem your gift cards</p>
+        </div>
 
       {/* Filters and Sort */}
       <div className="flex flex-col sm:flex-row gap-4 mb-8">
@@ -368,6 +370,7 @@ export default function WalletPage() {
         </div>
       )}
     </div>
+    </FeatureFlagGuard>
   );
 }
 

@@ -55,6 +55,17 @@ enum PayoutSchedule {
   MONTHLY
 }
 
+enum FeatureFlagCategory {
+  PAGE
+  FEATURE
+}
+
+enum FeatureFlagTargetRole {
+  MERCHANT
+  CUSTOMER
+  ALL
+}
+
 enum PaymentStatus {
   PENDING
   COMPLETED
@@ -557,4 +568,23 @@ model PayoutSettings {
   @@index([merchantId])
   @@index([isActive])
   @@map("payout_settings")
+}
+
+model FeatureFlag {
+  id          String                @id @default(uuid())
+  featureKey  String                @unique @map("feature_key")
+  featureName String                @map("feature_name")
+  description String?               @db.Text
+  category    FeatureFlagCategory
+  targetRole  FeatureFlagTargetRole @map("target_role")
+  isEnabled   Boolean               @default(true) @map("is_enabled")
+  metadata    Json?
+  createdAt   DateTime              @default(now()) @map("created_at")
+  updatedAt   DateTime              @updatedAt @map("updated_at")
+
+  @@index([featureKey])
+  @@index([targetRole])
+  @@index([category])
+  @@index([isEnabled])
+  @@map("feature_flags")
 }

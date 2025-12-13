@@ -71,6 +71,7 @@ export default function BreakagePage() {
   const [report, setReport] = useState<BreakageReport | null>(null);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadBreakageData();
@@ -79,6 +80,7 @@ export default function BreakagePage() {
   const loadBreakageData = async () => {
     try {
       setLoading(true);
+      setError(null);
       const params: any = {};
       if (startDate) params.startDate = startDate.toISOString();
       if (endDate) params.endDate = endDate.toISOString();
@@ -92,6 +94,7 @@ export default function BreakagePage() {
       setReport(reportRes.data.data);
     } catch (error: any) {
       console.error('Failed to load breakage data:', error);
+      setError(error?.response?.data?.error?.message || error?.response?.data?.message || error?.message || 'Failed to load breakage data');
     } finally {
       setLoading(false);
     }
@@ -146,6 +149,27 @@ export default function BreakagePage() {
             <div key={i} className="h-32 bg-navy-800 rounded-lg animate-pulse" />
           ))}
         </div>
+      ) : error ? (
+        <Card className="p-6 bg-navy-800 border-navy-700">
+          <div className="text-center py-8">
+            <p className="text-red-400 mb-4">{error}</p>
+            <button
+              onClick={loadBreakageData}
+              className="px-4 py-2 bg-plum-600 hover:bg-plum-700 text-white rounded-lg transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        </Card>
+      ) : !metrics && !report ? (
+        <Card className="p-6 bg-navy-800 border-navy-700">
+          <div className="text-center py-8">
+            <p className="text-navy-300 mb-4">No breakage data available yet.</p>
+            <p className="text-navy-400 text-sm">
+              Breakage data will appear here once you have gift cards that have expired past the grace period.
+            </p>
+          </div>
+        </Card>
       ) : (
         <>
           {metrics && (

@@ -165,7 +165,9 @@ export function FilterBar({
             <Filter className="w-4 h-4" />
             <span>Filters:</span>
           </div>
-          {filters.map((filter) => (
+          {filters
+            .filter(filter => filter.options && Array.isArray(filter.options))
+            .map((filter) => (
             <div key={filter.key} className="flex items-center space-x-2">
               <label className="text-sm text-plum-200 whitespace-nowrap">
                 {filter.label}:
@@ -204,7 +206,7 @@ export function FilterBar({
           {filters
             .filter(f => f.value)
             .map((filter) => {
-              const option = filter.options.find(o => o.value === filter.value);
+              const option = filter.options?.find(o => o.value === filter.value);
               return (
                 <span
                   key={filter.key}

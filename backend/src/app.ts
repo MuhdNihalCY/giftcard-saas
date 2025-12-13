@@ -199,7 +199,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // CSRF protection - attach token to all requests (skip for health and OPTIONS)
 // Note: OPTIONS requests are already handled above, so they won't reach here
 app.use((req, res, next) => {
-  if (req.path.startsWith('/health') || req.method === 'OPTIONS') {
+  if (req.path.startsWith('/health') || req.path.includes('/health') || req.method === 'OPTIONS') {
     return next(); // Skip CSRF for health checks and preflight requests
   }
   return attachCSRFToken(req, res, next);
@@ -217,6 +217,7 @@ app.use((req, res, next) => {
   if (
     req.path.includes('/webhook/') || 
     req.path.startsWith('/health') || 
+    req.path.includes('/health') ||
     req.path.startsWith('/api/v1/auth/login') ||
     req.path.startsWith('/api/v1/auth/register') ||
     req.path.startsWith('/api/v1/auth/refresh') ||
@@ -276,6 +277,7 @@ import chargebackRoutes from './routes/chargeback.routes';
 import merchantPaymentGatewayRoutes from './routes/merchant-payment-gateway.routes';
 import payoutRoutes from './routes/payout.routes';
 import adminPayoutRoutes from './routes/admin-payout.routes';
+import featureFlagRoutes from './routes/feature-flag.routes';
 
 app.use(`/api/${env.API_VERSION}/auth`, authRoutes);
 app.use(`/api/${env.API_VERSION}/auth/2fa`, twoFactorRoutes);
@@ -301,6 +303,9 @@ app.use(`/api/${env.API_VERSION}/admin/blacklist`, blacklistRoutes);
 app.use(`/api/${env.API_VERSION}/merchant/payment-gateways`, merchantPaymentGatewayRoutes);
 app.use(`/api/${env.API_VERSION}/payouts`, payoutRoutes);
 app.use(`/api/${env.API_VERSION}/admin/payouts`, adminPayoutRoutes);
+app.use(`/api/${env.API_VERSION}/feature-flags`, featureFlagRoutes);
+// Health routes also available under API version for consistency
+app.use(`/api/${env.API_VERSION}/health`, healthRoutes);
 
 // Serve uploaded files
 app.use('/uploads', express.static('uploads'));

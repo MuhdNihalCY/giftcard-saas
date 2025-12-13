@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { ALL_FEATURE_FLAGS } from '../src/constants/feature-flags';
 
 const prisma = new PrismaClient();
 
@@ -96,6 +97,45 @@ async function main() {
   console.log('   customer4@giftcard.com / customer123');
   console.log('   customer5@giftcard.com / customer123');
   console.log('   customer6@giftcard.com / customer123');
+  console.log('');
+
+  // Seed feature flags
+  console.log('🚩 Seeding feature flags...');
+  let featureFlagCreated = 0;
+  let featureFlagExisting = 0;
+
+  for (const flagDef of ALL_FEATURE_FLAGS) {
+    try {
+      await prisma.featureFlag.upsert({
+        where: { featureKey: flagDef.featureKey },
+        update: {
+          featureName: flagDef.featureName,
+          description: flagDef.description,
+          category: flagDef.category,
+          targetRole: flagDef.targetRole,
+          isEnabled: flagDef.defaultEnabled,
+        },
+        create: {
+          featureKey: flagDef.featureKey,
+          featureName: flagDef.featureName,
+          description: flagDef.description,
+          category: flagDef.category,
+          targetRole: flagDef.targetRole,
+          isEnabled: flagDef.defaultEnabled,
+          metadata: {},
+        },
+      });
+      featureFlagCreated++;
+    } catch (error: any) {
+      if (error.code === 'P2002') {
+        featureFlagExisting++;
+      } else {
+        console.error(`❌ Failed to create feature flag ${flagDef.featureKey}:`, error.message);
+      }
+    }
+  }
+
+  console.log(`✅ Feature flags: ${featureFlagCreated} created/updated, ${featureFlagExisting} already existed`);
   console.log('');
 }
 

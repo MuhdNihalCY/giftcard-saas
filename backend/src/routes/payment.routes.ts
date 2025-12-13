@@ -3,6 +3,7 @@ import paymentController from '../controllers/payment.controller';
 import webhookController from '../controllers/webhook.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validation.middleware';
+import { checkFeatureFlag } from '../middleware/feature-flag.middleware';
 import {
   createPaymentSchema,
   confirmPaymentSchema,
@@ -28,15 +29,19 @@ router.post(
   paymentController.confirmPayment.bind(paymentController)
 );
 
+// Payment viewing/management routes - protected by feature flag
+// Note: Payment processing (create-intent, confirm) is core functionality and not protected
 router.get(
   '/',
   authenticate,
+  checkFeatureFlag('payments'), // Feature flag protection for viewing payments
   paymentController.listPayments.bind(paymentController)
 );
 
 router.get(
   '/:id',
   authenticate,
+  checkFeatureFlag('payments'), // Feature flag protection for viewing payment details
   paymentController.getPayment.bind(paymentController)
 );
 
@@ -44,6 +49,7 @@ router.post(
   '/:id/refund',
   authenticate,
   authorize('ADMIN', 'MERCHANT'),
+  checkFeatureFlag('payments'), // Feature flag protection for refund management
   validate(refundPaymentSchema),
   paymentController.refundPayment.bind(paymentController)
 );

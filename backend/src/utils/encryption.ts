@@ -112,3 +112,8 @@ export function generateEncryptionKey(): string {
   return crypto.randomBytes(KEY_LENGTH).toString('hex');
 }
 
+
+
+
+
+

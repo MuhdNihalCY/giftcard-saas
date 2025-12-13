@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
+import { useFeatureFlag } from '@/hooks/useFeatureFlag';
+import { useFeatureFlagStore } from '@/store/featureFlagStore';
 import {
   LayoutDashboard,
   Gift,
@@ -23,6 +25,7 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  Flag,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -37,6 +40,7 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
   roles?: ('ADMIN' | 'MERCHANT' | 'CUSTOMER')[];
   badge?: number;
+  featureFlag?: string; // Feature flag key to check
 }
 
 export function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
@@ -44,6 +48,26 @@ export function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
   const router = useRouter();
   const { user, clearAuth } = useAuthStore();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { fetchFlags } = useFeatureFlagStore();
+
+  // Feature flag hooks for navigation items
+  const isGiftCardsEnabled = useFeatureFlag('gift_cards');
+  const isProductsEnabled = useFeatureFlag('gift_card_products');
+  const isTemplatesEnabled = useFeatureFlag('templates');
+  const isRedemptionsEnabled = useFeatureFlag('redemptions');
+  const isPaymentsEnabled = useFeatureFlag('payments');
+  const isDeliveryEnabled = useFeatureFlag('delivery');
+  const isAnalyticsEnabled = useFeatureFlag('analytics');
+  const isBreakageEnabled = useFeatureFlag('breakage_tracking');
+  const isChargebackEnabled = useFeatureFlag('chargeback_handling');
+  const isWalletEnabled = useFeatureFlag('wallet');
+
+  // Fetch flags on mount if user is authenticated (force refresh to get latest)
+  useEffect(() => {
+    if (user) {
+      fetchFlags(true); // Force refresh to get latest flag values
+    }
+  }, [user, fetchFlags]);
 
   // Close mobile menu when route changes
   useEffect(() => {
@@ -72,18 +96,21 @@ export function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
       href: '/dashboard/gift-cards',
       icon: Gift,
       roles: ['ADMIN', 'MERCHANT'],
+      featureFlag: 'gift_cards',
     },
     {
       label: 'Products',
       href: '/dashboard/gift-card-products',
       icon: Package,
       roles: ['ADMIN', 'MERCHANT'],
+      featureFlag: 'gift_card_products',
     },
     {
       label: 'Templates',
       href: '/dashboard/templates',
       icon: Palette,
       roles: ['ADMIN', 'MERCHANT'],
+      featureFlag: 'templates',
     },
     {
       label: 'Redeem',
@@ -96,36 +123,42 @@ export function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
       href: '/dashboard/redemptions',
       icon: FileText,
       roles: ['ADMIN', 'MERCHANT'],
+      featureFlag: 'redemptions',
     },
     {
       label: 'Payments',
       href: '/dashboard/payments',
       icon: CreditCard,
       roles: ['ADMIN', 'MERCHANT'],
+      featureFlag: 'payments',
     },
     {
       label: 'Delivery',
       href: '/dashboard/delivery',
       icon: Mail,
       roles: ['ADMIN', 'MERCHANT'],
+      featureFlag: 'delivery',
     },
     {
       label: 'Analytics',
       href: '/dashboard/analytics',
       icon: TrendingUp,
       roles: ['ADMIN', 'MERCHANT'],
+      featureFlag: 'analytics',
     },
     {
       label: 'Breakage',
       href: '/dashboard/breakage',
       icon: FileText,
       roles: ['ADMIN', 'MERCHANT'],
+      featureFlag: 'breakage_tracking',
     },
     {
       label: 'Chargebacks',
       href: '/dashboard/chargebacks',
       icon: CreditCard,
       roles: ['ADMIN', 'MERCHANT'],
+      featureFlag: 'chargeback_handling',
     },
   ];
 
@@ -156,6 +189,12 @@ export function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
       roles: ['ADMIN'],
     },
     {
+      label: 'Feature Flags',
+      href: '/dashboard/admin/feature-flags',
+      icon: Flag,
+      roles: ['ADMIN'],
+    },
+    {
       label: 'System Status',
       href: '/dashboard/admin/system-status',
       icon: Activity,
@@ -170,15 +209,39 @@ export function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
       href: '/dashboard/wallet',
       icon: Wallet,
       roles: ['CUSTOMER'],
+      featureFlag: 'wallet',
     },
   ];
 
-  // Combine all navigation items based on role
+  // Feature flag check helper
+  const checkFeatureFlag = (featureKey?: string): boolean => {
+    if (!featureKey) return true; // No feature flag means always enabled
+    if (user?.role === 'ADMIN') return true; // Admins always have access
+
+    // Map feature keys to their hook values
+    const flagMap: Record<string, boolean> = {
+      gift_cards: isGiftCardsEnabled,
+      gift_card_products: isProductsEnabled,
+      templates: isTemplatesEnabled,
+      redemptions: isRedemptionsEnabled,
+      payments: isPaymentsEnabled,
+      delivery: isDeliveryEnabled,
+      analytics: isAnalyticsEnabled,
+      breakage_tracking: isBreakageEnabled,
+      chargeback_handling: isChargebackEnabled,
+      wallet: isWalletEnabled,
+    };
+
+    // Default to false if flag not found (secure default)
+    return flagMap[featureKey] ?? false;
+  };
+
+  // Combine all navigation items based on role and feature flags
   const getNavItems = (): NavItem[] => {
     const items = [...baseNavItems];
     
     if (user?.role === 'ADMIN' || user?.role === 'MERCHANT') {
-      items.push(...merchantNavItems);
+      items.push(...merchantNavItems.filter(item => checkFeatureFlag(item.featureFlag)));
     }
     
     if (user?.role === 'ADMIN') {
@@ -186,7 +249,7 @@ export function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
     }
     
     if (user?.role === 'CUSTOMER') {
-      items.push(...customerNavItems);
+      items.push(...customerNavItems.filter(item => checkFeatureFlag(item.featureFlag)));
     }
 
     // Always add settings

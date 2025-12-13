@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { useAuthStore } from '@/store/authStore';
+import { FeatureFlagGuard } from '@/components/FeatureFlagGuard';
 import api from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import {
@@ -77,7 +78,8 @@ export default function AnalyticsPage() {
     : [];
 
   return (
-    <div className="page-transition">
+    <FeatureFlagGuard feature="analytics">
+      <div className="page-transition">
       <h1 className="text-4xl font-serif font-bold text-plum-300 mb-4">Analytics Dashboard</h1>
       <p className="text-navy-200 mb-8 text-lg">Track your business performance and insights</p>
 
@@ -198,7 +200,8 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
       )}
-    </div>
+      </div>
+    </FeatureFlagGuard>
   );
 }
 

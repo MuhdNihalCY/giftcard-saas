@@ -156,15 +156,17 @@ export class BreakageService {
     const expiredCardsDetails = expiredCards.map((card) => {
       const expiryDate = card.expiryDate || new Date();
       const gracePeriodEnd = new Date(expiryDate.getTime() + GRACE_PERIOD_DAYS * 24 * 60 * 60 * 1000);
+      const isBreakage = expiryDate < gracePeriodEndDate;
 
       return {
         id: card.id,
         code: card.code,
         value: Number(card.value),
         balance: Number(card.balance),
-        expiryDate,
-        expiredDate: expiryDate,
-        gracePeriodEndDate: gracePeriodEnd,
+        expiryDate: expiryDate.toISOString(),
+        expiredDate: expiryDate.toISOString(),
+        gracePeriodEndDate: gracePeriodEnd.toISOString(),
+        isBreakage,
       };
     });
 
@@ -172,8 +174,8 @@ export class BreakageService {
 
     return {
       period: {
-        startDate,
-        endDate,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
       },
       merchantId,
       calculations,
@@ -184,7 +186,7 @@ export class BreakageService {
   /**
    * Get breakage metrics for merchant dashboard
    */
-  async getBreakageMetrics(merchantId: string) {
+  async getBreakageMetrics(merchantId?: string) {
     const calculations = await this.calculateBreakage(merchantId);
 
     // Get trends (compare with previous period)
@@ -193,14 +195,17 @@ export class BreakageService {
     const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
 
     // Calculate breakage for previous 30 days
-    const previousPeriodCards = await prisma.giftCard.findMany({
-      where: {
-        merchantId,
-        createdAt: {
-          gte: sixtyDaysAgo,
-          lt: thirtyDaysAgo,
-        },
+    const previousPeriodWhere: any = {
+      createdAt: {
+        gte: sixtyDaysAgo,
+        lt: thirtyDaysAgo,
       },
+    };
+    if (merchantId) {
+      previousPeriodWhere.merchantId = merchantId;
+    }
+    const previousPeriodCards = await prisma.giftCard.findMany({
+      where: previousPeriodWhere,
       select: {
         value: true,
         balance: true,
@@ -311,6 +316,11 @@ export class BreakageService {
 }
 
 export default new BreakageService();
+
+
+
+
+
 
 
 

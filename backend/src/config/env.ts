@@ -60,8 +60,8 @@ export const env = {
   BACKEND_URL: process.env.BACKEND_URL || 'http://localhost:5000',
 
   // Rate Limiting
-  RATE_LIMIT_WINDOW_MS: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10),
-  RATE_LIMIT_MAX_REQUESTS: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10),
+  RATE_LIMIT_WINDOW_MS: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10), // 15 minutes
+  RATE_LIMIT_MAX_REQUESTS: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '1000', 10), // Increased default to 1000 requests per window
 
   // Session
   SESSION_SECRET: process.env.SESSION_SECRET || process.env.JWT_SECRET || '',

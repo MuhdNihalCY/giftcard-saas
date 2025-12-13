@@ -2,6 +2,7 @@ import { Router } from 'express';
 import merchantPaymentGatewayController from '../controllers/merchant-payment-gateway.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validation.middleware';
+import { checkFeatureFlag } from '../middleware/feature-flag.middleware';
 import { z } from 'zod';
 
 const router = Router();
@@ -9,6 +10,9 @@ const router = Router();
 // All routes require authentication and merchant/admin role
 router.use(authenticate);
 router.use(authorize('ADMIN', 'MERCHANT'));
+
+// All routes require payments feature flag to be enabled
+router.use(checkFeatureFlag('payments'));
 
 // Create gateway configuration schema
 const createGatewaySchema = z.object({
@@ -46,6 +50,19 @@ const updateGatewaySchema = z.object({
   }),
 });
 
+// PayPal connection schema (requires credentials)
+const paypalConnectSchema = z.object({
+  body: z.object({
+    gatewayType: z.literal('PAYPAL'),
+    credentials: z.object({
+      clientId: z.string().min(1, 'Client ID is required'),
+      clientSecret: z.string().min(1, 'Client Secret is required'),
+      mode: z.enum(['live', 'sandbox']).optional().default('sandbox'),
+    }),
+    metadata: z.record(z.any()).optional(),
+  }),
+});
+
 // Connect Stripe Connect account
 router.post(
   '/stripe/connect',
@@ -61,7 +78,7 @@ router.get(
 // Connect PayPal account
 router.post(
   '/paypal/connect',
-  validate(createGatewaySchema),
+  validate(paypalConnectSchema),
   merchantPaymentGatewayController.createPayPalAccount.bind(merchantPaymentGatewayController)
 );
 

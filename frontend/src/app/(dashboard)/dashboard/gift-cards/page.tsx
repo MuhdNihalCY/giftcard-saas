@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
+import { FeatureFlagGuard } from '@/components/FeatureFlagGuard';
 import Link from 'next/link';
 
 interface GiftCard {
@@ -80,8 +81,9 @@ export default function GiftCardsPage() {
   }
 
   return (
-    <div className="page-transition">
-      <div className="flex justify-between items-center mb-8">
+    <FeatureFlagGuard feature="gift_cards">
+      <div className="page-transition">
+        <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-4xl font-serif font-bold text-plum-300">Gift Cards</h1>
           <p className="text-navy-200 mt-2">Manage your gift card collection</p>
@@ -184,6 +186,7 @@ export default function GiftCardsPage() {
         )}
       </div>
     </div>
+    </FeatureFlagGuard>
   );
 }
 
