@@ -8,6 +8,7 @@ import { Badge, getStatusBadgeVariant } from '@/components/ui/Badge';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/lib/api';
 import { formatDateTime } from '@/lib/utils';
+import logger from '@/lib/logger';
 import { Mail, Download, Send, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
@@ -95,7 +96,7 @@ export default function DeliveryPage() {
         total: response.data.pagination?.total || transformedDeliveries.length,
       }));
     } catch (error) {
-      console.error('Failed to fetch deliveries:', error);
+      logger.error('Failed to fetch deliveries', { error });
     } finally {
       setIsLoading(false);
     }
@@ -119,7 +120,7 @@ export default function DeliveryPage() {
       a.click();
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Failed to download PDF:', error);
+      logger.error('Failed to download PDF', { error });
     }
   };
 
@@ -332,7 +333,6 @@ export default function DeliveryPage() {
             emptyMessage="No deliveries found"
             onRowClick={(row) => {
               // Could show delivery details
-              console.log('Delivery clicked:', row);
             }}
           />
         </CardContent>

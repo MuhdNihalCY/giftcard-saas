@@ -8,6 +8,7 @@ import { FilterBar } from '@/components/dashboard/FilterBar';
 import { Badge } from '@/components/ui/Badge';
 import api from '@/lib/api';
 import { formatDate } from '@/lib/utils';
+import logger from '@/lib/logger';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
 import { Users as UsersIcon, Download } from 'lucide-react';
@@ -68,7 +69,7 @@ export default function UsersPage() {
         total: response.data.pagination?.total || response.data.data?.length || 0,
       }));
     } catch (error) {
-      console.error('Failed to fetch users:', error);
+      logger.error('Failed to fetch users', { error });
     } finally {
       setIsLoading(false);
     }
@@ -81,7 +82,7 @@ export default function UsersPage() {
       });
       fetchUsers();
     } catch (error) {
-      console.error('Failed to toggle user status:', error);
+      logger.error('Failed to toggle user status', { error });
     }
   };
 
@@ -270,7 +271,6 @@ export default function UsersPage() {
             emptyMessage="No users found"
             onRowClick={(row) => {
               // Could navigate to user detail page
-              console.log('User clicked:', row);
             }}
           />
         </CardContent>

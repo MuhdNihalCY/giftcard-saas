@@ -404,7 +404,6 @@ export default function AdminAuditLogsPage() {
             emptyMessage="No audit logs found"
             onRowClick={(row) => {
               // Could show detailed view in a modal
-              console.log('Log clicked:', row);
             }}
           />
         </CardContent>

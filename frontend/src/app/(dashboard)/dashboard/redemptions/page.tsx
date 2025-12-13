@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/Badge';
 import { useAuthStore } from '@/store/authStore';
 import api from '@/lib/api';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
+import logger from '@/lib/logger';
 import { FileText, Download } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
@@ -78,7 +79,7 @@ export default function RedemptionsPage() {
         total: response.data.pagination?.total || response.data.data?.length || 0,
       }));
     } catch (error) {
-      console.error('Failed to fetch redemptions:', error);
+      logger.error('Failed to fetch redemptions', { error });
     } finally {
       setIsLoading(false);
     }
@@ -254,7 +255,6 @@ export default function RedemptionsPage() {
             emptyMessage="No redemptions found"
             onRowClick={(row) => {
               // Could navigate to redemption detail
-              console.log('Redemption clicked:', row);
             }}
           />
         </CardContent>

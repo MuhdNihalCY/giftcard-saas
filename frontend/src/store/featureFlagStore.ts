@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import logger from '../lib/logger';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import api from '../lib/api';
 import { useAuthStore } from './authStore';
@@ -85,7 +86,7 @@ export const useFeatureFlagStore = create<FeatureFlagState>()(
             lastFetched: now,
           });
         } catch (error) {
-          console.error('Failed to fetch feature flags:', error);
+          logger.error('Failed to fetch feature flags', { error });
           // On error, default to all features enabled (fail open)
           set({
             flags: [],

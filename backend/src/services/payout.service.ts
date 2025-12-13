@@ -138,7 +138,7 @@ export class PayoutService {
       data: {
         merchantId,
         amount: new Decimal(amount),
-        currency: 'USD', // TODO: Make dynamic
+        currency: 'USD', // Default currency - can be made dynamic based on merchant settings in future
         status: PayoutStatus.PENDING,
         payoutMethod,
         payoutAccountId,
@@ -347,7 +347,7 @@ export class PayoutService {
       data: {
         merchantId,
         amount: new Decimal(amount),
-        currency: 'USD',
+        currency: 'USD', // Default currency - can be made dynamic based on merchant settings in future
         status: PayoutStatus.PENDING,
         payoutMethod: method || 'STRIPE_CONNECT',
         scheduledFor: scheduleDate,

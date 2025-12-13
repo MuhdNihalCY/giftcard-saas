@@ -8,6 +8,7 @@ import { Badge, getStatusBadgeVariant } from '@/components/ui/Badge';
 import { useAuthStore } from '@/store/authStore';
 import { FeatureFlagGuard } from '@/components/FeatureFlagGuard';
 import api from '@/lib/api';
+import logger from '@/lib/logger';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import { CreditCard, Download, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -97,7 +98,7 @@ export default function PaymentsPage() {
         total: response.data.pagination?.total || response.data.data?.length || 0,
       }));
     } catch (error) {
-      console.error('Failed to fetch payments:', error);
+      logger.error('Failed to fetch payments', { error });
     } finally {
       setIsLoading(false);
     }
@@ -115,7 +116,7 @@ export default function PaymentsPage() {
       });
       fetchPayments();
     } catch (error) {
-      console.error('Failed to process refund:', error);
+      logger.error('Failed to process refund', { error });
       alert('Failed to process refund');
     }
   };
@@ -335,7 +336,6 @@ export default function PaymentsPage() {
             emptyMessage="No payments found"
             onRowClick={(row) => {
               // Could navigate to payment detail
-              console.log('Payment clicked:', row);
             }}
           />
         </CardContent>

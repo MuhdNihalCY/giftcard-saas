@@ -1,5 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { auth } from './auth';
+import logger from './logger';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
@@ -75,7 +76,7 @@ const fetchCSRFToken = async (): Promise<string | null> => {
     // Also check cookie
     return getCSRFToken();
   } catch (err) {
-    console.warn('Failed to fetch CSRF token', err);
+    logger.warn('Failed to fetch CSRF token', { error: err });
     return null;
   }
 };

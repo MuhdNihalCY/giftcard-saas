@@ -55,10 +55,6 @@ export default function LoginPage() {
             backendUrl = 'http://localhost:8000';
           }
           
-          // Log in development for debugging
-          if (process.env.NODE_ENV === 'development') {
-            console.log('Health check URL:', `${backendUrl}/health`);
-          }
           
           await Promise.race([
             axios.get(`${backendUrl}/health`, { 

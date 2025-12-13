@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
 import { Button } from './ui/Button';
 import { TemplatePreview } from './TemplatePreview';
 import api from '@/lib/api';
+import logger from '@/lib/logger';
 
 interface Template {
   id: string;
@@ -52,7 +53,7 @@ export function TemplateSelector({
       const response = await api.get('/gift-cards/templates');
       setTemplates(response.data.data || []);
     } catch (error) {
-      console.error('Failed to fetch templates:', error);
+      logger.error('Failed to fetch templates', { error });
     } finally {
       setIsLoading(false);
     }
