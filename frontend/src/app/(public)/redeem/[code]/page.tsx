@@ -119,7 +119,7 @@ export default function RedeemPage() {
       <Navigation />
       <div className="py-16 px-4 sm:px-6 lg:px-8 page-transition">
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-5xl font-serif font-bold text-plum-300 mb-4 text-center">
+          <h1 className="text-5xl font-serif font-bold text-slate-900 dark:text-slate-100 mb-4 text-center">
             Redeem Gift Card
           </h1>
           <p className="text-center text-navy-200 mb-12">Complete your redemption</p>

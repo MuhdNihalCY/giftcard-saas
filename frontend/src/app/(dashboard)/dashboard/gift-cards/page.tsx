@@ -85,26 +85,26 @@ export default function GiftCardsPage() {
       <div className="page-transition">
         <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-4xl font-serif font-bold text-plum-300">Gift Cards</h1>
-          <p className="text-navy-200 mt-2">Manage your gift card collection</p>
+          <h1 className="text-4xl font-serif font-bold text-slate-900 dark:text-slate-100">Gift Cards</h1>
+          <p className="text-slate-600 dark:text-slate-400 mt-2">Manage your gift card collection</p>
         </div>
         <Link href="/dashboard/gift-cards/create">
-          <Button variant="gold">Create Gift Card</Button>
+          <Button variant="primary">Create Gift Card</Button>
         </Link>
       </div>
 
       {/* Filters */}
       <div className="mb-6 flex space-x-4">
         <select
-          className="px-4 py-3 border-2 border-plum-500/30 rounded-lg bg-navy-800/50 text-navy-50 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
+          className="px-4 py-3 border-2 border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
           value={filters.status}
           onChange={(e) => setFilters({ ...filters, status: e.target.value, page: 1 })}
         >
-          <option value="" className="bg-navy-800">All Status</option>
-          <option value="ACTIVE" className="bg-navy-800">Active</option>
-          <option value="REDEEMED" className="bg-navy-800">Redeemed</option>
-          <option value="EXPIRED" className="bg-navy-800">Expired</option>
-          <option value="CANCELLED" className="bg-navy-800">Cancelled</option>
+          <option value="" className="bg-white dark:bg-slate-800">All Status</option>
+          <option value="ACTIVE" className="bg-white dark:bg-slate-800">Active</option>
+          <option value="REDEEMED" className="bg-white dark:bg-slate-800">Redeemed</option>
+          <option value="EXPIRED" className="bg-white dark:bg-slate-800">Expired</option>
+          <option value="CANCELLED" className="bg-white dark:bg-slate-800">Cancelled</option>
         </select>
       </div>
 
@@ -114,27 +114,27 @@ export default function GiftCardsPage() {
           <Card>
             <CardContent className="text-center py-16">
               <div className="text-6xl mb-4">🎁</div>
-              <h3 className="text-2xl font-serif font-semibold text-plum-300 mb-2">
+              <h3 className="text-2xl font-serif font-semibold text-slate-900 dark:text-slate-100 mb-2">
                 No gift cards found
               </h3>
-              <p className="text-plum-200">Create your first gift card to get started</p>
+              <p className="text-slate-600 dark:text-slate-400">Create your first gift card to get started</p>
             </CardContent>
           </Card>
         ) : (
           giftCards.map((card) => (
-            <Card key={card.id} className="hover:shadow-gold-glow-sm transition-all duration-300">
+            <Card key={card.id} className="hover:shadow-md transition-all duration-300">
               <CardContent className="p-6">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center space-x-4 mb-4">
-                      <h3 className="text-xl font-serif font-semibold text-navy-50">{card.merchant.businessName}</h3>
+                      <h3 className="text-xl font-serif font-semibold text-slate-900 dark:text-slate-100">{card.merchant.businessName}</h3>
                       <span
                         className={`px-3 py-1 text-xs font-semibold rounded ${
                           card.status === 'ACTIVE'
                             ? 'bg-green-900/30 text-green-400 border border-green-500/30'
                             : card.status === 'REDEEMED'
                             ? 'bg-blue-900/30 text-blue-400 border border-blue-500/30'
-                            : 'bg-navy-700/50 text-plum-300 border border-navy-600'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600'
                         }`}
                       >
                         {card.status}
@@ -142,24 +142,24 @@ export default function GiftCardsPage() {
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                       <div>
-                        <p className="text-plum-300 mb-1">Code</p>
-                        <p className="font-mono font-semibold text-navy-50">{card.code}</p>
+                        <p className="text-slate-600 dark:text-slate-400 mb-1">Code</p>
+                        <p className="font-mono font-semibold text-slate-900 dark:text-slate-100">{card.code}</p>
                       </div>
                       <div>
-                        <p className="text-plum-300 mb-1">Value</p>
-                        <p className="font-serif font-bold text-gold-400">
+                        <p className="text-slate-600 dark:text-slate-400 mb-1">Value</p>
+                        <p className="font-serif font-bold text-cyan-600 dark:text-cyan-400">
                           {formatCurrency(card.value, card.currency)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-plum-300 mb-1">Balance</p>
-                        <p className="font-serif font-bold bg-gold-gradient bg-clip-text text-transparent">
+                        <p className="text-slate-600 dark:text-slate-400 mb-1">Balance</p>
+                        <p className="font-serif font-bold bg-cyan-gradient bg-clip-text text-transparent">
                           {formatCurrency(card.balance, card.currency)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-plum-300 mb-1">Created</p>
-                        <p className="font-semibold text-navy-50">{formatDate(card.createdAt)}</p>
+                        <p className="text-slate-600 dark:text-slate-400 mb-1">Created</p>
+                        <p className="font-semibold text-slate-900 dark:text-slate-100">{formatDate(card.createdAt)}</p>
                       </div>
                     </div>
                   </div>

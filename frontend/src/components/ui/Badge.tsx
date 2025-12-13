@@ -24,18 +24,18 @@ interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 }
 
 const variantStyles: Record<BadgeVariant, string> = {
-  default: 'bg-navy-700 text-navy-200 border-navy-600',
-  success: 'bg-green-500/20 text-green-400 border-green-500/30',
-  warning: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-  error: 'bg-red-500/20 text-red-400 border-red-500/30',
-  info: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  active: 'bg-green-500/20 text-green-400 border-green-500/30',
-  inactive: 'bg-navy-700 text-navy-300 border-navy-600',
-  pending: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-  completed: 'bg-green-500/20 text-green-400 border-green-500/30',
-  expired: 'bg-red-500/20 text-red-400 border-red-500/30',
-  cancelled: 'bg-navy-700 text-navy-300 border-navy-600',
-  redeemed: 'bg-plum-500/20 text-plum-300 border-plum-500/30',
+  default: 'bg-slate-100 text-slate-700 border-slate-300',
+  success: 'bg-green-50 text-green-700 border-green-200',
+  warning: 'bg-amber-50 text-amber-700 border-amber-200',
+  error: 'bg-red-50 text-red-700 border-red-200',
+  info: 'bg-cyan-50 text-cyan-700 border-cyan-200',
+  active: 'bg-green-50 text-green-700 border-green-200',
+  inactive: 'bg-slate-100 text-slate-500 border-slate-300',
+  pending: 'bg-amber-50 text-amber-700 border-amber-200',
+  completed: 'bg-green-50 text-green-700 border-green-200',
+  expired: 'bg-red-50 text-red-700 border-red-200',
+  cancelled: 'bg-slate-100 text-slate-500 border-slate-300',
+  redeemed: 'bg-rose-50 text-rose-700 border-rose-200',
 };
 
 const sizeStyles: Record<BadgeSize, string> = {

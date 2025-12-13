@@ -60,10 +60,10 @@ export default function CheckBalancePage() {
       <Navigation />
       <div className="py-16 px-4 sm:px-6 lg:px-8 page-transition">
         <div className="max-w-2xl mx-auto">
-        <h1 className="text-5xl font-serif font-bold text-plum-300 mb-4 text-center">
+        <h1 className="text-5xl font-serif font-bold text-slate-900 dark:text-slate-100 mb-4 text-center">
           Check Gift Card Balance
         </h1>
-        <p className="text-center text-navy-200 mb-12">Verify your gift card details</p>
+        <p className="text-center text-slate-600 dark:text-slate-400 mb-12">Verify your gift card details</p>
 
         <Card>
           <CardHeader>
@@ -90,27 +90,27 @@ export default function CheckBalancePage() {
             )}
 
             {balance && (
-              <div className="mt-8 p-8 bg-plum-900/20 border border-plum-500/30 rounded-xl backdrop-blur-sm">
-                <h3 className="text-2xl font-serif font-semibold mb-6 text-plum-300">Gift Card Details</h3>
+              <div className="mt-8 p-8 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-500/30 rounded-xl backdrop-blur-sm">
+                <h3 className="text-2xl font-serif font-semibold mb-6 text-slate-900 dark:text-slate-100">Gift Card Details</h3>
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center py-2 border-b border-navy-700">
-                    <span className="text-plum-200">Code:</span>
-                    <span className="font-mono font-semibold text-navy-50">{balance.code}</span>
+                  <div className="flex justify-between items-center py-2 border-b border-slate-200 dark:border-slate-700">
+                    <span className="text-slate-600 dark:text-slate-400">Code:</span>
+                    <span className="font-mono font-semibold text-slate-900 dark:text-slate-100">{balance.code}</span>
                   </div>
-                  <div className="flex justify-between items-center py-2 border-b border-navy-700">
-                    <span className="text-plum-200">Balance:</span>
-                    <span className="text-3xl font-serif font-bold bg-gold-gradient bg-clip-text text-transparent">
+                  <div className="flex justify-between items-center py-2 border-b border-slate-200 dark:border-slate-700">
+                    <span className="text-slate-600 dark:text-slate-400">Balance:</span>
+                    <span className="text-3xl font-serif font-bold bg-cyan-gradient bg-clip-text text-transparent">
                       {formatCurrency(balance.balance, balance.currency)}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center py-2 border-b border-navy-700">
-                    <span className="text-plum-200">Original Value:</span>
-                    <span className="font-semibold text-navy-50">
+                  <div className="flex justify-between items-center py-2 border-b border-slate-200 dark:border-slate-700">
+                    <span className="text-slate-600 dark:text-slate-400">Original Value:</span>
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">
                       {formatCurrency(balance.value, balance.currency)}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center py-2 border-b border-navy-700">
-                    <span className="text-plum-200">Status:</span>
+                  <div className="flex justify-between items-center py-2 border-b border-slate-200 dark:border-slate-700">
+                    <span className="text-slate-600 dark:text-slate-400">Status:</span>
                     <span
                       className={`font-semibold ${
                         balance.status === 'ACTIVE' ? 'text-green-400' : 'text-red-400'
@@ -127,7 +127,7 @@ export default function CheckBalancePage() {
                   )}
                 </div>
                 {isAuthenticated && (
-                  <div className="mt-6 pt-6 border-t border-navy-700">
+                  <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
                     <Link href={`/redeem/${balance.code}`}>
                       <Button variant="gold" className="w-full">
                         Redeem Gift Card

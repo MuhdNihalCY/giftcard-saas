@@ -105,18 +105,18 @@ export default function GiftCardProductsPage() {
     <div className="page-transition">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-4xl font-serif font-bold text-plum-300">Gift Card Products</h1>
-          <p className="text-navy-200 mt-2">Manage your gift card product catalog</p>
+          <h1 className="text-4xl font-serif font-bold text-slate-900 dark:text-slate-100">Gift Card Products</h1>
+          <p className="text-slate-600 dark:text-slate-400 mt-2">Manage your gift card product catalog</p>
         </div>
         <Link href="/dashboard/gift-card-products/create">
-          <Button variant="gold">Create Product</Button>
+          <Button variant="primary">Create Product</Button>
         </Link>
       </div>
 
       {/* Filters */}
       <div className="mb-6 flex space-x-4">
         <select
-          className="px-4 py-3 border-2 border-plum-500/30 rounded-lg bg-navy-800/50 text-navy-50 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
+          className="px-4 py-3 border-2 border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
           value={filters.isActive}
           onChange={(e) => setFilters({ ...filters, isActive: e.target.value, page: 1 })}
         >
@@ -174,18 +174,18 @@ export default function GiftCardProductsPage() {
                         </span>
                       )}
                       {product.category && (
-                        <span className="px-3 py-1 text-xs font-semibold rounded bg-plum-900/30 text-plum-300 border border-plum-500/30">
+                        <span className="px-3 py-1 text-xs font-semibold rounded bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30">
                           {product.category}
                         </span>
                       )}
                     </div>
                     {product.description && (
-                      <p className="text-navy-200 mb-4 line-clamp-2">{product.description}</p>
+                      <p className="text-slate-700 dark:text-slate-300 mb-4 line-clamp-2">{product.description}</p>
                     )}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                       <div>
-                        <p className="text-plum-300 mb-1">Pricing</p>
-                        <p className="font-semibold text-navy-50 text-xs">
+                        <p className="text-slate-600 dark:text-slate-400 mb-1">Pricing</p>
+                        <p className="font-semibold text-slate-900 dark:text-slate-100 text-xs">
                           {product.allowCustomAmount
                             ? `Custom: ${formatCurrency(Number(product.minAmount || 0), product.currency)} - ${formatCurrency(Number(product.maxAmount || 0), product.currency)}`
                             : product.fixedAmounts && product.fixedAmounts.length > 0
@@ -193,21 +193,21 @@ export default function GiftCardProductsPage() {
                             : 'N/A'}
                         </p>
                         {product.fixedAmounts && product.fixedAmounts.length > 0 && product.fixedSalePrices && product.fixedSalePrices.length > 0 && (
-                          <p className="text-xs text-green-400 mt-1">
+                          <p className="text-xs text-green-600 dark:text-green-400 mt-1">
                             Sale prices available
                           </p>
                         )}
                       </div>
                       <div>
-                        <p className="text-plum-300 mb-1">Currency</p>
-                        <p className="font-semibold text-navy-50">{product.currency}</p>
+                        <p className="text-slate-600 dark:text-slate-400 mb-1">Currency</p>
+                        <p className="font-semibold text-slate-900 dark:text-slate-100">{product.currency}</p>
                       </div>
                       <div>
-                        <p className="text-plum-300 mb-1">Created</p>
-                        <p className="font-semibold text-navy-50">{formatDate(product.createdAt)}</p>
+                        <p className="text-slate-600 dark:text-slate-400 mb-1">Created</p>
+                        <p className="font-semibold text-slate-900 dark:text-slate-100">{formatDate(product.createdAt)}</p>
                       </div>
                       <div>
-                        <p className="text-plum-300 mb-1">Actions</p>
+                        <p className="text-slate-600 dark:text-slate-400 mb-1">Actions</p>
                         <div className="flex space-x-2">
                           <Link href={`/dashboard/gift-card-products/${product.id}/edit`}>
                             <Button variant="outline" size="sm">

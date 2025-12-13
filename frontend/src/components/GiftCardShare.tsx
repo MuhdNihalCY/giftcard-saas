@@ -127,19 +127,19 @@ export function GiftCardShare({ giftCardId, onClose }: GiftCardShareProps) {
         {/* NFC Write (Android only) */}
         {platformInfo.isNFCAvailable && platformInfo.isAndroid && shareData.nfcData && (
           <div className="space-y-3">
-            <h4 className="text-lg font-semibold text-plum-300">Share via NFC</h4>
-            <p className="text-sm text-plum-200">
+            <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Share via NFC</h4>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
               Write gift card data to an NFC tag. The recipient can then scan the tag with their phone.
             </p>
             <Button
-              variant="gold"
+              variant="primary"
               onClick={writeToNFC}
               isLoading={isWritingNFC}
               className="w-full"
             >
               {isWritingNFC ? 'Writing to NFC...' : 'Write to NFC Tag'}
             </Button>
-            <p className="text-xs text-plum-300">
+            <p className="text-xs text-slate-600 dark:text-slate-400">
               Hold your phone near an NFC tag and tap the button above
             </p>
           </div>
@@ -147,11 +147,11 @@ export function GiftCardShare({ giftCardId, onClose }: GiftCardShareProps) {
 
         {/* QR Code */}
         <div className="space-y-3">
-          <h4 className="text-lg font-semibold text-plum-300">Share via QR Code</h4>
-          <p className="text-sm text-plum-200">
+          <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Share via QR Code</h4>
+          <p className="text-sm text-slate-600 dark:text-slate-400">
             Scan this QR code to view the gift card
           </p>
-          <div className="flex justify-center p-4 bg-white rounded-lg">
+          <div className="flex justify-center p-4 bg-white dark:bg-slate-800 rounded-lg">
             <QRCode
               value={shareData.shareUrl}
               size={200}
@@ -164,7 +164,7 @@ export function GiftCardShare({ giftCardId, onClose }: GiftCardShareProps) {
 
         {/* Share Link */}
         <div className="space-y-3">
-          <h4 className="text-lg font-semibold text-plum-300">Share via Link</h4>
+          <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Share via Link</h4>
           <div className="flex gap-2">
             <input
               type="text"

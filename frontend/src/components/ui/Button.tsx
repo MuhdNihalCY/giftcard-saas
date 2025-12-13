@@ -19,11 +19,11 @@ export const Button: React.FC<ButtonProps> = ({
   const baseStyles = 'font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
   
   const variants = {
-    primary: 'bg-navy-600 text-white hover:bg-navy-700 focus:ring-navy-500',
-    secondary: 'bg-plum-600 text-white hover:bg-plum-700 focus:ring-plum-500',
-    gold: 'bg-gold-gradient text-navy-900 font-bold hover:shadow-gold-glow focus:ring-gold-500 gold-glow transition-all duration-300 hover:scale-105',
-    outline: 'border-2 border-plum-500 text-plum-300 hover:bg-plum-900/30 focus:ring-plum-500',
-    ghost: 'text-navy-50 hover:bg-navy-800/50 focus:ring-navy-500',
+    primary: 'bg-cyan-500 text-white hover:bg-cyan-600 focus:ring-cyan-500',
+    secondary: 'bg-rose-500 text-white hover:bg-rose-600 focus:ring-rose-500',
+    gold: 'bg-gold-gradient text-slate-900 font-bold hover:shadow-gold-glow focus:ring-amber-500 gold-glow transition-all duration-300 hover:scale-105',
+    outline: 'border-2 border-cyan-500 text-cyan-600 hover:bg-cyan-50 focus:ring-cyan-500',
+    ghost: 'text-slate-700 hover:bg-slate-100 focus:ring-slate-500',
     danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
   };
 

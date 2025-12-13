@@ -140,25 +140,25 @@ export default function ChargebacksPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-navy-50">Chargebacks</h1>
-        <p className="text-navy-300 mt-2">
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">Chargebacks</h1>
+        <p className="text-slate-600 dark:text-slate-400 mt-2">
           Manage chargebacks, disputes, and evidence submission
         </p>
       </div>
 
       {statistics && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="p-6 bg-navy-800 border-navy-700">
-            <div className="text-navy-300 text-sm">Total Chargebacks</div>
-            <div className="text-2xl font-bold text-navy-50 mt-1">{statistics.total}</div>
+          <Card className="p-6">
+            <div className="text-slate-600 dark:text-slate-400 text-sm">Total Chargebacks</div>
+            <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">{statistics.total}</div>
           </Card>
-          <Card className="p-6 bg-navy-800 border-navy-700">
-            <div className="text-navy-300 text-sm">Pending</div>
-            <div className="text-2xl font-bold text-yellow-400 mt-1">{statistics.pending}</div>
+          <Card className="p-6">
+            <div className="text-slate-600 dark:text-slate-400 text-sm">Pending</div>
+            <div className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">{statistics.pending}</div>
           </Card>
-          <Card className="p-6 bg-navy-800 border-navy-700">
-            <div className="text-navy-300 text-sm">Total Amount</div>
-            <div className="text-2xl font-bold text-navy-50 mt-1">
+          <Card className="p-6">
+            <div className="text-slate-600 dark:text-slate-400 text-sm">Total Amount</div>
+            <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">
               {formatCurrency(statistics.totalAmount)}
             </div>
           </Card>
@@ -191,7 +191,7 @@ export default function ChargebacksPage() {
         ]}
       />
 
-      <Card className="p-6 bg-navy-800 border-navy-700">
+      <Card className="p-6">
         <DataTable
           data={chargebacks}
           columns={columns}

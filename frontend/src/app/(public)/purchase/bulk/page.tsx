@@ -246,10 +246,10 @@ export default function BulkPurchasePage() {
       <Navigation />
       <div className="py-16 px-4 sm:px-6 lg:px-8 page-transition">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-5xl font-serif font-bold text-plum-300 mb-4 text-center">
+          <h1 className="text-5xl font-serif font-bold text-slate-900 dark:text-slate-100 mb-4 text-center">
             Bulk Purchase
           </h1>
-          <p className="text-center text-navy-200 mb-12">Purchase multiple gift cards for different recipients</p>
+          <p className="text-center text-slate-600 dark:text-slate-400 mb-12">Purchase multiple gift cards for different recipients</p>
 
           {product && (
             <Card className="mb-8">
@@ -258,7 +258,7 @@ export default function BulkPurchasePage() {
               </CardHeader>
               <CardContent>
                 {product.description && (
-                  <p className="text-navy-200">{product.description}</p>
+                  <p className="text-slate-600 dark:text-slate-400">{product.description}</p>
                 )}
               </CardContent>
             </Card>
@@ -285,7 +285,7 @@ export default function BulkPurchasePage() {
                   <CardTitle className="text-2xl">Amount Options</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-plum-300 mb-4">
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
                     Set the amount for each recipient individually, or use the options below to set a default amount.
                   </p>
                   <AmountSelector
@@ -315,17 +315,17 @@ export default function BulkPurchasePage() {
               </CardHeader>
               <CardContent>
                 <div>
-                  <label className="block text-sm font-medium text-plum-200 mb-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                     Payment Method
                   </label>
                   <select
-                    className="w-full px-4 py-3 border-2 border-navy-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 bg-navy-800/50 text-navy-50"
+                    className="w-full px-4 py-3 border-2 border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                     {...register('paymentMethod')}
                   >
-                    <option value="STRIPE" className="bg-navy-800">Stripe (Card, Apple Pay, Google Pay)</option>
-                    <option value="PAYPAL" className="bg-navy-800">PayPal</option>
-                    <option value="RAZORPAY" className="bg-navy-800">Razorpay (Cards, UPI, Wallets)</option>
-                    <option value="UPI" className="bg-navy-800">UPI</option>
+                    <option value="STRIPE" className="bg-white dark:bg-slate-800">Stripe (Card, Apple Pay, Google Pay)</option>
+                    <option value="PAYPAL" className="bg-white dark:bg-slate-800">PayPal</option>
+                    <option value="RAZORPAY" className="bg-white dark:bg-slate-800">Razorpay (Cards, UPI, Wallets)</option>
+                    <option value="UPI" className="bg-white dark:bg-slate-800">UPI</option>
                   </select>
                 </div>
               </CardContent>
@@ -335,25 +335,25 @@ export default function BulkPurchasePage() {
               <CardContent className="pt-6">
                 <div className="space-y-3 mb-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-xl font-serif font-semibold text-plum-300">
+                    <span className="text-xl font-serif font-semibold text-slate-900 dark:text-slate-100">
                       You Pay ({recipients.length} gift card{recipients.length !== 1 ? 's' : ''}):
                     </span>
-                    <span className="text-3xl font-serif font-bold bg-gold-gradient bg-clip-text text-transparent">
+                    <span className="text-3xl font-serif font-bold bg-cyan-gradient bg-clip-text text-transparent">
                       {formatCurrency(calculateTotal(), product?.currency || 'USD')}
                     </span>
                   </div>
                   {calculateTotal() < calculateTotalGiftCardValue() && (
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-plum-200">
+                      <span className="text-sm text-slate-600 dark:text-slate-400">
                         Total Gift Card Value:
                       </span>
-                      <span className="text-lg font-semibold text-green-400">
+                      <span className="text-lg font-semibold text-green-600 dark:text-green-400">
                         {formatCurrency(calculateTotalGiftCardValue(), product?.currency || 'USD')}
                       </span>
                     </div>
                   )}
                 </div>
-                <p className="text-sm text-plum-300">
+                <p className="text-sm text-slate-600 dark:text-slate-400">
                   Each recipient will receive their gift card via email after payment is confirmed.
                 </p>
               </CardContent>

@@ -54,7 +54,7 @@ export function TemplatePreview({ designData }: TemplatePreviewProps) {
   return (
     <Card className="sticky top-4">
       <CardHeader>
-        <h3 className="text-xl font-bold text-plum-300">Live Preview</h3>
+        <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100">Live Preview</h3>
       </CardHeader>
       <CardContent>
         <div

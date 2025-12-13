@@ -43,7 +43,7 @@ export default function RedeemSuccessPage() {
             <CardContent>
               <div className="text-center space-y-6">
                 <div className="p-8 bg-green-900/20 border border-green-500/30 rounded-xl">
-                  <h2 className="text-3xl font-serif font-bold text-plum-300 mb-6">
+                  <h2 className="text-3xl font-serif font-bold text-slate-900 dark:text-slate-100 mb-6">
                     Gift Card Redeemed Successfully
                   </h2>
                   {giftCard && (

@@ -125,7 +125,7 @@ export function DataTable<T extends Record<string, any>>({
     <Card className={cn('overflow-hidden', className)}>
       {/* Export Button */}
       {exportable && onExport && (
-        <div className="p-4 border-b border-navy-700/50 flex justify-end">
+        <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-end">
           <Button variant="ghost" size="sm" onClick={onExport}>
             <Download className="w-4 h-4 mr-2" />
             Export
@@ -137,14 +137,14 @@ export function DataTable<T extends Record<string, any>>({
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-navy-700/50">
+            <tr className="border-b border-slate-200 dark:border-slate-700">
               {selectable && (
                 <th className="px-4 py-3 text-left">
                   <input
                     type="checkbox"
                     checked={isAllSelected}
                     onChange={(e) => handleSelectAll(e.target.checked)}
-                    className="rounded border-navy-600 bg-navy-800 text-gold-500 focus:ring-gold-500"
+                    className="rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-cyan-500 focus:ring-cyan-500"
                   />
                 </th>
               )}
@@ -152,8 +152,8 @@ export function DataTable<T extends Record<string, any>>({
                 <th
                   key={column.key}
                   className={cn(
-                    'px-4 py-3 text-left text-sm font-semibold text-plum-300',
-                    column.sortable && sortable && 'cursor-pointer hover:bg-navy-700/30',
+                    'px-4 py-3 text-left text-sm font-semibold text-slate-700 dark:text-slate-300',
+                    column.sortable && sortable && 'cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800',
                     column.className
                   )}
                   onClick={() => column.sortable && handleSort(column.key)}
@@ -161,7 +161,7 @@ export function DataTable<T extends Record<string, any>>({
                   <div className="flex items-center space-x-2">
                     <span>{column.label}</span>
                     {column.sortable && sortable && sortKey === column.key && (
-                      <span className="text-gold-400">
+                      <span className="text-cyan-600 dark:text-cyan-400">
                         {sortDirection === 'asc' ? (
                           <ChevronUp className="w-4 h-4" />
                         ) : (
@@ -179,7 +179,7 @@ export function DataTable<T extends Record<string, any>>({
               <tr>
                 <td
                   colSpan={columns.length + (selectable ? 1 : 0)}
-                  className="px-4 py-12 text-center text-plum-400"
+                  className="px-4 py-12 text-center text-slate-500 dark:text-slate-400"
                 >
                   {emptyMessage}
                 </td>
@@ -192,9 +192,9 @@ export function DataTable<T extends Record<string, any>>({
                   <tr
                     key={rowId || index}
                     className={cn(
-                      'border-b border-navy-700/30 hover:bg-navy-700/20 transition-colors',
+                      'border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors',
                       onRowClick && 'cursor-pointer',
-                      isSelected && 'bg-plum-600/10',
+                      isSelected && 'bg-cyan-50 dark:bg-cyan-900/20',
                       rowClassName && rowClassName(row)
                     )}
                     onClick={() => onRowClick?.(row)}
@@ -205,14 +205,14 @@ export function DataTable<T extends Record<string, any>>({
                           type="checkbox"
                           checked={isSelected}
                           onChange={(e) => handleSelectRow(row, e.target.checked)}
-                          className="rounded border-navy-600 bg-navy-800 text-gold-500 focus:ring-gold-500"
+                          className="rounded border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-cyan-500 focus:ring-cyan-500"
                         />
                       </td>
                     )}
                     {columns.map((column) => (
                       <td
                         key={column.key}
-                        className={cn('px-4 py-3 text-sm text-navy-200', column.className)}
+                        className={cn('px-4 py-3 text-sm text-slate-700 dark:text-slate-300', column.className)}
                       >
                         {column.render
                           ? column.render(row[column.key], row)
@@ -229,8 +229,8 @@ export function DataTable<T extends Record<string, any>>({
 
       {/* Pagination */}
       {pagination && totalPages > 1 && (
-        <div className="p-4 border-t border-navy-700/50 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="text-sm text-plum-300">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="text-sm text-slate-600 dark:text-slate-400">
             Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
             {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
             {pagination.total} results
@@ -259,7 +259,7 @@ export function DataTable<T extends Record<string, any>>({
                 return (
                   <Button
                     key={pageNum}
-                    variant={pagination.page === pageNum ? 'gold' : 'ghost'}
+                    variant={pagination.page === pageNum ? 'primary' : 'ghost'}
                     size="sm"
                     onClick={() => pagination.onPageChange(pageNum)}
                     className="min-w-[2rem]"

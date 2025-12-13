@@ -64,8 +64,8 @@ export function TemplateEditor({ designData, onChange }: TemplateEditorProps) {
               onClick={() => setActiveTab('schemes')}
               className={`px-4 py-2 font-semibold text-sm ${
                 activeTab === 'schemes'
-                  ? 'border-b-2 border-gold-400 text-gold-400'
-                  : 'text-plum-300 hover:text-gold-400'
+                  ? 'border-b-2 border-cyan-500 text-cyan-600 dark:text-cyan-400'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400'
               }`}
             >
               Color Schemes
@@ -74,8 +74,8 @@ export function TemplateEditor({ designData, onChange }: TemplateEditorProps) {
               onClick={() => setActiveTab('colors')}
               className={`px-4 py-2 font-semibold text-sm ${
                 activeTab === 'colors'
-                  ? 'border-b-2 border-gold-400 text-gold-400'
-                  : 'text-plum-300 hover:text-gold-400'
+                  ? 'border-b-2 border-cyan-500 text-cyan-600 dark:text-cyan-400'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400'
               }`}
             >
               Custom Colors
@@ -84,8 +84,8 @@ export function TemplateEditor({ designData, onChange }: TemplateEditorProps) {
               onClick={() => setActiveTab('typography')}
               className={`px-4 py-2 font-semibold text-sm ${
                 activeTab === 'typography'
-                  ? 'border-b-2 border-gold-400 text-gold-400'
-                  : 'text-plum-300 hover:text-gold-400'
+                  ? 'border-b-2 border-cyan-500 text-cyan-600 dark:text-cyan-400'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400'
               }`}
             >
               Typography
@@ -94,8 +94,8 @@ export function TemplateEditor({ designData, onChange }: TemplateEditorProps) {
               onClick={() => setActiveTab('images')}
               className={`px-4 py-2 font-semibold text-sm ${
                 activeTab === 'images'
-                  ? 'border-b-2 border-gold-400 text-gold-400'
-                  : 'text-plum-300 hover:text-gold-400'
+                  ? 'border-b-2 border-cyan-500 text-cyan-600 dark:text-cyan-400'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400'
               }`}
             >
               Images
@@ -104,8 +104,8 @@ export function TemplateEditor({ designData, onChange }: TemplateEditorProps) {
               onClick={() => setActiveTab('layout')}
               className={`px-4 py-2 font-semibold text-sm ${
                 activeTab === 'layout'
-                  ? 'border-b-2 border-gold-400 text-gold-400'
-                  : 'text-plum-300 hover:text-gold-400'
+                  ? 'border-b-2 border-cyan-500 text-cyan-600 dark:text-cyan-400'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400'
               }`}
             >
               Layout
@@ -114,8 +114,8 @@ export function TemplateEditor({ designData, onChange }: TemplateEditorProps) {
               onClick={() => setActiveTab('effects')}
               className={`px-4 py-2 font-semibold text-sm ${
                 activeTab === 'effects'
-                  ? 'border-b-2 border-gold-400 text-gold-400'
-                  : 'text-plum-300 hover:text-gold-400'
+                  ? 'border-b-2 border-cyan-500 text-cyan-600 dark:text-cyan-400'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400'
               }`}
             >
               Effects
@@ -125,7 +125,7 @@ export function TemplateEditor({ designData, onChange }: TemplateEditorProps) {
           {/* Color Schemes Tab */}
           {activeTab === 'schemes' && (
             <div className="space-y-4">
-              <p className="text-sm text-plum-200 mb-4">
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
                 Choose a professional color scheme or customize your own colors
               </p>
               <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto">
@@ -133,19 +133,19 @@ export function TemplateEditor({ designData, onChange }: TemplateEditorProps) {
                   <button
                     key={scheme.name}
                     onClick={() => onChange(applyColorScheme(scheme, designData))}
-                    className="group relative p-3 rounded-lg border-2 border-navy-600 hover:border-gold-400 transition-all text-left"
+                    className="group relative p-3 rounded-lg border-2 border-slate-300 dark:border-slate-700 hover:border-cyan-500 dark:hover:border-cyan-400 transition-all text-left"
                   >
                     <div
                       className="w-full h-16 rounded mb-2"
                       style={{ background: scheme.preview }}
                     />
-                    <h4 className="font-semibold text-plum-300 text-sm">{scheme.name}</h4>
-                    <p className="text-xs text-plum-400 mt-1">{scheme.description}</p>
+                    <h4 className="font-semibold text-slate-900 dark:text-slate-100 text-sm">{scheme.name}</h4>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{scheme.description}</p>
                     <div className="flex gap-1 mt-2">
                       {Object.values(scheme.colors).slice(0, 5).map((color, idx) => (
                         <div
                           key={idx}
-                          className="w-4 h-4 rounded border border-navy-600"
+                          className="w-4 h-4 rounded border border-slate-300 dark:border-slate-700"
                           style={{ backgroundColor: color }}
                           title={color}
                         />
@@ -161,7 +161,7 @@ export function TemplateEditor({ designData, onChange }: TemplateEditorProps) {
           {activeTab === 'colors' && (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-plum-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Primary Color
                 </label>
                 <div className="flex gap-2">
@@ -169,7 +169,7 @@ export function TemplateEditor({ designData, onChange }: TemplateEditorProps) {
                     type="color"
                     value={designData.colors?.primary || '#667eea'}
                     onChange={(e) => updateColors({ primary: e.target.value })}
-                    className="w-16 h-10 rounded border border-navy-600"
+                    className="w-16 h-10 rounded border border-slate-300 dark:border-slate-700"
                   />
                   <Input
                     value={designData.colors?.primary || '#667eea'}
@@ -180,7 +180,7 @@ export function TemplateEditor({ designData, onChange }: TemplateEditorProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-plum-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Secondary Color
                 </label>
                 <div className="flex gap-2">
@@ -188,7 +188,7 @@ export function TemplateEditor({ designData, onChange }: TemplateEditorProps) {
                     type="color"
                     value={designData.colors?.secondary || '#764ba2'}
                     onChange={(e) => updateColors({ secondary: e.target.value })}
-                    className="w-16 h-10 rounded border border-navy-600"
+                    className="w-16 h-10 rounded border border-slate-300 dark:border-slate-700"
                   />
                   <Input
                     value={designData.colors?.secondary || '#764ba2'}
@@ -199,7 +199,7 @@ export function TemplateEditor({ designData, onChange }: TemplateEditorProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-plum-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Background Color
                 </label>
                 <div className="flex gap-2">
@@ -218,7 +218,7 @@ export function TemplateEditor({ designData, onChange }: TemplateEditorProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-plum-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Text Color
                 </label>
                 <div className="flex gap-2">
@@ -226,7 +226,7 @@ export function TemplateEditor({ designData, onChange }: TemplateEditorProps) {
                     type="color"
                     value={designData.colors?.text || '#000000'}
                     onChange={(e) => updateColors({ text: e.target.value })}
-                    className="w-16 h-10 rounded border border-navy-600"
+                    className="w-16 h-10 rounded border border-slate-300 dark:border-slate-700"
                   />
                   <Input
                     value={designData.colors?.text || '#000000'}
@@ -237,7 +237,7 @@ export function TemplateEditor({ designData, onChange }: TemplateEditorProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-plum-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Accent Color
                 </label>
                 <div className="flex gap-2">
@@ -245,7 +245,7 @@ export function TemplateEditor({ designData, onChange }: TemplateEditorProps) {
                     type="color"
                     value={designData.colors?.accent || '#667eea'}
                     onChange={(e) => updateColors({ accent: e.target.value })}
-                    className="w-16 h-10 rounded border border-navy-600"
+                    className="w-16 h-10 rounded border border-slate-300 dark:border-slate-700"
                   />
                   <Input
                     value={designData.colors?.accent || '#667eea'}
@@ -261,13 +261,13 @@ export function TemplateEditor({ designData, onChange }: TemplateEditorProps) {
           {activeTab === 'typography' && (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-plum-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Font Family
                 </label>
                 <select
                   value={designData.typography?.fontFamily || 'Inter, sans-serif'}
                   onChange={(e) => updateTypography({ fontFamily: e.target.value })}
-                  className="w-full px-4 py-2 border border-navy-600 rounded-lg bg-navy-800 text-navy-50"
+                  className="w-full px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                 >
                   <optgroup label="Modern Sans-Serif">
                     <option value="Inter, -apple-system, BlinkMacSystemFont, sans-serif">Inter (Recommended)</option>
@@ -291,7 +291,7 @@ export function TemplateEditor({ designData, onChange }: TemplateEditorProps) {
                     <option value="'Fira Code', monospace">Fira Code</option>
                   </optgroup>
                 </select>
-                <p className="text-xs text-plum-400 mt-1">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                   Selected: <span style={{ fontFamily: designData.typography?.fontFamily || 'Inter' }}>
                     {designData.typography?.fontFamily?.split(',')[0] || 'Inter'}
                   </span>
@@ -299,7 +299,7 @@ export function TemplateEditor({ designData, onChange }: TemplateEditorProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-plum-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Heading Size: {designData.typography?.headingSize || '24px'}
                 </label>
                 <input
@@ -310,14 +310,14 @@ export function TemplateEditor({ designData, onChange }: TemplateEditorProps) {
                   onChange={(e) => updateTypography({ headingSize: `${e.target.value}px` })}
                   className="w-full"
                 />
-                <div className="flex justify-between text-xs text-plum-400 mt-1">
+                <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mt-1">
                   <span>Small (18px)</span>
                   <span>Large (48px)</span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-plum-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Body Size: {designData.typography?.bodySize || '16px'}
                 </label>
                 <input
@@ -335,13 +335,13 @@ export function TemplateEditor({ designData, onChange }: TemplateEditorProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-plum-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Font Weight
                 </label>
                 <select
                   value={designData.typography?.fontWeight || '600'}
                   onChange={(e) => updateTypography({ fontWeight: e.target.value })}
-                  className="w-full px-4 py-2 border border-navy-600 rounded-lg bg-navy-800 text-navy-50"
+                    className="w-full px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                 >
                   <option value="300">Light (300)</option>
                   <option value="400">Normal (400)</option>
@@ -357,7 +357,7 @@ export function TemplateEditor({ designData, onChange }: TemplateEditorProps) {
           {activeTab === 'images' && (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-plum-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Logo URL
                 </label>
                 <Input
@@ -370,7 +370,7 @@ export function TemplateEditor({ designData, onChange }: TemplateEditorProps) {
                   <img
                     src={designData.images.logo}
                     alt="Logo preview"
-                    className="mt-2 w-32 h-32 object-contain rounded border border-navy-600"
+                    className="mt-2 w-32 h-32 object-contain rounded border border-slate-300 dark:border-slate-700"
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = 'none';
                     }}
@@ -379,7 +379,7 @@ export function TemplateEditor({ designData, onChange }: TemplateEditorProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-plum-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Background Image URL
                 </label>
                 <Input
@@ -391,7 +391,7 @@ export function TemplateEditor({ designData, onChange }: TemplateEditorProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-plum-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Pattern URL
                 </label>
                 <Input
@@ -424,18 +424,18 @@ export function TemplateEditor({ designData, onChange }: TemplateEditorProps) {
                     onClick={() => updateDesign({ layout: layout.value as any })}
                     className={`p-4 rounded-lg border-2 text-left transition-all ${
                       designData.layout === layout.value
-                        ? 'border-gold-400 bg-gold-400/10'
-                        : 'border-navy-600 hover:border-gold-400/50'
+                        ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20'
+                        : 'border-slate-300 dark:border-slate-700 hover:border-cyan-500 dark:hover:border-cyan-400'
                     }`}
                   >
-                    <h4 className="font-semibold text-plum-300 text-sm">{layout.label}</h4>
-                    <p className="text-xs text-plum-400 mt-1">{layout.desc}</p>
+                    <h4 className="font-semibold text-slate-900 dark:text-slate-100 text-sm">{layout.label}</h4>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{layout.desc}</p>
                   </button>
                 ))}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-plum-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Border Radius
                 </label>
                 <Input
@@ -447,7 +447,7 @@ export function TemplateEditor({ designData, onChange }: TemplateEditorProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-plum-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Padding
                 </label>
                 <Input
@@ -466,7 +466,7 @@ export function TemplateEditor({ designData, onChange }: TemplateEditorProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-plum-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Margin
                 </label>
                 <Input
@@ -504,7 +504,7 @@ export function TemplateEditor({ designData, onChange }: TemplateEditorProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-plum-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Border Radius: {designData.borderRadius || '8px'}
                 </label>
                 <input
@@ -522,7 +522,7 @@ export function TemplateEditor({ designData, onChange }: TemplateEditorProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-plum-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Padding: {designData.spacing?.padding || '20px'}
                 </label>
                 <input

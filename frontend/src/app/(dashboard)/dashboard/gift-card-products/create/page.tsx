@@ -123,8 +123,8 @@ export default function CreateProductPage() {
   return (
     <div className="page-transition">
       <div className="mb-8">
-        <h1 className="text-4xl font-serif font-bold text-plum-300">Create Product</h1>
-        <p className="text-navy-200 mt-2 text-lg">Create a new gift card product for your catalog</p>
+        <h1 className="text-4xl font-serif font-bold text-slate-900 dark:text-slate-100">Create Product</h1>
+        <p className="text-slate-600 dark:text-slate-400 mt-2 text-lg">Create a new gift card product for your catalog</p>
       </div>
 
       <Card>
@@ -232,7 +232,7 @@ export default function CreateProductPage() {
             {allowCustomAmount ? (
               <div className="space-y-6">
                 <div>
-                  <h4 className="text-lg font-semibold text-plum-300 mb-4">Gift Card Values (What customer gets)</h4>
+                  <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Gift Card Values (What customer gets)</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Input
                       label="Minimum Gift Card Value *"
@@ -253,7 +253,7 @@ export default function CreateProductPage() {
                   </div>
                 </div>
                 <div>
-                  <h4 className="text-lg font-semibold text-plum-300 mb-4">Sale Prices (What customer pays) - Optional</h4>
+                  <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Sale Prices (What customer pays) - Optional</h4>
                   <p className="text-sm text-plum-200 mb-4">Leave empty to use gift card values as sale prices (no discount)</p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Input
@@ -278,7 +278,7 @@ export default function CreateProductPage() {
             ) : (
               <div className="space-y-6">
                 <div>
-                  <h4 className="text-lg font-semibold text-plum-300 mb-4">Gift Card Values (What customer gets)</h4>
+                  <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Gift Card Values (What customer gets)</h4>
                   <Input
                     label="Fixed Gift Card Values (comma-separated) *"
                     type="text"
@@ -288,7 +288,7 @@ export default function CreateProductPage() {
                   />
                 </div>
                 <div>
-                  <h4 className="text-lg font-semibold text-plum-300 mb-4">Sale Prices (What customer pays) - Optional</h4>
+                  <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Sale Prices (What customer pays) - Optional</h4>
                   <p className="text-sm text-plum-200 mb-4">Comma-separated, must match the number of gift card values. Leave empty for no discount.</p>
                   <Input
                     label="Fixed Sale Prices (comma-separated)"

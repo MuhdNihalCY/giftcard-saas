@@ -94,8 +94,8 @@ export default function CreateGiftCardPage() {
   return (
     <div className="page-transition">
       <div className="mb-8">
-        <h1 className="text-4xl font-serif font-bold text-plum-300">Create Gift Card</h1>
-        <p className="text-navy-200 mt-2 text-lg">Create a new digital gift card</p>
+        <h1 className="text-4xl font-serif font-bold text-slate-900 dark:text-slate-100">Create Gift Card</h1>
+        <p className="text-slate-600 dark:text-slate-400 mt-2 text-lg">Create a new digital gift card</p>
       </div>
 
       <Card>

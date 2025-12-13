@@ -84,8 +84,8 @@ export default function CreateTemplatePage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-plum-300">Create Template</h1>
-        <p className="text-plum-200 mt-2">Create a new gift card template with custom design</p>
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">Create Template</h1>
+        <p className="text-slate-600 dark:text-slate-400 mt-2">Create a new gift card template with custom design</p>
       </div>
 
       {/* Template Presets */}
@@ -104,7 +104,7 @@ export default function CreateTemplatePage() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-plum-200 mb-4">
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
               Choose a preset template to get started quickly, or start from scratch
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -115,7 +115,7 @@ export default function CreateTemplatePage() {
                     setDesignData(preset.designData);
                     setShowPresets(false);
                   }}
-                  className="group p-4 rounded-lg border-2 border-navy-600 hover:border-gold-400 transition-all text-left"
+                  className="group p-4 rounded-lg border-2 border-slate-300 dark:border-slate-700 hover:border-cyan-500 dark:hover:border-cyan-400 transition-all text-left"
                 >
                   <div
                     className="w-full h-20 rounded mb-2"
@@ -123,13 +123,13 @@ export default function CreateTemplatePage() {
                       background: `linear-gradient(135deg, ${preset.designData.colors?.primary} 0%, ${preset.designData.colors?.secondary} 100%)`,
                     }}
                   />
-                  <h4 className="font-semibold text-plum-300 text-sm mb-1">{preset.name}</h4>
-                  <p className="text-xs text-plum-400 mb-2">{preset.category}</p>
-                  <p className="text-xs text-plum-500">{preset.preview}</p>
+                  <h4 className="font-semibold text-slate-900 dark:text-slate-100 text-sm mb-1">{preset.name}</h4>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mb-2">{preset.category}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-500">{preset.preview}</p>
                 </button>
               ))}
             </div>
-            <div className="mt-4 pt-4 border-t border-navy-700">
+            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
               <Button
                 variant="outline"
                 onClick={() => setShowPresets(false)}

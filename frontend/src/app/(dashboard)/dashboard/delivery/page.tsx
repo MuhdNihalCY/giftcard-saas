@@ -160,7 +160,7 @@ export default function DeliveryPage() {
       label: 'Date',
       sortable: true,
       render: (value) => (
-        <span className="text-sm text-plum-300">{formatDateTime(value)}</span>
+        <span className="text-sm text-slate-600 dark:text-slate-400">{formatDateTime(value)}</span>
       ),
     },
     {
@@ -175,7 +175,7 @@ export default function DeliveryPage() {
       key: 'recipient',
       label: 'Recipient',
       render: (value) => (
-        <span className="text-sm text-plum-300">{value}</span>
+        <span className="text-sm text-slate-600 dark:text-slate-400">{value}</span>
       ),
     },
     {
@@ -190,7 +190,7 @@ export default function DeliveryPage() {
       key: 'subject',
       label: 'Subject',
       render: (value) => (
-        <span className="text-sm text-navy-200">{value || '-'}</span>
+        <span className="text-sm text-slate-700 dark:text-slate-300">{value || '-'}</span>
       ),
     },
     {
@@ -201,12 +201,12 @@ export default function DeliveryPage() {
           {value ? (
             <Link
               href={`/dashboard/gift-cards/${value}`}
-              className="text-gold-400 hover:text-gold-300 font-mono text-sm"
+              className="text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 font-mono text-sm"
             >
               View Card
             </Link>
           ) : (
-            <span className="text-navy-300">-</span>
+            <span className="text-slate-500 dark:text-slate-400">-</span>
           )}
         </div>
       ),
@@ -221,7 +221,7 @@ export default function DeliveryPage() {
               variant="ghost"
               size="sm"
               onClick={() => handleDownloadPDF(row.giftCardId)}
-              className="text-plum-300 hover:text-gold-400"
+              className="text-slate-600 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400"
             >
               <FileDown className="w-3 h-3" />
             </Button>
@@ -236,11 +236,11 @@ export default function DeliveryPage() {
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-4xl font-serif font-bold text-plum-300 mb-2 flex items-center space-x-3">
+          <h1 className="text-4xl font-serif font-bold text-slate-900 dark:text-slate-100 mb-2 flex items-center space-x-3">
             <Mail className="w-8 h-8" />
             <span>Delivery Management</span>
           </h1>
-          <p className="text-navy-200 text-lg">View and manage gift card deliveries</p>
+          <p className="text-slate-600 dark:text-slate-400 text-lg">View and manage gift card deliveries</p>
         </div>
         <div className="flex items-center space-x-2">
           <Button

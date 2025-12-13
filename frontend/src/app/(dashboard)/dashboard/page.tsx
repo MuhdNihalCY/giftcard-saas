@@ -37,7 +37,7 @@ import {
 } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 
-const COLORS = ['#ffd700', '#8241a5', '#667eea', '#f093fb', '#4facfe'];
+const COLORS = ['#06b6d4', '#f43f5e', '#f59e0b', '#10b981', '#8b5cf6'];
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
@@ -167,7 +167,7 @@ export default function DashboardPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500"></div>
       </div>
     );
   }
@@ -176,10 +176,10 @@ export default function DashboardPage() {
     <div className="page-transition">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-serif font-bold text-plum-300 mb-2">
+        <h1 className="text-4xl font-serif font-bold text-slate-900 dark:text-slate-100 mb-2">
           Welcome back, {user?.firstName || user?.email}!
         </h1>
-        <p className="text-navy-200 text-lg">
+        <p className="text-slate-600 dark:text-slate-400 text-lg">
           {user?.role === 'CUSTOMER'
             ? 'Manage your gift cards and wallet from here.'
             : 'Here is an overview of your business performance.'}
@@ -450,12 +450,12 @@ export default function DashboardPage() {
                     {recentActivity.map((activity) => (
                       <div
                         key={activity.id}
-                        className="flex items-start space-x-3 p-3 rounded-lg bg-navy-700/30 hover:bg-navy-700/50 transition-colors"
+                        className="flex items-start space-x-3 p-3 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors"
                       >
-                        <div className="w-2 h-2 rounded-full bg-gold-500 mt-2 flex-shrink-0" />
+                        <div className="w-2 h-2 rounded-full bg-cyan-500 mt-2 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm text-navy-50">{activity.message}</p>
-                          <p className="text-xs text-plum-300 mt-1">
+                          <p className="text-sm text-slate-900">{activity.message}</p>
+                          <p className="text-xs text-slate-600 mt-1">
                             {format(new Date(activity.time), 'MMM d, yyyy h:mm a')}
                           </p>
                         </div>
@@ -463,7 +463,7 @@ export default function DashboardPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-plum-200 text-center py-8">No recent activity</p>
+                  <p className="text-slate-600 text-center py-8">No recent activity</p>
                 )}
               </CardContent>
             </Card>
@@ -497,7 +497,7 @@ export default function DashboardPage() {
               <CardTitle className="text-xl">Recent Activity</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-plum-200">No recent activity</p>
+              <p className="text-slate-600">No recent activity</p>
             </CardContent>
           </Card>
         </div>

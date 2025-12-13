@@ -118,10 +118,10 @@ function BrowsePageContent() {
       <Navigation />
       <div className="py-16 px-4 sm:px-6 lg:px-8 page-transition">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-5xl font-serif font-bold text-plum-300 mb-4 text-center">
+          <h1 className="text-5xl font-serif font-bold text-slate-900 dark:text-slate-100 mb-4 text-center">
             Browse Gift Cards
           </h1>
-          <p className="text-center text-navy-200 mb-12 text-lg">Discover our exclusive collection</p>
+          <p className="text-center text-slate-600 dark:text-slate-400 mb-12 text-lg">Discover our exclusive collection</p>
 
           {/* Search and Filters */}
           <div className="mb-8 space-y-4">
@@ -137,7 +137,7 @@ function BrowsePageContent() {
                     className="w-full px-4 py-3 pl-12 bg-navy-800/50 border-2 border-plum-500/30 rounded-lg text-navy-50 placeholder-plum-300 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all"
                   />
                   <svg
-                    className="absolute left-4 top-3.5 h-5 w-5 text-plum-300"
+                    className="absolute left-4 top-3.5 h-5 w-5 text-slate-500 dark:text-slate-400"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -153,11 +153,11 @@ function BrowsePageContent() {
                   <select
                     value={selectedCategory}
                     onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="w-full px-4 py-3 bg-navy-800/50 border-2 border-plum-500/30 rounded-lg text-navy-50 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
+                    className="w-full px-4 py-3 bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                   >
-                    <option value="all" className="bg-navy-800">All Categories</option>
+                    <option value="all" className="bg-white dark:bg-slate-800">All Categories</option>
                     {categories.map((category) => (
-                      <option key={category} value={category} className="bg-navy-800">
+                      <option key={category} value={category} className="bg-white dark:bg-slate-800">
                         {category}
                       </option>
                     ))}
@@ -170,20 +170,20 @@ function BrowsePageContent() {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as SortOption)}
-                  className="w-full px-4 py-3 bg-navy-800/50 border-2 border-plum-500/30 rounded-lg text-navy-50 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
+                  className="w-full px-4 py-3 bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                 >
-                  <option value="default" className="bg-navy-800">Default</option>
-                  <option value="name-asc" className="bg-navy-800">Name (A-Z)</option>
-                  <option value="name-desc" className="bg-navy-800">Name (Z-A)</option>
-                  <option value="price-asc" className="bg-navy-800">Price (Low to High)</option>
-                  <option value="price-desc" className="bg-navy-800">Price (High to Low)</option>
+                  <option value="default" className="bg-white dark:bg-slate-800">Default</option>
+                  <option value="name-asc" className="bg-white dark:bg-slate-800">Name (A-Z)</option>
+                  <option value="name-desc" className="bg-white dark:bg-slate-800">Name (Z-A)</option>
+                  <option value="price-asc" className="bg-white dark:bg-slate-800">Price (Low to High)</option>
+                  <option value="price-desc" className="bg-white dark:bg-slate-800">Price (High to Low)</option>
                 </select>
               </div>
             </div>
 
             {/* Results count */}
             {!isLoading && (
-              <p className="text-plum-200 text-sm">
+              <p className="text-slate-600 dark:text-slate-400 text-sm">
                 Showing {filteredAndSortedProducts.length} of {products.length} products
               </p>
             )}
@@ -200,10 +200,10 @@ function BrowsePageContent() {
             <Card>
               <CardContent className="text-center py-16">
                 <div className="text-6xl mb-4">🎁</div>
-                <h3 className="text-2xl font-serif font-semibold text-plum-300 mb-2">
+                <h3 className="text-2xl font-serif font-semibold text-slate-900 dark:text-slate-100 mb-2">
                   No products found
                 </h3>
-                <p className="text-plum-200 mb-6">
+                <p className="text-slate-600 dark:text-slate-400 mb-6">
                   {searchQuery || selectedCategory !== 'all'
                     ? 'Try adjusting your search or filters'
                     : 'No products available at the moment.'}

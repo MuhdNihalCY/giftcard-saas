@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -24,6 +24,12 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
+  
+  useEffect(() => {
+    router.replace('/auth?mode=login');
+  }, [router]);
+  
+  return null;
   const { setUser, isAuthenticated, checkAuth, setTokens } = useAuthStore();
   const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -260,7 +266,7 @@ export default function LoginPage() {
   // Show loading while checking auth
   if (isChecking) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-navy-900">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-500"></div>
       </div>
     );
@@ -272,13 +278,13 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-navy-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 page-transition">
         <div className="text-center">
-          <h2 className="text-4xl font-serif font-bold text-plum-300 mb-2">
+          <h2 className="text-4xl font-serif font-bold text-slate-900 dark:text-slate-100 mb-2">
             Welcome Back
           </h2>
-          <p className="text-navy-200">
+          <p className="text-slate-600 dark:text-slate-400">
             Sign in to your account
           </p>
         </div>
@@ -311,7 +317,7 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-[3.25rem] text-plum-300 hover:text-gold-400 transition-colors focus:outline-none rounded p-1"
+                      className="absolute right-3 top-[3.25rem] text-slate-600 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors focus:outline-none rounded p-1"
                       aria-label={showPassword ? 'Hide password' : 'Show password'}
                     >
                       {showPassword ? (
@@ -327,9 +333,9 @@ export default function LoginPage() {
                     Sign In
                   </Button>
                 </div>
-                <p className="text-center text-sm text-plum-200">
+                <p className="text-center text-sm text-slate-600 dark:text-slate-400">
                   Don't have an account?{' '}
-                  <Link href="/register" className="font-medium text-gold-400 hover:text-gold-300 transition-colors">
+                  <Link href="/register" className="font-medium text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 transition-colors">
                     Create one now
                   </Link>
                 </p>
@@ -337,8 +343,8 @@ export default function LoginPage() {
             ) : (
               <div className="space-y-6">
                 <div className="text-center">
-                  <h3 className="text-xl font-semibold text-plum-300 mb-2">Two-Factor Authentication</h3>
-                  <p className="text-sm text-plum-200">
+                  <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">Two-Factor Authentication</h3>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
                     Enter the 6-digit code from your authenticator app
                   </p>
                 </div>
@@ -376,7 +382,7 @@ export default function LoginPage() {
                       <button
                         type="button"
                         onClick={() => setUseBackupCode(true)}
-                        className="text-sm text-gold-400 hover:text-gold-300 transition-colors"
+                        className="text-sm text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 transition-colors"
                       >
                         Use backup code instead
                       </button>
@@ -414,7 +420,7 @@ export default function LoginPage() {
                           setUseBackupCode(false);
                           setBackupCode('');
                         }}
-                        className="text-sm text-gold-400 hover:text-gold-300 transition-colors"
+                        className="text-sm text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 transition-colors"
                       >
                         Use authenticator app instead
                       </button>
@@ -432,7 +438,7 @@ export default function LoginPage() {
                       setUseBackupCode(false);
                       setError('');
                     }}
-                    className="text-sm text-plum-300 hover:text-plum-200 transition-colors"
+                    className="text-sm text-slate-600 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
                   >
                     ← Back to login
                   </button>

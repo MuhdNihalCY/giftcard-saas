@@ -80,45 +80,45 @@ export default function AnalyticsPage() {
   return (
     <FeatureFlagGuard feature="analytics">
       <div className="page-transition">
-      <h1 className="text-4xl font-serif font-bold text-plum-300 mb-4">Analytics Dashboard</h1>
-      <p className="text-navy-200 mb-8 text-lg">Track your business performance and insights</p>
+      <h1 className="text-4xl font-serif font-bold text-slate-900 dark:text-slate-100 mb-4">Analytics Dashboard</h1>
+      <p className="text-slate-600 dark:text-slate-400 mb-8 text-lg">Track your business performance and insights</p>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card className="hover:shadow-gold-glow-sm transition-all duration-300">
+        <Card className="hover:shadow-md transition-all duration-300">
           <CardHeader>
-            <CardTitle className="text-sm font-medium text-plum-300">Total Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">Total Revenue</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-serif font-bold bg-gold-gradient bg-clip-text text-transparent">
+            <p className="text-3xl font-serif font-bold bg-cyan-gradient bg-clip-text text-transparent">
               {salesData ? formatCurrency(salesData.totalRevenue) : '$0'}
             </p>
           </CardContent>
         </Card>
-        <Card className="hover:shadow-gold-glow-sm transition-all duration-300">
+        <Card className="hover:shadow-md transition-all duration-300">
           <CardHeader>
-            <CardTitle className="text-sm font-medium text-plum-300">Total Redeemed</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">Total Redeemed</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-serif font-bold text-navy-50">
+            <p className="text-3xl font-serif font-bold text-slate-900 dark:text-slate-100">
               {redemptionData ? formatCurrency(redemptionData.totalRedeemed) : '$0'}
             </p>
           </CardContent>
         </Card>
         <Card className="hover:shadow-gold-glow-sm transition-all duration-300">
           <CardHeader>
-            <CardTitle className="text-sm font-medium text-plum-300">Total Customers</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">Total Customers</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-serif font-bold text-navy-50">{customerData?.totalCustomers || 0}</p>
+            <p className="text-3xl font-serif font-bold text-slate-900 dark:text-slate-100">{customerData?.totalCustomers || 0}</p>
           </CardContent>
         </Card>
-        <Card className="hover:shadow-gold-glow-sm transition-all duration-300">
+        <Card className="hover:shadow-md transition-all duration-300">
           <CardHeader>
-            <CardTitle className="text-sm font-medium text-plum-300">Active Gift Cards</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-600 dark:text-slate-400">Active Gift Cards</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-serif font-bold text-navy-50">{giftCardStats?.active || 0}</p>
+            <p className="text-3xl font-serif font-bold text-slate-900 dark:text-slate-100">{giftCardStats?.active || 0}</p>
           </CardContent>
         </Card>
       </div>
@@ -179,20 +179,20 @@ export default function AnalyticsPage() {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
-                <p className="text-sm text-plum-300 mb-1">Total Cards</p>
-                <p className="text-2xl font-serif font-bold text-navy-50">{giftCardStats.total}</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Total Cards</p>
+                <p className="text-2xl font-serif font-bold text-slate-900 dark:text-slate-100">{giftCardStats.total}</p>
               </div>
               <div>
-                <p className="text-sm text-plum-300 mb-1">Active</p>
-                <p className="text-2xl font-serif font-bold text-green-400">{giftCardStats.active}</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Active</p>
+                <p className="text-2xl font-serif font-bold text-green-600 dark:text-green-400">{giftCardStats.active}</p>
               </div>
               <div>
-                <p className="text-sm text-plum-300 mb-1">Redeemed</p>
-                <p className="text-2xl font-serif font-bold text-blue-400">{giftCardStats.redeemed}</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Redeemed</p>
+                <p className="text-2xl font-serif font-bold text-blue-600 dark:text-blue-400">{giftCardStats.redeemed}</p>
               </div>
               <div>
-                <p className="text-sm text-plum-300 mb-1">Redemption Rate</p>
-                <p className="text-2xl font-serif font-bold text-gold-400">
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Redemption Rate</p>
+                <p className="text-2xl font-serif font-bold text-cyan-600 dark:text-cyan-400">
                   {giftCardStats.redemptionRate.toFixed(1)}%
                 </p>
               </div>

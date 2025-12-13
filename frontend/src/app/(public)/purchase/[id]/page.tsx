@@ -143,10 +143,10 @@ export default function PurchasePage() {
       <Navigation />
       <div className="py-16 px-4 sm:px-6 lg:px-8 page-transition">
         <div className="max-w-4xl mx-auto">
-        <h1 className="text-5xl font-serif font-bold text-plum-300 mb-4 text-center">
+        <h1 className="text-5xl font-serif font-bold text-slate-900 dark:text-slate-100 mb-4 text-center">
           Purchase Gift Card
         </h1>
-        <p className="text-center text-navy-200 mb-12">Complete your purchase</p>
+        <p className="text-center text-slate-600 dark:text-slate-400 mb-12">Complete your purchase</p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <Card>
@@ -156,19 +156,19 @@ export default function PurchasePage() {
             <CardContent>
               <div className="space-y-6">
                 <div>
-                  <p className="text-sm text-plum-300 mb-1">Merchant</p>
-                  <p className="text-xl font-serif font-semibold text-navy-50">{giftCard.merchant.businessName}</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Merchant</p>
+                  <p className="text-xl font-serif font-semibold text-slate-900 dark:text-slate-100">{giftCard.merchant.businessName}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-plum-300 mb-1">Value</p>
-                  <p className="text-4xl font-serif font-bold bg-gold-gradient bg-clip-text text-transparent">
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Value</p>
+                  <p className="text-4xl font-serif font-bold bg-cyan-gradient bg-clip-text text-transparent">
                     {formatCurrency(Number(giftCard.value), giftCard.currency)}
                   </p>
                 </div>
                 {giftCard.expiryDate && (
                   <div>
-                    <p className="text-sm text-plum-300 mb-1">Expires</p>
-                    <p className="text-base text-navy-100">{new Date(giftCard.expiryDate).toLocaleDateString()}</p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Expires</p>
+                    <p className="text-base text-slate-700 dark:text-slate-300">{new Date(giftCard.expiryDate).toLocaleDateString()}</p>
                   </div>
                 )}
               </div>
@@ -203,24 +203,24 @@ export default function PurchasePage() {
                   {...register('customMessage')}
                 />
                 <div>
-                  <label className="block text-sm font-medium text-plum-200 mb-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                     Payment Method
                   </label>
                   <select
-                    className="w-full px-4 py-3 border-2 border-navy-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 bg-navy-800/50 text-navy-50"
+                    className="w-full px-4 py-3 border-2 border-slate-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                     {...register('paymentMethod')}
                   >
-                    <option value="STRIPE" className="bg-navy-800">Stripe (Card, Apple Pay, Google Pay)</option>
-                    <option value="PAYPAL" className="bg-navy-800">PayPal</option>
-                    <option value="RAZORPAY" className="bg-navy-800">Razorpay (Cards, UPI, Wallets)</option>
-                    <option value="UPI" className="bg-navy-800">UPI</option>
+                    <option value="STRIPE" className="bg-white dark:bg-slate-800">Stripe (Card, Apple Pay, Google Pay)</option>
+                    <option value="PAYPAL" className="bg-white dark:bg-slate-800">PayPal</option>
+                    <option value="RAZORPAY" className="bg-white dark:bg-slate-800">Razorpay (Cards, UPI, Wallets)</option>
+                    <option value="UPI" className="bg-white dark:bg-slate-800">UPI</option>
                   </select>
                 </div>
 
-                <div className="pt-4 border-t border-navy-700">
+                <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
                   <div className="flex justify-between items-center mb-6">
-                    <span className="text-xl font-serif font-semibold text-plum-300">Total:</span>
-                    <span className="text-3xl font-serif font-bold bg-gold-gradient bg-clip-text text-transparent">
+                    <span className="text-xl font-serif font-semibold text-slate-900 dark:text-slate-100">Total:</span>
+                    <span className="text-3xl font-serif font-bold bg-cyan-gradient bg-clip-text text-transparent">
                       {formatCurrency(Number(giftCard.value), giftCard.currency)}
                     </span>
                   </div>

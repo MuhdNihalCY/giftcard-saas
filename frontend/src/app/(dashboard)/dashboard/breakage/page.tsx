@@ -124,8 +124,8 @@ export default function BreakagePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-navy-50">Breakage & Liability</h1>
-        <p className="text-navy-300 mt-2">
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">Breakage & Liability</h1>
+        <p className="text-slate-600 dark:text-slate-400 mt-2">
           Track unredeemed gift cards, breakage, and liability management
         </p>
       </div>
@@ -162,10 +162,10 @@ export default function BreakagePage() {
           </div>
         </Card>
       ) : !metrics && !report ? (
-        <Card className="p-6 bg-navy-800 border-navy-700">
+        <Card className="p-6">
           <div className="text-center py-8">
-            <p className="text-navy-300 mb-4">No breakage data available yet.</p>
-            <p className="text-navy-400 text-sm">
+            <p className="text-slate-600 dark:text-slate-400 mb-4">No breakage data available yet.</p>
+            <p className="text-slate-500 dark:text-slate-500 text-sm">
               Breakage data will appear here once you have gift cards that have expired past the grace period.
             </p>
           </div>
@@ -222,36 +222,36 @@ export default function BreakagePage() {
                 </ResponsiveContainer>
               </ChartContainer>
 
-              <Card className="p-6 bg-navy-800 border-navy-700">
-                <h3 className="text-lg font-semibold text-navy-50 mb-4">Breakage Details</h3>
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Breakage Details</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-navy-300">Grace Period:</span>
-                    <span className="text-navy-50 font-medium">
+                    <span className="text-slate-600 dark:text-slate-400">Grace Period:</span>
+                    <span className="text-slate-900 dark:text-slate-100 font-medium">
                       {report.calculations.gracePeriodDays} days
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-navy-300">Total Expired:</span>
-                    <span className="text-navy-50 font-medium">
+                    <span className="text-slate-600 dark:text-slate-400">Total Expired:</span>
+                    <span className="text-slate-900 dark:text-slate-100 font-medium">
                       {formatCurrency(report.calculations.totalExpired)}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-navy-300">Expired Unredeemed:</span>
-                    <span className="text-navy-50 font-medium">
+                    <span className="text-slate-600 dark:text-slate-400">Expired Unredeemed:</span>
+                    <span className="text-slate-900 dark:text-slate-100 font-medium">
                       {formatCurrency(report.calculations.totalExpiredUnredeemed)}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-navy-300">Breakage Amount:</span>
-                    <span className="text-navy-50 font-medium text-plum-400">
+                    <span className="text-slate-600 dark:text-slate-400">Breakage Amount:</span>
+                    <span className="text-slate-900 dark:text-slate-100 font-medium text-rose-600 dark:text-rose-400">
                       {formatCurrency(report.calculations.breakageAmount)}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-navy-300">Breakage %:</span>
-                    <span className="text-navy-50 font-medium text-plum-400">
+                    <span className="text-slate-600 dark:text-slate-400">Breakage %:</span>
+                    <span className="text-slate-900 dark:text-slate-100 font-medium text-rose-600 dark:text-rose-400">
                       {report.calculations.breakagePercentage.toFixed(2)}%
                     </span>
                   </div>
@@ -261,28 +261,28 @@ export default function BreakagePage() {
           )}
 
           {report && report.expiredCards.length > 0 && (
-            <Card className="p-6 bg-navy-800 border-navy-700">
-              <h3 className="text-lg font-semibold text-navy-50 mb-4">
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
                 Expired Cards ({report.expiredCards.length})
               </h3>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-navy-700">
-                      <th className="text-left py-3 px-4 text-navy-300">Code</th>
-                      <th className="text-left py-3 px-4 text-navy-300">Value</th>
-                      <th className="text-left py-3 px-4 text-navy-300">Balance</th>
-                      <th className="text-left py-3 px-4 text-navy-300">Expiry Date</th>
-                      <th className="text-left py-3 px-4 text-navy-300">Status</th>
+                    <tr className="border-b border-slate-200 dark:border-slate-700">
+                      <th className="text-left py-3 px-4 text-slate-600 dark:text-slate-400">Code</th>
+                      <th className="text-left py-3 px-4 text-slate-600 dark:text-slate-400">Value</th>
+                      <th className="text-left py-3 px-4 text-slate-600 dark:text-slate-400">Balance</th>
+                      <th className="text-left py-3 px-4 text-slate-600 dark:text-slate-400">Expiry Date</th>
+                      <th className="text-left py-3 px-4 text-slate-600 dark:text-slate-400">Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {report.expiredCards.slice(0, 10).map((card) => (
-                      <tr key={card.id} className="border-b border-navy-700/50">
-                        <td className="py-3 px-4 text-navy-50 font-mono text-sm">{card.code}</td>
-                        <td className="py-3 px-4 text-navy-50">{formatCurrency(card.value)}</td>
-                        <td className="py-3 px-4 text-navy-50">{formatCurrency(card.balance)}</td>
-                        <td className="py-3 px-4 text-navy-300">
+                      <tr key={card.id} className="border-b border-slate-200 dark:border-slate-700">
+                        <td className="py-3 px-4 text-slate-900 dark:text-slate-100 font-mono text-sm">{card.code}</td>
+                        <td className="py-3 px-4 text-slate-900 dark:text-slate-100">{formatCurrency(card.value)}</td>
+                        <td className="py-3 px-4 text-slate-900 dark:text-slate-100">{formatCurrency(card.balance)}</td>
+                        <td className="py-3 px-4 text-slate-600 dark:text-slate-400">
                           {new Date(card.expiryDate).toLocaleDateString()}
                         </td>
                         <td className="py-3 px-4">

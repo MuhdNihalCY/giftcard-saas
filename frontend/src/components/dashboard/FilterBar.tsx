@@ -88,7 +88,7 @@ export function FilterBar({
         {/* Search */}
         <div className="flex-1">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-plum-300" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 dark:text-slate-400" />
             <Input
               type="text"
               placeholder={searchPlaceholder}
@@ -109,7 +109,7 @@ export function FilterBar({
               className={cn(
                 dateRange?.start && 
                 dateRange.start.getTime() === startOfDay(subDays(new Date(), 7)).getTime()
-                  ? 'bg-plum-600/30 border-plum-500/50'
+                  ? 'bg-cyan-100 dark:bg-cyan-900/30 border-cyan-500 dark:border-cyan-500/50'
                   : ''
               )}
             >
@@ -122,7 +122,7 @@ export function FilterBar({
               className={cn(
                 dateRange?.start && 
                 dateRange.start.getTime() === startOfDay(subDays(new Date(), 30)).getTime()
-                  ? 'bg-plum-600/30 border-plum-500/50'
+                  ? 'bg-cyan-100 dark:bg-cyan-900/30 border-cyan-500 dark:border-cyan-500/50'
                   : ''
               )}
             >
@@ -135,7 +135,7 @@ export function FilterBar({
               className={cn(
                 dateRange?.start && 
                 dateRange.start.getTime() === startOfDay(subDays(new Date(), 90)).getTime()
-                  ? 'bg-plum-600/30 border-plum-500/50'
+                  ? 'bg-cyan-100 dark:bg-cyan-900/30 border-cyan-500 dark:border-cyan-500/50'
                   : ''
               )}
             >
@@ -150,7 +150,7 @@ export function FilterBar({
             variant="ghost"
             size="sm"
             onClick={handleClear}
-            className="text-plum-300 hover:text-red-400"
+            className="text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400"
           >
             <X className="w-4 h-4 mr-1" />
             Clear
@@ -161,7 +161,7 @@ export function FilterBar({
       {/* Additional Filters */}
       {filters.length > 0 && (
         <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center space-x-2 text-sm text-plum-300">
+          <div className="flex items-center space-x-2 text-sm text-slate-600 dark:text-slate-400">
             <Filter className="w-4 h-4" />
             <span>Filters:</span>
           </div>
@@ -169,13 +169,13 @@ export function FilterBar({
             .filter(filter => filter.options && Array.isArray(filter.options))
             .map((filter) => (
             <div key={filter.key} className="flex items-center space-x-2">
-              <label className="text-sm text-plum-200 whitespace-nowrap">
+              <label className="text-sm text-slate-700 dark:text-slate-300 whitespace-nowrap">
                 {filter.label}:
               </label>
               <select
                 value={filter.value || ''}
                 onChange={(e) => filter.onChange?.(e.target.value)}
-                className="px-3 py-1.5 bg-navy-700/50 border border-navy-600 rounded-lg text-navy-50 text-sm focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
+                className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
               >
                 <option value="">All</option>
                 {filter.options.map((option) => (
@@ -192,14 +192,14 @@ export function FilterBar({
       {/* Active Filters Display */}
       {hasActiveFilters && (
         <div className="flex flex-wrap items-center gap-2 text-sm">
-          <span className="text-plum-300">Active filters:</span>
+          <span className="text-slate-600 dark:text-slate-400">Active filters:</span>
           {localSearch.trim() && (
-            <span className="px-2 py-1 bg-plum-600/20 text-plum-300 rounded border border-plum-500/30">
+            <span className="px-2 py-1 bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-400 rounded border border-cyan-200 dark:border-cyan-500/30">
               Search: {localSearch}
             </span>
           )}
           {dateRange?.start && dateRange?.end && (
-            <span className="px-2 py-1 bg-plum-600/20 text-plum-300 rounded border border-plum-500/30">
+            <span className="px-2 py-1 bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-400 rounded border border-cyan-200 dark:border-cyan-500/30">
               {format(dateRange.start, 'MMM d')} - {format(dateRange.end, 'MMM d, yyyy')}
             </span>
           )}
@@ -210,7 +210,7 @@ export function FilterBar({
               return (
                 <span
                   key={filter.key}
-                  className="px-2 py-1 bg-plum-600/20 text-plum-300 rounded border border-plum-500/30"
+                  className="px-2 py-1 bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-400 rounded border border-cyan-200 dark:border-cyan-500/30"
                 >
                   {filter.label}: {option?.label || filter.value}
                 </span>

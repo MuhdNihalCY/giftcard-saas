@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/authStore';
 import { Search, Bell, Menu, Settings, LogOut, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 interface TopBarProps {
   onMenuClick: () => void;
@@ -79,13 +80,13 @@ export function TopBar({ onMenuClick }: TopBarProps) {
   const breadcrumbs = getBreadcrumbs();
 
   return (
-    <header className="sticky top-0 z-30 bg-navy-800/95 backdrop-blur-md border-b border-navy-700/50 shadow-luxury">
+    <header className="sticky top-0 z-30 bg-white dark:bg-slate-900 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 shadow-sm transition-colors">
       <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
         {/* Left Section: Menu Button & Breadcrumbs */}
         <div className="flex items-center space-x-4 flex-1 min-w-0">
           <button
             onClick={onMenuClick}
-            className="lg:hidden p-2 rounded-lg hover:bg-navy-700/50 text-plum-300 transition-colors"
+            className="lg:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
             aria-label="Toggle menu"
           >
             <Menu className="w-5 h-5" />
@@ -97,14 +98,14 @@ export function TopBar({ onMenuClick }: TopBarProps) {
               {breadcrumbs.map((crumb, index) => (
                 <div key={crumb.href} className="flex items-center space-x-2">
                   {index > 0 && (
-                    <span className="text-navy-400">/</span>
+                    <span className="text-slate-400 dark:text-slate-500">/</span>
                   )}
                   {index === breadcrumbs.length - 1 ? (
-                    <span className="text-gold-400 font-medium">{crumb.label}</span>
+                    <span className="text-cyan-600 dark:text-cyan-400 font-medium">{crumb.label}</span>
                   ) : (
                     <Link
                       href={crumb.href}
-                      className="text-plum-300 hover:text-gold-300 transition-colors"
+                      className="text-slate-600 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
                     >
                       {crumb.label}
                     </Link>
@@ -122,7 +123,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
               <Search
                 className={cn(
                   'absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors',
-                  isSearchFocused ? 'text-gold-400' : 'text-plum-300'
+                  isSearchFocused ? 'text-cyan-500 dark:text-cyan-400' : 'text-slate-400 dark:text-slate-500'
                 )}
               />
               <input
@@ -133,11 +134,11 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                 onFocus={() => setIsSearchFocused(true)}
                 onBlur={() => setIsSearchFocused(false)}
                 className={cn(
-                  'w-full pl-10 pr-4 py-2 bg-navy-700/50 border rounded-lg',
-                  'text-navy-50 placeholder-plum-300',
-                  'focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500',
+                  'w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg',
+                  'text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500',
+                  'focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500',
                   'transition-all',
-                  isSearchFocused && 'border-gold-500/50'
+                  isSearchFocused && 'border-cyan-500'
                 )}
               />
             </div>
@@ -149,15 +150,18 @@ export function TopBar({ onMenuClick }: TopBarProps) {
           {/* Search Button (Mobile) */}
           <button
             onClick={() => setIsSearchFocused(!isSearchFocused)}
-            className="md:hidden p-2 rounded-lg hover:bg-navy-700/50 text-plum-300 transition-colors"
+            className="md:hidden p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
             aria-label="Search"
           >
             <Search className="w-5 h-5" />
           </button>
 
+          {/* Theme Toggle */}
+          <ThemeToggle />
+
           {/* Notifications (Future) */}
           <button
-            className="hidden lg:flex relative p-2 rounded-lg hover:bg-navy-700/50 text-plum-300 transition-colors"
+            className="hidden lg:flex relative p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
             aria-label="Notifications"
           >
             <Bell className="w-5 h-5" />
@@ -168,23 +172,23 @@ export function TopBar({ onMenuClick }: TopBarProps) {
           <div className="relative user-menu-button">
             <button
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-              className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-navy-700/50 transition-colors"
+              className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               aria-label="User menu"
             >
-              <div className="w-8 h-8 rounded-full bg-plum-600 flex items-center justify-center text-navy-50 font-semibold text-sm">
+              <div className="w-8 h-8 rounded-full bg-rose-500 flex items-center justify-center text-white font-semibold text-sm">
                 {user?.firstName?.[0] || user?.email?.[0] || 'U'}
               </div>
               <div className="hidden lg:block text-left">
-                <p className="text-sm font-medium text-navy-50">
+                <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
                   {user?.firstName || user?.email}
                 </p>
-                <p className="text-xs text-plum-300">
+                <p className="text-xs text-slate-600 dark:text-slate-400">
                   {user?.role === 'ADMIN' ? 'Administrator' : user?.role === 'MERCHANT' ? 'Merchant' : 'Customer'}
                 </p>
               </div>
               <ChevronDown
                 className={cn(
-                  'hidden lg:block w-4 h-4 text-plum-300 transition-transform',
+                  'hidden lg:block w-4 h-4 text-slate-600 dark:text-slate-400 transition-transform',
                   isUserMenuOpen && 'rotate-180'
                 )}
               />
@@ -192,22 +196,22 @@ export function TopBar({ onMenuClick }: TopBarProps) {
 
             {/* User Dropdown Menu */}
             {isUserMenuOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-navy-800 border border-navy-700 rounded-lg shadow-luxury py-2 user-menu z-50">
-                <div className="px-4 py-3 border-b border-navy-700">
-                  <p className="text-sm font-semibold text-navy-50">
+              <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg py-2 user-menu z-50 transition-colors">
+                <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                     {user?.firstName && user?.lastName
                       ? `${user.firstName} ${user.lastName}`
                       : user?.firstName || user?.email}
                   </p>
-                  <p className="text-xs text-plum-300 truncate">{user?.email}</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 truncate">{user?.email}</p>
                   {user?.businessName && (
-                    <p className="text-xs text-navy-300 truncate mt-1">{user.businessName}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-500 truncate mt-1">{user.businessName}</p>
                   )}
                 </div>
                 <div className="py-1">
                   <Link
                     href="/dashboard/settings"
-                    className="flex items-center space-x-2 px-4 py-2 text-sm text-plum-200 hover:bg-navy-700/50 transition-colors"
+                    className="flex items-center space-x-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                     onClick={() => setIsUserMenuOpen(false)}
                   >
                     <Settings className="w-4 h-4" />
@@ -215,7 +219,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                   </Link>
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-red-400 hover:bg-navy-700/50 transition-colors text-left"
+                    className="w-full flex items-center space-x-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-left"
                   >
                     <LogOut className="w-4 h-4" />
                     <span>Logout</span>
@@ -232,13 +236,13 @@ export function TopBar({ onMenuClick }: TopBarProps) {
         <div className="md:hidden px-4 pb-4">
           <form onSubmit={handleSearch} className="w-full">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-plum-300" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
               <input
                 type="text"
                 placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-navy-700/50 border border-plum-500/30 rounded-lg text-navy-50 placeholder-plum-300 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
+                className="w-full pl-10 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                 autoFocus
               />
             </div>

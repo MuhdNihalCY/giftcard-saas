@@ -158,14 +158,14 @@ export default function PaymentsPage() {
       label: 'Date',
       sortable: true,
       render: (value) => (
-        <span className="text-sm text-plum-300">{formatDateTime(value)}</span>
+        <span className="text-sm text-slate-600 dark:text-slate-400">{formatDateTime(value)}</span>
       ),
     },
     {
       key: 'paymentIntentId',
       label: 'Payment ID',
       render: (value) => (
-        <span className="font-mono text-xs text-navy-300">{value.substring(0, 20)}...</span>
+        <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{value.substring(0, 20)}...</span>
       ),
     },
     {
@@ -173,7 +173,7 @@ export default function PaymentsPage() {
       label: 'Amount',
       sortable: true,
       render: (value, row) => (
-        <span className="font-semibold text-gold-400">
+        <span className="font-semibold text-cyan-600 dark:text-cyan-400">
           {formatCurrency(value, row.currency)}
         </span>
       ),
@@ -202,12 +202,12 @@ export default function PaymentsPage() {
           {row.giftCard ? (
             <Link
               href={`/dashboard/gift-cards/${row.giftCardId}`}
-              className="text-gold-400 hover:text-gold-300 font-mono text-sm"
+              className="text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 font-mono text-sm"
             >
               {row.giftCard.code}
             </Link>
           ) : (
-            <span className="text-navy-300">-</span>
+            <span className="text-slate-500 dark:text-slate-400">-</span>
           )}
         </div>
       ),
@@ -216,7 +216,7 @@ export default function PaymentsPage() {
       key: 'customer',
       label: 'Customer',
       render: (_, row) => (
-        <span className="text-sm text-plum-300">
+        <span className="text-sm text-slate-600 dark:text-slate-400">
           {row.customer?.email || '-'}
         </span>
       ),
@@ -248,11 +248,11 @@ export default function PaymentsPage() {
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-4xl font-serif font-bold text-plum-300 mb-2 flex items-center space-x-3">
+          <h1 className="text-4xl font-serif font-bold text-slate-900 dark:text-slate-100 mb-2 flex items-center space-x-3">
             <CreditCard className="w-8 h-8" />
             <span>Payments</span>
           </h1>
-          <p className="text-navy-200 text-lg">View and manage all payment transactions</p>
+          <p className="text-slate-600 dark:text-slate-400 text-lg">View and manage all payment transactions</p>
         </div>
         <Button
           variant="outline"

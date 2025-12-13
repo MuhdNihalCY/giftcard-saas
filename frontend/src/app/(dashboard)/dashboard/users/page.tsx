@@ -124,11 +124,11 @@ export default function UsersPage() {
       sortable: true,
       render: (_, row) => (
         <div>
-          <div className="font-medium text-navy-50">
+          <div className="font-medium text-slate-900 dark:text-slate-100">
             {row.firstName} {row.lastName}
           </div>
           {row.businessName && (
-            <div className="text-sm text-plum-300">{row.businessName}</div>
+            <div className="text-sm text-slate-600 dark:text-slate-400">{row.businessName}</div>
           )}
         </div>
       ),
@@ -137,7 +137,7 @@ export default function UsersPage() {
       key: 'email',
       label: 'Email',
       sortable: true,
-      render: (value) => <span className="text-navy-200">{value}</span>,
+      render: (value) => <span className="text-slate-700 dark:text-slate-300">{value}</span>,
     },
     {
       key: 'role',
@@ -173,7 +173,7 @@ export default function UsersPage() {
       label: 'Created',
       sortable: true,
       render: (value) => (
-        <span className="text-sm text-plum-300">{formatDate(value)}</span>
+        <span className="text-sm text-slate-600 dark:text-slate-400">{formatDate(value)}</span>
       ),
     },
     {
@@ -200,11 +200,11 @@ export default function UsersPage() {
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-4xl font-serif font-bold text-plum-300 mb-2 flex items-center space-x-3">
+          <h1 className="text-4xl font-serif font-bold text-slate-900 dark:text-slate-100 mb-2 flex items-center space-x-3">
             <UsersIcon className="w-8 h-8" />
             <span>User Management</span>
           </h1>
-          <p className="text-navy-200 text-lg">Manage all users in the system</p>
+          <p className="text-slate-600 dark:text-slate-400 text-lg">Manage all users in the system</p>
         </div>
         <Button
           variant="outline"

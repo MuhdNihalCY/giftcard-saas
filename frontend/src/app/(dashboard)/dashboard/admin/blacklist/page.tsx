@@ -189,8 +189,8 @@ export default function BlacklistPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-navy-50">Fraud Blacklist</h1>
-          <p className="text-navy-300 mt-2">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">Fraud Blacklist</h1>
+          <p className="text-slate-600 dark:text-slate-400 mt-2">
             Manage blacklisted emails, IPs, phones, and payment methods
           </p>
         </div>
@@ -201,11 +201,11 @@ export default function BlacklistPage() {
       </div>
 
       {showAddForm && (
-        <Card className="p-6 bg-navy-800 border-navy-700">
-          <h3 className="text-lg font-semibold text-navy-50 mb-4">Add Blacklist Entry</h3>
+        <Card className="p-6">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Add Blacklist Entry</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-navy-300 mb-2">Type</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Type</label>
               <select
                 className="w-full px-3 py-2 bg-navy-900 border border-navy-700 rounded-lg text-navy-50"
                 value={formData.type}

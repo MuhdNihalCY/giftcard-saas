@@ -54,9 +54,9 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="light">
+    <html lang="en" suppressHydrationWarning>
       <body 
-        className={`${montserrat.variable} ${playfairDisplay.variable} ${poppins.variable} ${merriweather.variable} ${roboto.variable} ${openSans.variable} font-sans text-gray-100 bg-navy-900 antialiased`}
+        className={`${montserrat.variable} ${playfairDisplay.variable} ${poppins.variable} ${merriweather.variable} ${roboto.variable} ${openSans.variable} font-sans antialiased`}
         suppressHydrationWarning
       >
         <ClientProviders>

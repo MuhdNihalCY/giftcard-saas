@@ -120,8 +120,8 @@ export default function WalletPage() {
     <FeatureFlagGuard feature="wallet">
       <div className="page-transition">
         <div className="mb-8">
-          <h1 className="text-4xl font-serif font-bold text-plum-300">My Gift Card Wallet</h1>
-          <p className="text-navy-200 mt-2 text-lg">Manage and redeem your gift cards</p>
+          <h1 className="text-4xl font-serif font-bold text-slate-900 dark:text-slate-100">My Gift Card Wallet</h1>
+          <p className="text-slate-600 dark:text-slate-400 mt-2 text-lg">Manage and redeem your gift cards</p>
         </div>
 
       {/* Filters and Sort */}
@@ -160,12 +160,12 @@ export default function WalletPage() {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as 'name' | 'value' | 'date' | 'balance')}
-            className="px-4 py-2 bg-navy-800/50 border-2 border-plum-500/30 rounded-lg text-navy-50 focus:outline-none focus:ring-2 focus:ring-gold-500"
+            className="px-4 py-2 bg-white dark:bg-slate-800 border-2 border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500"
           >
-            <option value="date" className="bg-navy-800">Newest First</option>
-            <option value="name" className="bg-navy-800">Name (A-Z)</option>
-            <option value="value" className="bg-navy-800">Highest Value</option>
-            <option value="balance" className="bg-navy-800">Highest Balance</option>
+            <option value="date" className="bg-white dark:bg-slate-800">Newest First</option>
+            <option value="name" className="bg-white dark:bg-slate-800">Name (A-Z)</option>
+            <option value="value" className="bg-white dark:bg-slate-800">Highest Value</option>
+            <option value="balance" className="bg-white dark:bg-slate-800">Highest Balance</option>
           </select>
         </div>
       </div>
@@ -174,16 +174,16 @@ export default function WalletPage() {
         <Card>
           <CardContent className="text-center py-16">
             <div className="text-6xl mb-4">🎁</div>
-            <h3 className="text-2xl font-serif font-semibold text-plum-300 mb-2">
+            <h3 className="text-2xl font-serif font-semibold text-slate-900 dark:text-slate-100 mb-2">
               {giftCards.length === 0 ? 'No gift cards yet' : 'No cards match your filter'}
             </h3>
-            <p className="text-plum-200 mb-6">
+            <p className="text-slate-600 dark:text-slate-400 mb-6">
               {giftCards.length === 0
                 ? 'Start building your collection of gift cards'
                 : 'Try adjusting your filters'}
             </p>
             <Link href="/browse">
-              <Button variant="gold">Browse Gift Cards</Button>
+              <Button variant="primary">Browse Gift Cards</Button>
             </Link>
           </CardContent>
         </Card>
@@ -192,32 +192,32 @@ export default function WalletPage() {
           {filteredAndSortedCards.map((card) => (
             <Card
               key={card.id}
-              className="cursor-pointer hover:shadow-gold-glow-sm transition-all duration-300 hover:scale-105"
+              className="cursor-pointer hover:shadow-md transition-all duration-300 hover:scale-105"
             >
               <CardHeader>
                 <CardTitle className="text-xl">{card.merchant.businessName}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="mb-4">
-                  <p className="text-3xl font-serif font-bold bg-gold-gradient bg-clip-text text-transparent">
+                  <p className="text-3xl font-serif font-bold bg-cyan-gradient bg-clip-text text-transparent">
                     {formatCurrency(card.balance, card.currency)}
                   </p>
-                  <p className="text-sm text-plum-300">
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
                     of {formatCurrency(card.value, card.currency)}
                   </p>
                 </div>
                 <div className="mb-4">
-                  <p className="text-xs font-mono text-plum-200">{card.code}</p>
+                  <p className="text-xs font-mono text-slate-700 dark:text-slate-300">{card.code}</p>
                   <p
                     className={`text-sm mt-1 font-semibold ${
-                      card.status === 'ACTIVE' ? 'text-green-400' : 'text-red-400'
+                      card.status === 'ACTIVE' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                     }`}
                   >
                     {card.status}
                   </p>
                 </div>
                 {card.expiryDate && (
-                  <p className="text-xs text-plum-300 mb-4">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mb-4">
                     Expires: {formatDate(card.expiryDate)}
                   </p>
                 )}
@@ -235,7 +235,7 @@ export default function WalletPage() {
                     </Button>
                     {card.status === 'ACTIVE' && card.balance > 0 && (
                       <Link href={`/redeem/${card.code}`} className="flex-1">
-                        <Button variant="gold" className="w-full">
+                        <Button variant="primary" className="w-full">
                           Redeem
                         </Button>
                       </Link>
@@ -269,7 +269,7 @@ export default function WalletPage() {
                     setShowTransactions(false);
                     setTransactions([]);
                   }}
-                  className="text-plum-300 hover:text-gold-400 transition-colors p-1"
+                  className="text-slate-600 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors p-1"
                   aria-label="Close"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -280,35 +280,35 @@ export default function WalletPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <p className="text-4xl font-serif font-bold bg-gold-gradient bg-clip-text text-transparent">
+                <p className="text-4xl font-serif font-bold bg-cyan-gradient bg-clip-text text-transparent">
                   {formatCurrency(selectedCard.balance, selectedCard.currency)}
                 </p>
-                <p className="text-sm text-plum-300">
+                <p className="text-sm text-slate-600 dark:text-slate-400">
                   Remaining balance of {formatCurrency(selectedCard.value, selectedCard.currency)}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-plum-200 mb-1">Gift Card Code:</p>
-                <p className="font-mono font-semibold text-navy-50">{selectedCard.code}</p>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">Gift Card Code:</p>
+                <p className="font-mono font-semibold text-slate-900 dark:text-slate-100">{selectedCard.code}</p>
               </div>
               {selectedCard.qrCodeUrl && (
-                <div className="flex justify-center p-4 bg-navy-800/50 rounded-lg border border-navy-700">
+                <div className="flex justify-center p-4 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
                   <QRCodeSVG value={selectedCard.code} size={200} />
                 </div>
               )}
               <div className="space-y-4">
                 {showTransactions && transactions.length > 0 && (
-                  <div className="border-t border-navy-700 pt-4">
-                    <h4 className="font-serif font-semibold text-plum-300 mb-3">Transaction History</h4>
+                  <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
+                    <h4 className="font-serif font-semibold text-slate-900 dark:text-slate-100 mb-3">Transaction History</h4>
                     <div className="space-y-2 max-h-60 overflow-y-auto">
                       {transactions.map((tx) => (
                         <div
                           key={tx.id}
-                          className="flex justify-between items-center p-3 bg-navy-800/50 rounded-lg text-sm border border-navy-700"
+                          className="flex justify-between items-center p-3 bg-slate-100 dark:bg-slate-800 rounded-lg text-sm border border-slate-200 dark:border-slate-700"
                         >
                           <div>
-                            <p className="font-medium text-navy-50">{tx.type}</p>
-                            <p className="text-xs text-plum-300">
+                            <p className="font-medium text-slate-900 dark:text-slate-100">{tx.type}</p>
+                            <p className="text-xs text-slate-600 dark:text-slate-400">
                               {formatDateTime(tx.createdAt)}
                             </p>
                           </div>
@@ -319,13 +319,13 @@ export default function WalletPage() {
                                   ? 'text-green-400'
                                   : tx.type === 'REDEMPTION'
                                   ? 'text-red-400'
-                                  : 'text-plum-300'
+                                  : 'text-slate-600 dark:text-slate-400'
                               }`}
                             >
                               {tx.type === 'PURCHASE' ? '+' : '-'}
                               {formatCurrency(Number(tx.amount), selectedCard.currency)}
                             </p>
-                            <p className="text-xs text-plum-300">
+                            <p className="text-xs text-slate-600 dark:text-slate-400">
                               Balance: {formatCurrency(Number(tx.balanceAfter), selectedCard.currency)}
                             </p>
                           </div>

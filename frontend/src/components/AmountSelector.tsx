@@ -139,10 +139,10 @@ export function AmountSelector({
             </p>
           )}
           {showSalePrice && value > 0 && (
-            <div className="mt-3 p-3 bg-navy-800/50 rounded-lg border border-navy-700">
+            <div className="mt-3 p-3 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
               <div className="flex justify-between items-center">
-                <span className="text-plum-200">You Pay:</span>
-                <span className="text-xl font-serif font-bold text-gold-400">
+                <span className="text-slate-700 dark:text-slate-300">You Pay:</span>
+                <span className="text-xl font-serif font-bold text-cyan-600 dark:text-cyan-400">
                   {formatCurrency(currentSalePrice, currency)}
                 </span>
               </div>

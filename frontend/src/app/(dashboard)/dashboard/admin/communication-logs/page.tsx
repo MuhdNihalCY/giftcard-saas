@@ -121,57 +121,57 @@ export default function AdminCommunicationLogsPage() {
       case 'PENDING':
         return 'bg-blue-900/30 text-blue-400 border border-blue-500/30';
       default:
-        return 'bg-navy-700/50 text-plum-300 border border-navy-600';
+        return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600';
     }
   };
 
   const getChannelColor = (channel: string) => {
     switch (channel) {
       case 'EMAIL':
-        return 'bg-blue-900/30 text-blue-400 border border-blue-500/30';
+        return 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30';
       case 'SMS':
-        return 'bg-plum-900/30 text-plum-300 border border-plum-500/30';
+        return 'bg-rose-50 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30';
       case 'OTP':
-        return 'bg-orange-900/30 text-orange-400 border border-orange-500/30';
+        return 'bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-500/30';
       case 'PUSH':
-        return 'bg-pink-900/30 text-pink-400 border border-pink-500/30';
+        return 'bg-pink-50 dark:bg-pink-900/30 text-pink-700 dark:text-pink-400 border border-pink-200 dark:border-pink-500/30';
       default:
-        return 'bg-navy-700/50 text-plum-300 border border-navy-600';
+        return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600';
     }
   };
 
   return (
     <div className="page-transition">
       <div className="mb-8">
-        <h1 className="text-4xl font-serif font-bold text-plum-300">Communication Logs</h1>
-        <p className="text-navy-200 mt-2 text-lg">View and monitor all communication activities</p>
+        <h1 className="text-4xl font-serif font-bold text-slate-900 dark:text-slate-100">Communication Logs</h1>
+        <p className="text-slate-600 dark:text-slate-400 mt-2 text-lg">View and monitor all communication activities</p>
       </div>
 
       {/* Statistics Cards */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="hover:shadow-gold-glow-sm transition-all duration-300">
+          <Card className="hover:shadow-md transition-all duration-300">
             <CardContent className="pt-6">
-              <div className="text-sm text-plum-300 mb-1">Total Communications</div>
-              <div className="text-3xl font-serif font-bold text-navy-50">{stats.total}</div>
+              <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">Total Communications</div>
+              <div className="text-3xl font-serif font-bold text-slate-900 dark:text-slate-100">{stats.total}</div>
             </CardContent>
           </Card>
-          <Card className="hover:shadow-gold-glow-sm transition-all duration-300">
+          <Card className="hover:shadow-md transition-all duration-300">
             <CardContent className="pt-6">
-              <div className="text-sm text-plum-300 mb-1">Successful</div>
-              <div className="text-3xl font-serif font-bold text-green-400">{stats.sent}</div>
+              <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">Successful</div>
+              <div className="text-3xl font-serif font-bold text-green-600 dark:text-green-400">{stats.sent}</div>
             </CardContent>
           </Card>
-          <Card className="hover:shadow-gold-glow-sm transition-all duration-300">
+          <Card className="hover:shadow-md transition-all duration-300">
             <CardContent className="pt-6">
-              <div className="text-sm text-plum-300 mb-1">Failed</div>
-              <div className="text-3xl font-serif font-bold text-red-400">{stats.failed}</div>
+              <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">Failed</div>
+              <div className="text-3xl font-serif font-bold text-red-600 dark:text-red-400">{stats.failed}</div>
             </CardContent>
           </Card>
-          <Card className="hover:shadow-gold-glow-sm transition-all duration-300">
+          <Card className="hover:shadow-md transition-all duration-300">
             <CardContent className="pt-6">
-              <div className="text-sm text-plum-300 mb-1">Success Rate</div>
-              <div className="text-3xl font-serif font-bold bg-gold-gradient bg-clip-text text-transparent">{stats.successRate}%</div>
+              <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">Success Rate</div>
+              <div className="text-3xl font-serif font-bold bg-cyan-gradient bg-clip-text text-transparent">{stats.successRate}%</div>
             </CardContent>
           </Card>
         </div>
@@ -186,15 +186,15 @@ export default function AdminCommunicationLogsPage() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {channelStats.map((stat) => (
-                <div key={stat.channel} className="border border-navy-700 rounded-xl p-4 bg-navy-800/30">
+                <div key={stat.channel} className="border border-slate-200 dark:border-slate-700 rounded-xl p-4 bg-slate-50 dark:bg-slate-800/50">
                   <div className="flex items-center justify-between mb-2">
                     <span className={`px-3 py-1 rounded text-xs font-semibold ${getChannelColor(stat.channel)}`}>
                       {stat.channel}
                     </span>
-                    <span className="text-sm text-plum-300">{stat.successRate}%</span>
+                    <span className="text-sm text-slate-600 dark:text-slate-400">{stat.successRate}%</span>
                   </div>
-                  <div className="text-2xl font-serif font-bold text-navy-50">{stat.total}</div>
-                  <div className="text-sm text-plum-200">
+                  <div className="text-2xl font-serif font-bold text-slate-900 dark:text-slate-100">{stat.total}</div>
+                  <div className="text-sm text-slate-600 dark:text-slate-400">
                     {stat.sent} sent, {stat.failed} failed
                   </div>
                 </div>
@@ -212,31 +212,31 @@ export default function AdminCommunicationLogsPage() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-plum-200 mb-2">Channel</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Channel</label>
               <select
                 value={filters.channel}
                 onChange={(e) => updateFilter('channel', e.target.value)}
-                className="w-full px-4 py-3 border-2 border-plum-500/30 rounded-lg bg-navy-800/50 text-navy-50 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
+                className="w-full px-4 py-3 border-2 border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
               >
-                <option value="" className="bg-navy-800">All Channels</option>
-                <option value="EMAIL" className="bg-navy-800">Email</option>
-                <option value="SMS" className="bg-navy-800">SMS</option>
-                <option value="OTP" className="bg-navy-800">OTP</option>
-                <option value="PUSH" className="bg-navy-800">Push</option>
+                <option value="" className="bg-white dark:bg-slate-800">All Channels</option>
+                <option value="EMAIL" className="bg-white dark:bg-slate-800">Email</option>
+                <option value="SMS" className="bg-white dark:bg-slate-800">SMS</option>
+                <option value="OTP" className="bg-white dark:bg-slate-800">OTP</option>
+                <option value="PUSH" className="bg-white dark:bg-slate-800">Push</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-plum-200 mb-2">Status</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Status</label>
               <select
                 value={filters.status}
                 onChange={(e) => updateFilter('status', e.target.value)}
-                className="w-full px-4 py-3 border-2 border-plum-500/30 rounded-lg bg-navy-800/50 text-navy-50 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
+                className="w-full px-4 py-3 border-2 border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
               >
-                <option value="" className="bg-navy-800">All Statuses</option>
-                <option value="SENT" className="bg-navy-800">Sent</option>
-                <option value="FAILED" className="bg-navy-800">Failed</option>
-                <option value="BLOCKED" className="bg-navy-800">Blocked</option>
-                <option value="PENDING" className="bg-navy-800">Pending</option>
+                <option value="" className="bg-white dark:bg-slate-800">All Statuses</option>
+                <option value="SENT" className="bg-white dark:bg-slate-800">Sent</option>
+                <option value="FAILED" className="bg-white dark:bg-slate-800">Failed</option>
+                <option value="BLOCKED" className="bg-white dark:bg-slate-800">Blocked</option>
+                <option value="PENDING" className="bg-white dark:bg-slate-800">Pending</option>
               </select>
             </div>
             <div>
@@ -274,43 +274,43 @@ export default function AdminCommunicationLogsPage() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8 text-plum-200">Loading logs...</div>
+            <div className="text-center py-8 text-slate-600 dark:text-slate-400">Loading logs...</div>
           ) : logs.length === 0 ? (
             <div className="text-center py-16">
               <div className="text-6xl mb-4">📧</div>
-              <h3 className="text-2xl font-serif font-semibold text-plum-300 mb-2">No logs found</h3>
-              <p className="text-plum-200">No communication logs match your filters</p>
+              <h3 className="text-2xl font-serif font-semibold text-slate-900 dark:text-slate-100 mb-2">No logs found</h3>
+              <p className="text-slate-600 dark:text-slate-400">No communication logs match your filters</p>
             </div>
           ) : (
             <>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-navy-700">
-                  <thead className="bg-navy-800/50 border-b border-navy-700">
+                <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                  <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-plum-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                         Time
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-plum-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                         Channel
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-plum-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                         Recipient
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-plum-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                         Subject
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-plum-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-plum-300 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                         Error
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-navy-700">
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                     {logs.map((log) => (
-                      <tr key={log.id} className="hover:bg-navy-800/30 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-navy-50">
+                      <tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-slate-100">
                           {new Date(log.createdAt).toLocaleString()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -318,10 +318,10 @@ export default function AdminCommunicationLogsPage() {
                             {log.channel}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-navy-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-slate-100">
                           {log.recipient}
                         </td>
-                        <td className="px-6 py-4 text-sm text-plum-200">
+                        <td className="px-6 py-4 text-sm text-slate-700 dark:text-slate-300">
                           {log.subject || '-'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">

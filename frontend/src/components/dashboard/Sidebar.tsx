@@ -285,7 +285,7 @@ export function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed left-0 top-0 h-full bg-navy-800/95 backdrop-blur-md border-r border-navy-700/50 z-50 transition-all duration-300',
+          'fixed left-0 top-0 h-full bg-white dark:bg-slate-900 backdrop-blur-md border-r border-slate-200 dark:border-slate-700 z-50 transition-all duration-300 shadow-lg',
           'lg:translate-x-0',
           isMobileOpen ? 'translate-x-0' : '-translate-x-full',
           isCollapsed ? 'w-16' : 'w-64'
@@ -293,10 +293,10 @@ export function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
       >
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-navy-700/50">
+          <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
             {!isCollapsed && (
               <Link href="/dashboard" className="flex items-center space-x-2">
-                <span className="text-2xl font-serif font-bold bg-gold-gradient bg-clip-text text-transparent">
+                <span className="text-2xl font-serif font-bold bg-cyan-gradient bg-clip-text text-transparent">
                   🎁 GiftCard
                 </span>
               </Link>
@@ -309,7 +309,7 @@ export function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => setIsCollapsed(!isCollapsed)}
-                className="hidden lg:flex p-1.5 rounded-lg hover:bg-navy-700/50 text-plum-300 transition-colors"
+                className="hidden lg:flex p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
                 aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               >
                 {isCollapsed ? (
@@ -320,7 +320,7 @@ export function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
               </button>
               <button
                 onClick={onMobileClose}
-                className="lg:hidden p-1.5 rounded-lg hover:bg-navy-700/50 text-plum-300 transition-colors"
+                className="lg:hidden p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
                 aria-label="Close menu"
               >
                 <X className="w-5 h-5" />
@@ -340,10 +340,10 @@ export function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
                   href={item.href}
                   className={cn(
                     'flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all duration-200',
-                    'hover:bg-navy-700/50 hover:text-gold-300',
+                    'hover:bg-cyan-50 dark:hover:bg-cyan-900/20 hover:text-cyan-600 dark:hover:text-cyan-400',
                     active
-                      ? 'bg-plum-600/30 text-gold-400 border border-plum-500/50'
-                      : 'text-plum-200'
+                      ? 'bg-cyan-500 dark:bg-cyan-600 text-white border border-cyan-600 dark:border-cyan-500 shadow-sm'
+                      : 'text-slate-700 dark:text-slate-300'
                   )}
                   title={isCollapsed ? item.label : undefined}
                 >
@@ -352,7 +352,7 @@ export function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
                     <>
                       <span className="flex-1 text-sm font-medium">{item.label}</span>
                       {item.badge && item.badge > 0 && (
-                        <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-gold-500/20 text-gold-400">
+                        <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
                           {item.badge}
                         </span>
                       )}
@@ -365,26 +365,26 @@ export function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
 
           {/* User Profile Section */}
           {!isCollapsed && user && (
-            <div className="p-4 border-t border-navy-700/50">
+            <div className="p-4 border-t border-slate-200 dark:border-slate-700">
               <div className="flex items-center space-x-3 mb-3">
-                <div className="w-10 h-10 rounded-full bg-plum-600 flex items-center justify-center text-navy-50 font-semibold">
+                <div className="w-10 h-10 rounded-full bg-rose-500 flex items-center justify-center text-white font-semibold">
                   {user.firstName?.[0] || user.email?.[0] || 'U'}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-navy-50 truncate">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
                     {user.firstName && user.lastName
                       ? `${user.firstName} ${user.lastName}`
                       : user.firstName || user.email}
                   </p>
-                  <p className="text-xs text-plum-300 truncate">{user.email}</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 truncate">{user.email}</p>
                   {user.businessName && (
-                    <p className="text-xs text-navy-300 truncate">{user.businessName}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-500 truncate">{user.businessName}</p>
                   )}
                 </div>
               </div>
               <button
                 onClick={handleLogout}
-                className="w-full px-3 py-2 text-sm text-red-400 hover:bg-navy-700/50 rounded-lg transition-colors text-left"
+                className="w-full px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors text-left"
               >
                 Logout
               </button>
@@ -392,8 +392,8 @@ export function Sidebar({ isMobileOpen, onMobileClose }: SidebarProps) {
           )}
 
           {isCollapsed && user && (
-            <div className="p-4 border-t border-navy-700/50">
-              <div className="w-8 h-8 rounded-full bg-plum-600 flex items-center justify-center text-navy-50 font-semibold mx-auto">
+            <div className="p-4 border-t border-slate-200 dark:border-slate-700">
+              <div className="w-8 h-8 rounded-full bg-rose-500 flex items-center justify-center text-white font-semibold mx-auto">
                 {user.firstName?.[0] || user.email?.[0] || 'U'}
               </div>
             </div>

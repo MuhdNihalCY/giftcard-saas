@@ -18,21 +18,21 @@ export function LoadingSpinner({ size = 'md', className, text }: LoadingSpinnerP
 
   return (
     <div className={cn('flex flex-col items-center justify-center gap-2', className)}>
-      <Loader2 className={cn('animate-spin text-plum-500', sizeClasses[size])} />
-      {text && <p className="text-sm text-navy-300">{text}</p>}
+      <Loader2 className={cn('animate-spin text-cyan-500', sizeClasses[size])} />
+      {text && <p className="text-sm text-slate-600 dark:text-slate-400">{text}</p>}
     </div>
   );
 }
 
 export function LoadingSkeleton({ className }: { className?: string }) {
   return (
-    <div className={cn('animate-pulse bg-navy-800 rounded', className)} />
+    <div className={cn('animate-pulse bg-slate-200 dark:bg-slate-700 rounded', className)} />
   );
 }
 
 export function PageLoading() {
   return (
-    <div className="min-h-screen bg-navy-900 flex items-center justify-center">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
       <LoadingSpinner size="lg" text="Loading..." />
     </div>
   );

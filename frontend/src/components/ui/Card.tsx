@@ -9,7 +9,7 @@ export const Card: React.FC<CardProps> = ({ children, className, ...props }) => 
   return (
     <div
       className={cn(
-        'bg-navy-800/80 backdrop-blur-sm rounded-xl shadow-luxury p-6 text-navy-50 border border-navy-700/50 luxury-overlay',
+        'bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700 transition-colors',
         className
       )}
       {...props}
@@ -29,7 +29,7 @@ export const CardHeader: React.FC<CardProps> = ({ children, className, ...props 
 
 export const CardTitle: React.FC<CardProps> = ({ children, className, ...props }) => {
   return (
-    <h3 className={cn('text-xl font-serif font-semibold text-plum-300', className)} {...props}>
+    <h3 className={cn('text-xl font-serif font-semibold text-slate-900 dark:text-slate-100', className)} {...props}>
       {children}
     </h3>
   );

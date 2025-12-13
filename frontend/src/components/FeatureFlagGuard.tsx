@@ -59,14 +59,14 @@ export function FeatureFlagGuard({
                 <Shield className="w-8 h-8 text-red-400" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-navy-50 mb-2">Feature Disabled</h2>
-                <p className="text-navy-200">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">Feature Disabled</h2>
+                <p className="text-slate-600 dark:text-slate-400">
                   This feature is currently disabled. Please contact support if you believe this is an error.
                 </p>
               </div>
               <button
                 onClick={() => router.push(redirectTo)}
-                className="px-4 py-2 bg-plum-600 hover:bg-plum-700 text-white rounded-lg transition-colors"
+                className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg transition-colors"
               >
                 Go to Dashboard
               </button>

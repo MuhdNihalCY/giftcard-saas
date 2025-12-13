@@ -1,36 +1,16 @@
 'use client';
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
-import { Card, CardContent } from '@/components/ui/Card';
-import api from '@/lib/api';
-import { useAuthStore } from '@/store/authStore';
-import Link from 'next/link';
-import { PasswordStrength } from '@/components/PasswordStrength';
-import { Eye, EyeOff } from 'lucide-react';
-
-const registerSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z
-    .string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-    .regex(/[0-9]/, 'Password must contain at least one number')
-    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
-  firstName: z.string().optional(),
-  lastName: z.string().optional(),
-  businessName: z.string().optional(),
-});
-
-type RegisterFormData = z.infer<typeof registerSchema>;
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function RegisterPage() {
-  const { setUser } = useAuthStore();
+  const router = useRouter();
+  
+  useEffect(() => {
+    router.replace('/auth?mode=register');
+  }, [router]);
+  
+  return null;
   const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -74,13 +54,13 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-navy-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 page-transition">
         <div className="text-center">
-          <h2 className="text-4xl font-serif font-bold text-plum-300 mb-2">
+          <h2 className="text-4xl font-serif font-bold text-slate-900 dark:text-slate-100 mb-2">
             Create Account
           </h2>
-          <p className="text-navy-200">
+          <p className="text-slate-600 dark:text-slate-400">
             Create your account and get started
           </p>
         </div>

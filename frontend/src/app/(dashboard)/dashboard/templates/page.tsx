@@ -58,8 +58,8 @@ export default function TemplatesPage() {
     <div>
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Gift Card Templates</h1>
-          <p className="text-gray-600 mt-1">Manage your gift card templates</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">Gift Card Templates</h1>
+          <p className="text-slate-600 dark:text-slate-400 mt-1">Manage your gift card templates</p>
         </div>
         <Link href="/dashboard/templates/create">
           <Button>Create Template</Button>
@@ -70,7 +70,7 @@ export default function TemplatesPage() {
         {templates.length === 0 ? (
           <Card className="md:col-span-2 lg:col-span-3">
             <CardContent className="text-center py-12">
-              <p className="text-gray-600 mb-4">No templates found.</p>
+              <p className="text-slate-600 dark:text-slate-400 mb-4">No templates found.</p>
               <Link href="/dashboard/templates/create">
                 <Button>Create Your First Template</Button>
               </Link>
@@ -84,16 +84,16 @@ export default function TemplatesPage() {
                   <div>
                     <CardTitle>{template.name}</CardTitle>
                     {template.isDefault && (
-                      <span className="text-xs text-primary-600 mt-1">Default</span>
+                      <span className="text-xs text-cyan-600 dark:text-cyan-400 mt-1">Default</span>
                     )}
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
                 {template.description && (
-                  <p className="text-sm text-gray-600 mb-4">{template.description}</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">{template.description}</p>
                 )}
-                <div className="flex justify-between items-center text-sm text-gray-500">
+                <div className="flex justify-between items-center text-sm text-slate-500 dark:text-slate-400">
                   <span>Created {formatDate(template.createdAt)}</span>
                   <div className="flex space-x-2">
                     <Button variant="outline" size="sm">

@@ -15,7 +15,7 @@ export function Skeleton({
   height,
   animation = 'pulse',
 }: SkeletonProps) {
-  const baseStyles = 'bg-navy-700/50 rounded';
+  const baseStyles = 'bg-slate-200 dark:bg-slate-700 rounded';
   
   const variantStyles = {
     text: 'h-4 rounded',
@@ -25,7 +25,7 @@ export function Skeleton({
 
   const animationStyles = {
     pulse: 'animate-pulse',
-    wave: 'animate-[shimmer_2s_infinite] bg-gradient-to-r from-navy-700/50 via-navy-600/50 to-navy-700/50 bg-[length:200%_100%]',
+    wave: 'animate-[shimmer_2s_infinite] bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 dark:from-slate-700 dark:via-slate-600 dark:to-slate-700 bg-[length:200%_100%]',
     none: '',
   };
 
@@ -50,7 +50,7 @@ export function Skeleton({
 
 export function CardSkeleton() {
   return (
-    <div className="bg-navy-800/80 backdrop-blur-sm rounded-xl shadow-luxury p-6 border border-navy-700/50">
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 border border-slate-200 dark:border-slate-700">
       <Skeleton variant="rectangular" height={24} width="60%" className="mb-4" />
       <Skeleton variant="rectangular" height={40} width="40%" className="mb-4" />
       <Skeleton variant="rectangular" height={16} width="80%" className="mb-6" />
@@ -61,7 +61,7 @@ export function CardSkeleton() {
 
 export function GiftCardSkeleton() {
   return (
-    <div className="bg-navy-800/80 backdrop-blur-sm rounded-xl shadow-luxury p-6 border border-navy-700/50 luxury-overlay hover:shadow-gold-glow-sm transition-all duration-300">
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 border border-slate-200 dark:border-slate-700 hover:shadow-md transition-all duration-300">
       <Skeleton variant="rectangular" height={32} width="70%" className="mb-4" />
       <Skeleton variant="rectangular" height={48} width="50%" className="mb-2" />
       <Skeleton variant="rectangular" height={16} width="40%" className="mb-6" />

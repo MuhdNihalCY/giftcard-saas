@@ -103,13 +103,13 @@ export default function SystemStatusPage() {
     };
 
     const colors: Record<string, string> = {
-      operational: 'text-green-400',
-      configured: 'text-green-400',
-      healthy: 'text-green-400',
-      degraded: 'text-yellow-400',
-      not_configured: 'text-yellow-400',
-      unhealthy: 'text-red-400',
-      unknown: 'text-gray-400',
+      operational: 'text-green-600 dark:text-green-400',
+      configured: 'text-green-600 dark:text-green-400',
+      healthy: 'text-green-600 dark:text-green-400',
+      degraded: 'text-amber-600 dark:text-amber-400',
+      not_configured: 'text-amber-600 dark:text-amber-400',
+      unhealthy: 'text-red-600 dark:text-red-400',
+      unknown: 'text-slate-500 dark:text-slate-400',
     };
 
     const badgeVariant = variants[status] || 'default';
@@ -131,7 +131,7 @@ export default function SystemStatusPage() {
   if (user?.role !== 'ADMIN') {
     return (
       <div className="text-center py-12">
-        <p className="text-navy-300">Access denied. Admin only.</p>
+        <p className="text-slate-600 dark:text-slate-400">Access denied. Admin only.</p>
       </div>
     );
   }
@@ -140,10 +140,10 @@ export default function SystemStatusPage() {
     return (
       <div className="space-y-6">
         <div className="animate-pulse">
-          <div className="h-8 bg-navy-800 rounded w-1/4 mb-4"></div>
+          <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-1/4 mb-4"></div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-32 bg-navy-800 rounded"></div>
+              <div key={i} className="h-32 bg-slate-200 dark:bg-slate-700 rounded"></div>
             ))}
           </div>
         </div>
@@ -155,8 +155,8 @@ export default function SystemStatusPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-navy-50">System Status</h1>
-          <p className="text-navy-300 mt-2">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">System Status</h1>
+          <p className="text-slate-600 dark:text-slate-400 mt-2">
             Monitor platform health and service status
           </p>
         </div>
@@ -170,7 +170,7 @@ export default function SystemStatusPage() {
               Retry
             </Button>
           )}
-          <div className="text-sm text-navy-400">
+          <div className="text-sm text-slate-500 dark:text-slate-400">
             Last updated: {formatDate(lastUpdated.toISOString())}
           </div>
         </div>
@@ -178,8 +178,8 @@ export default function SystemStatusPage() {
 
       {/* Error Message */}
       {error && (
-        <Card className="p-6 bg-red-900/20 border-red-700">
-          <div className="flex items-center gap-2 text-red-400">
+        <Card className="p-6 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
+          <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
             <span className="font-semibold">Error:</span>
             <span>{error}</span>
           </div>
@@ -189,91 +189,91 @@ export default function SystemStatusPage() {
       {/* System Status */}
       {status ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="p-6 bg-navy-800 border-navy-700">
-            <h2 className="text-xl font-semibold text-navy-50 mb-4 flex items-center gap-2">
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
               <Server className="h-5 w-5" />
               API Status
             </h2>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-navy-300">Status</span>
+                <span className="text-slate-600 dark:text-slate-400">Status</span>
                 {getStatusBadge(status.api.status)}
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-navy-300">Version</span>
-                <span className="text-navy-50">{status.api.version}</span>
+                <span className="text-slate-600 dark:text-slate-400">Version</span>
+                <span className="text-slate-900 dark:text-slate-100 font-medium">{status.api.version}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-navy-300">Uptime</span>
-                <span className="text-navy-50">{formatUptime(status.api.uptime)}</span>
+                <span className="text-slate-600 dark:text-slate-400">Uptime</span>
+                <span className="text-slate-900 dark:text-slate-100 font-medium">{formatUptime(status.api.uptime)}</span>
               </div>
             </div>
           </Card>
 
-          <Card className="p-6 bg-navy-800 border-navy-700">
-            <h2 className="text-xl font-semibold text-navy-50 mb-4 flex items-center gap-2">
+          <Card className="p-6">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
               <Database className="h-5 w-5" />
               Database Status
             </h2>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-navy-300">Status</span>
+                <span className="text-slate-600 dark:text-slate-400">Status</span>
                 {getStatusBadge(status.database.status)}
               </div>
             </div>
           </Card>
         </div>
       ) : (
-        <Card className="p-6 bg-navy-800 border-navy-700">
-          <p className="text-navy-300">No status data available. Please try refreshing.</p>
+        <Card className="p-6">
+          <p className="text-slate-600 dark:text-slate-400">No status data available. Please try refreshing.</p>
         </Card>
       )}
 
       {/* Service Status */}
       {status ? (
-        <Card className="p-6 bg-navy-800 border-navy-700">
-          <h2 className="text-xl font-semibold text-navy-50 mb-4">Service Status</h2>
+        <Card className="p-6">
+          <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-4">Service Status</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            <div className="flex items-center justify-between p-3 bg-navy-900 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 rounded-lg">
               <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-navy-400" />
-                <span className="text-navy-300">Email</span>
+                <Mail className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                <span className="text-slate-700 dark:text-slate-300">Email</span>
               </div>
               {getStatusBadge(status.services.email)}
             </div>
-            <div className="flex items-center justify-between p-3 bg-navy-900 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 rounded-lg">
               <div className="flex items-center gap-2">
-                <MessageSquare className="h-4 w-4 text-navy-400" />
-                <span className="text-navy-300">SMS</span>
+                <MessageSquare className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                <span className="text-slate-700 dark:text-slate-300">SMS</span>
               </div>
               {getStatusBadge(status.services.sms)}
             </div>
-            <div className="flex items-center justify-between p-3 bg-navy-900 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 rounded-lg">
               <div className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4 text-navy-400" />
-                <span className="text-navy-300">Stripe</span>
+                <CreditCard className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                <span className="text-slate-700 dark:text-slate-300">Stripe</span>
               </div>
               {getStatusBadge(status.services.stripe)}
             </div>
-            <div className="flex items-center justify-between p-3 bg-navy-900 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 rounded-lg">
               <div className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4 text-navy-400" />
-                <span className="text-navy-300">PayPal</span>
+                <CreditCard className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                <span className="text-slate-700 dark:text-slate-300">PayPal</span>
               </div>
               {getStatusBadge(status.services.paypal)}
             </div>
-            <div className="flex items-center justify-between p-3 bg-navy-900 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-slate-100 dark:bg-slate-800 rounded-lg">
               <div className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4 text-navy-400" />
-                <span className="text-navy-300">Razorpay</span>
+                <CreditCard className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+                <span className="text-slate-700 dark:text-slate-300">Razorpay</span>
               </div>
               {getStatusBadge(status.services.razorpay)}
             </div>
           </div>
         </Card>
       ) : (
-        <Card className="p-6 bg-navy-800 border-navy-700">
-          <p className="text-navy-300">No service status data available.</p>
+        <Card className="p-6">
+          <p className="text-slate-600 dark:text-slate-400">No service status data available.</p>
         </Card>
       )}
 
@@ -304,50 +304,50 @@ export default function SystemStatusPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="p-6 bg-navy-800 border-navy-700">
-              <h3 className="text-lg font-semibold text-navy-50 mb-4">User Statistics</h3>
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">User Statistics</h3>
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-navy-300">Total Users</span>
-                  <span className="text-navy-50 font-semibold">{metrics.users.total}</span>
+                  <span className="text-slate-600 dark:text-slate-400">Total Users</span>
+                  <span className="text-slate-900 dark:text-slate-100 font-semibold">{metrics.users.total}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-navy-300">Merchants</span>
-                  <span className="text-navy-50 font-semibold">{metrics.users.merchants}</span>
+                  <span className="text-slate-600 dark:text-slate-400">Merchants</span>
+                  <span className="text-slate-900 dark:text-slate-100 font-semibold">{metrics.users.merchants}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-navy-300">Customers</span>
-                  <span className="text-navy-50 font-semibold">{metrics.users.customers}</span>
+                  <span className="text-slate-600 dark:text-slate-400">Customers</span>
+                  <span className="text-slate-900 dark:text-slate-100 font-semibold">{metrics.users.customers}</span>
                 </div>
               </div>
             </Card>
 
-            <Card className="p-6 bg-navy-800 border-navy-700">
-              <h3 className="text-lg font-semibold text-navy-50 mb-4">Gift Card Statistics</h3>
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Gift Card Statistics</h3>
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-navy-300">Total Cards</span>
-                  <span className="text-navy-50 font-semibold">{metrics.giftCards.total}</span>
+                  <span className="text-slate-600 dark:text-slate-400">Total Cards</span>
+                  <span className="text-slate-900 dark:text-slate-100 font-semibold">{metrics.giftCards.total}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-navy-300">Active</span>
-                  <span className="text-navy-50 font-semibold">{metrics.giftCards.active}</span>
+                  <span className="text-slate-600 dark:text-slate-400">Active</span>
+                  <span className="text-slate-900 dark:text-slate-100 font-semibold">{metrics.giftCards.active}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-navy-300">Redeemed</span>
-                  <span className="text-navy-50 font-semibold">{metrics.giftCards.redeemed}</span>
+                  <span className="text-slate-600 dark:text-slate-400">Redeemed</span>
+                  <span className="text-slate-900 dark:text-slate-100 font-semibold">{metrics.giftCards.redeemed}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-navy-300">Expired</span>
-                  <span className="text-navy-50 font-semibold">{metrics.giftCards.expired}</span>
+                  <span className="text-slate-600 dark:text-slate-400">Expired</span>
+                  <span className="text-slate-900 dark:text-slate-100 font-semibold">{metrics.giftCards.expired}</span>
                 </div>
               </div>
             </Card>
           </div>
         </>
       ) : (
-        <Card className="p-6 bg-navy-800 border-navy-700">
-          <p className="text-navy-300">No metrics data available. Please try refreshing.</p>
+        <Card className="p-6">
+          <p className="text-slate-600 dark:text-slate-400">No metrics data available. Please try refreshing.</p>
         </Card>
       )}
     </div>

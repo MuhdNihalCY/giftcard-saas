@@ -49,7 +49,7 @@ export function Navigation() {
   const isPublic = !isDashboard && !pathname?.startsWith('/login') && !pathname?.startsWith('/register');
 
   return (
-    <nav className="bg-navy-800/95 backdrop-blur-md border-b border-navy-700/50 sticky top-0 z-50 shadow-luxury">
+    <nav className="bg-white dark:bg-slate-900 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 sticky top-0 z-50 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -112,7 +112,7 @@ export function Navigation() {
                     placeholder="Search gift cards..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full px-4 py-2 pl-10 bg-navy-700/50 border border-plum-500/30 rounded-lg text-navy-50 placeholder-plum-300 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500 transition-all"
+                    className="w-full px-4 py-2 pl-10 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all"
                   />
                   <svg
                     className="absolute left-3 top-2.5 h-5 w-5 text-plum-300"
@@ -133,13 +133,13 @@ export function Navigation() {
               <div className="relative user-menu-button">
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-navy-700/50 transition-colors"
+                  className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                   aria-label="User menu"
                 >
                   <div className="w-8 h-8 rounded-full bg-plum-600 flex items-center justify-center text-navy-50 font-semibold">
                     {user?.firstName?.[0] || user?.email?.[0] || 'U'}
                   </div>
-                  <span className="hidden sm:block text-plum-200 text-sm">{user?.firstName || user?.email}</span>
+                  <span className="hidden sm:block text-slate-700 dark:text-slate-300 text-sm">{user?.firstName || user?.email}</span>
                   <svg
                     className={`w-4 h-4 text-plum-300 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`}
                     fill="none"
@@ -152,30 +152,30 @@ export function Navigation() {
 
                 {/* User Dropdown Menu */}
                 {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-navy-800 border border-navy-700 rounded-lg shadow-luxury py-2 user-menu">
-                    <div className="px-4 py-2 border-b border-navy-700">
-                      <p className="text-sm font-semibold text-navy-50">{user?.firstName} {user?.lastName}</p>
-                      <p className="text-xs text-plum-300 truncate">{user?.email}</p>
-                    </div>
-                    {!isDashboard && (
-                      <Link
-                        href="/dashboard"
-                        className="block px-4 py-2 text-sm text-plum-200 hover:bg-navy-700/50 transition-colors"
-                        onClick={() => setIsUserMenuOpen(false)}
+                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg py-2 user-menu">
+                  <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-700">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{user?.firstName} {user?.lastName}</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 truncate">{user?.email}</p>
+                  </div>
+                  {!isDashboard && (
+                    <Link
+                      href="/dashboard"
+                      className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                      onClick={() => setIsUserMenuOpen(false)}
                       >
                         Dashboard
                       </Link>
                     )}
                     <Link
                       href="/dashboard/settings"
-                      className="block px-4 py-2 text-sm text-plum-200 hover:bg-navy-700/50 transition-colors"
+                      className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                       onClick={() => setIsUserMenuOpen(false)}
                     >
                       Settings
                     </Link>
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-navy-700/50 transition-colors"
+                      className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                     >
                       Logout
                     </button>
@@ -184,11 +184,11 @@ export function Navigation() {
               </div>
             ) : (
               <div className="hidden md:flex items-center space-x-2">
-                <Link href="/login">
+                <Link href="/auth?mode=login">
                   <Button variant="ghost" size="sm">Sign In</Button>
                 </Link>
-                <Link href="/register">
-                  <Button variant="gold" size="sm">Get Started</Button>
+                <Link href="/auth?mode=register">
+                  <Button variant="primary" size="sm">Get Started</Button>
                 </Link>
               </div>
             )}
@@ -227,10 +227,10 @@ export function Navigation() {
                       placeholder="Search gift cards..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full px-4 py-2 pl-10 bg-navy-700/50 border border-plum-500/30 rounded-lg text-navy-50 placeholder-plum-300 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-gold-500"
+                      className="w-full px-4 py-2 pl-10 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                     />
                     <svg
-                      className="absolute left-3 top-2.5 h-5 w-5 text-plum-300"
+                      className="absolute left-3 top-2.5 h-5 w-5 text-slate-500 dark:text-slate-400"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -273,7 +273,7 @@ export function Navigation() {
                   <MobileNavLink href="/dashboard/settings" pathname={pathname} onClick={() => setIsMobileMenuOpen(false)}>Settings</MobileNavLink>
                   <button
                     onClick={handleLogout}
-                    className="w-full text-left px-4 py-2 rounded-lg text-red-400 hover:bg-navy-700/50 transition-colors"
+                    className="w-full text-left px-4 py-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                   >
                     Logout
                   </button>
@@ -284,11 +284,11 @@ export function Navigation() {
                   <MobileNavLink href="/browse" pathname={pathname} onClick={() => setIsMobileMenuOpen(false)}>Browse</MobileNavLink>
                   <MobileNavLink href="/check-balance" pathname={pathname} onClick={() => setIsMobileMenuOpen(false)}>Check Balance</MobileNavLink>
                   <div className="px-4 pt-2 space-y-2">
-                    <Link href="/login" className="block">
+                    <Link href="/auth?mode=login" className="block">
                       <Button variant="ghost" className="w-full">Sign In</Button>
                     </Link>
-                    <Link href="/register" className="block">
-                      <Button variant="gold" className="w-full">Get Started</Button>
+                    <Link href="/auth?mode=register" className="block">
+                      <Button variant="primary" className="w-full">Get Started</Button>
                     </Link>
                   </div>
                 </>
@@ -308,8 +308,8 @@ function NavLink({ href, pathname, children }: { href: string; pathname: string 
       href={href}
       className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
         isActive
-          ? 'bg-plum-600/30 text-gold-400 border border-plum-500/50'
-          : 'text-plum-200 hover:bg-navy-700/50 hover:text-gold-300'
+          ? 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-500/50'
+          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-cyan-600 dark:hover:text-cyan-400'
       }`}
     >
       {children}
@@ -325,8 +325,8 @@ function MobileNavLink({ href, pathname, onClick, children }: { href: string; pa
       onClick={onClick}
       className={`block px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
         isActive
-          ? 'bg-plum-600/30 text-gold-400 border border-plum-500/50'
-          : 'text-plum-200 hover:bg-navy-700/50'
+          ? 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 border border-cyan-200 dark:border-cyan-500/50'
+          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
       }`}
     >
       {children}

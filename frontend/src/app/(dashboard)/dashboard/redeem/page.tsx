@@ -150,8 +150,8 @@ export default function RedeemPage() {
   return (
     <div className="page-transition">
       <div className="mb-8">
-        <h1 className="text-4xl font-serif font-bold text-plum-300">Redeem Gift Card</h1>
-        <p className="text-navy-200 mt-2 text-lg">Enter gift card code or scan QR code to redeem</p>
+        <h1 className="text-4xl font-serif font-bold text-slate-900 dark:text-slate-100">Redeem Gift Card</h1>
+        <p className="text-slate-600 dark:text-slate-400 mt-2 text-lg">Enter gift card code or scan QR code to redeem</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -266,7 +266,7 @@ export default function RedeemPage() {
           <CardContent>
             <div className="space-y-6">
               <div>
-                <h4 className="text-lg font-semibold text-plum-300 mb-3">Scan Customer's QR Code</h4>
+                <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-3">Scan Customer's QR Code</h4>
                 <QRCodeScanner
                   onScanSuccess={handleQRScan}
                   onError={(error) => setError(error)}
@@ -274,7 +274,7 @@ export default function RedeemPage() {
               </div>
 
               <div>
-                <h4 className="text-lg font-semibold text-plum-300 mb-3">Scan via NFC</h4>
+                <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-3">Scan via NFC</h4>
                 <NFCReader
                   onScanSuccess={handleNFCScan}
                   onError={(error) => setError(error)}
@@ -296,22 +296,22 @@ export default function RedeemPage() {
                     />
                   </div>
                 ) : (
-                  <div className="bg-navy-700/50 p-8 rounded-lg border-2 border-dashed border-navy-600">
-                    <p className="text-plum-300 text-sm">
+                  <div className="bg-slate-100 dark:bg-slate-800 p-8 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600">
+                    <p className="text-slate-600 dark:text-slate-400 text-sm">
                       QR code will appear after validating a gift card
                     </p>
                   </div>
                 )}
                 {!giftCard && (
-                  <p className="text-xs text-plum-300 mt-4">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-4">
                     Scan a QR code or enter a gift card code to see the QR code display
                   </p>
                 )}
               </div>
 
-              <div className="p-6 bg-blue-900/20 border border-blue-500/30 rounded-lg">
-                <h4 className="font-serif font-semibold text-plum-300 mb-3">How to Redeem:</h4>
-                <ol className="list-decimal list-inside space-y-2 text-sm text-plum-200">
+              <div className="p-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-500/30 rounded-lg">
+                <h4 className="font-serif font-semibold text-slate-900 dark:text-slate-100 mb-3">How to Redeem:</h4>
+                <ol className="list-decimal list-inside space-y-2 text-sm text-slate-700 dark:text-slate-300">
                   <li>Click "Start Scanner" and scan the customer's QR code, OR enter the gift card code manually</li>
                   <li>If scanning, the gift card will be validated automatically. If entering manually, click "Validate Gift Card"</li>
                   <li>Enter redemption amount</li>
@@ -321,9 +321,9 @@ export default function RedeemPage() {
               </div>
 
               {giftCard && (
-                <div className="p-6 bg-yellow-900/20 border border-yellow-500/30 rounded-lg">
-                  <p className="text-sm text-plum-200">
-                    <strong className="text-gold-400">Note:</strong> Partial redemption is{' '}
+                <div className="p-6 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-500/30 rounded-lg">
+                  <p className="text-sm text-slate-700 dark:text-slate-300">
+                    <strong className="text-amber-600 dark:text-amber-400">Note:</strong> Partial redemption is{' '}
                     {giftCard.allowPartialRedemption ? (
                       <span className="text-green-400">allowed</span>
                     ) : (

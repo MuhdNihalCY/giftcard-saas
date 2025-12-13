@@ -63,11 +63,11 @@ export function PasswordStrength({ password = '', hasError = false }: PasswordSt
             {/* Strength Bar */}
             {password.length > 0 && (
                 <div className="space-y-1">
-                    <div className="flex justify-between text-xs text-plum-300">
+                    <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400">
                         <span>Password Strength</span>
                         <span className="font-medium">{getStrengthLabel()}</span>
                     </div>
-                    <div className="h-1.5 w-full bg-navy-700 rounded-full overflow-hidden">
+                    <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                         <div
                             className={`h-full transition-all duration-300 ${getStrengthColor()}`}
                             style={{ width: `${(strength / 5) * 100}%` }}
@@ -83,13 +83,13 @@ export function PasswordStrength({ password = '', hasError = false }: PasswordSt
                     return (
                         <div
                             key={req.id}
-                            className={`flex items-center text-xs ${isMet ? 'text-green-400' : 'text-plum-300'
+                            className={`flex items-center text-xs ${isMet ? 'text-green-600 dark:text-green-400' : 'text-slate-600 dark:text-slate-400'
                                 }`}
                         >
                             {isMet ? (
                                 <Check className="h-3 w-3 mr-1.5" />
                             ) : (
-                                <div className="h-1 w-1 rounded-full bg-plum-400 mr-2.5 ml-1" />
+                                <div className="h-1 w-1 rounded-full bg-slate-400 dark:bg-slate-500 mr-2.5 ml-1" />
                             )}
                             <span>{req.label}</span>
                         </div>

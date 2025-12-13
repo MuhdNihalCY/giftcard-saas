@@ -16,11 +16,11 @@ export interface DefaultDesignData extends Required<TemplateDesignData> {
  */
 export const DEFAULT_DESIGN_DATA: DefaultDesignData = {
   colors: {
-    primary: '#1a365d',      // Deep navy - professional and modern
-    secondary: '#2d3748',    // Charcoal - sophisticated
+    primary: '#06b6d4',      // Cyan - modern and trustworthy
+    secondary: '#f43f5e',   // Rose - celebratory and warm
     background: '#ffffff',   // Pure white - clean
-    text: '#1a202c',         // Dark gray - excellent readability
-    accent: '#d69e2e',       // Gold accent - premium feel
+    text: '#0f172a',         // Slate-900 - excellent readability
+    accent: '#f59e0b',       // Amber accent - premium feel
   },
   typography: {
     fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',

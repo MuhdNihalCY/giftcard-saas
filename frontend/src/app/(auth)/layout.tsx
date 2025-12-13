@@ -30,7 +30,7 @@ export default function AuthLayout({
           import('@/lib/auth').then(({ auth: authUtil }) => {
             if (!authUtil.isAccessTokenExpired()) {
               // User is authenticated, redirect away from auth pages
-              if (pathname === '/login' || pathname === '/register') {
+              if (pathname === '/login' || pathname === '/register' || pathname === '/auth') {
                 const redirectUrl = user.role === 'ADMIN' || user.role === 'MERCHANT' 
                   ? '/dashboard' 
                   : '/';
@@ -50,7 +50,7 @@ export default function AuthLayout({
     // Also check Zustand state
     if (isAuthenticated) {
       const user = useAuthStore.getState().user;
-      if (user && (pathname === '/login' || pathname === '/register')) {
+      if (user && (pathname === '/login' || pathname === '/register' || pathname === '/auth')) {
         const redirectUrl = user.role === 'ADMIN' || user.role === 'MERCHANT' 
           ? '/dashboard' 
           : '/';

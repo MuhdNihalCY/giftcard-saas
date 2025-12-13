@@ -50,12 +50,12 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="min-h-screen bg-navy-900 flex items-center justify-center p-4">
-          <Card className="p-8 bg-navy-800 border-navy-700 max-w-md w-full">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4">
+          <Card className="p-8 max-w-md w-full">
             <div className="text-center">
-              <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-navy-50 mb-2">Something went wrong</h2>
-              <p className="text-navy-300 mb-6">
+              <AlertCircle className="h-12 w-12 text-red-600 dark:text-red-400 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">Something went wrong</h2>
+              <p className="text-slate-600 dark:text-slate-400 mb-6">
                 {this.state.error?.message || 'An unexpected error occurred'}
               </p>
               <div className="flex gap-3 justify-center">
@@ -71,10 +71,10 @@ export class ErrorBoundary extends Component<Props, State> {
               </div>
               {process.env.NODE_ENV === 'development' && this.state.error && (
                 <details className="mt-6 text-left">
-                  <summary className="text-navy-400 cursor-pointer mb-2">
+                  <summary className="text-slate-500 dark:text-slate-400 cursor-pointer mb-2">
                     Error Details (Development Only)
                   </summary>
-                  <pre className="text-xs text-navy-400 bg-navy-900 p-3 rounded overflow-auto">
+                  <pre className="text-xs text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 p-3 rounded overflow-auto">
                     {this.state.error.stack}
                   </pre>
                 </details>

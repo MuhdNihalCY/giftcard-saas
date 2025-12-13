@@ -325,11 +325,11 @@ export default function AdminFeatureFlagsPage() {
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-4xl font-serif font-bold text-plum-300 mb-2 flex items-center space-x-3">
+          <h1 className="text-4xl font-serif font-bold text-slate-900 mb-2 flex items-center space-x-3">
             <Flag className="w-8 h-8" />
             <span>Feature Flags</span>
           </h1>
-          <p className="text-navy-200 text-lg">
+          <p className="text-slate-600 text-lg">
             Manage feature visibility for merchants and customers
           </p>
         </div>

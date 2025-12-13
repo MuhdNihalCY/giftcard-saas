@@ -112,8 +112,8 @@ export default function GiftCardDetailsPage() {
     <div className="page-transition">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-4xl font-serif font-bold text-plum-300">Gift Card Details</h1>
-          <p className="text-plum-200 mt-2">Code: <span className="font-mono text-navy-50">{giftCard.code}</span></p>
+          <h1 className="text-4xl font-serif font-bold text-slate-900 dark:text-slate-100">Gift Card Details</h1>
+          <p className="text-slate-600 dark:text-slate-400 mt-2">Code: <span className="font-mono text-slate-900 dark:text-slate-100">{giftCard.code}</span></p>
         </div>
         <div className="flex space-x-2">
           <Link href={`/dashboard/gift-cards/${params.id}/edit`}>

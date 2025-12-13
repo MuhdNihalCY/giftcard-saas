@@ -140,13 +140,13 @@ export default function AdminCommunicationsPage() {
     <div className="page-transition">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-serif font-bold text-plum-300 mb-2 flex items-center space-x-3">
-          <MessageSquare className="w-8 h-8" />
-          <span>Communication Settings</span>
-        </h1>
-        <p className="text-navy-200 text-lg">
-          Manage global communication channel settings and monitor performance
-        </p>
+          <h1 className="text-4xl font-serif font-bold text-slate-900 dark:text-slate-100 mb-2 flex items-center space-x-3">
+            <MessageSquare className="w-8 h-8" />
+            <span>Communication Settings</span>
+          </h1>
+          <p className="text-slate-600 dark:text-slate-400 text-lg">
+            Manage global communication channel settings and monitor performance
+          </p>
       </div>
 
       {/* Alerts */}

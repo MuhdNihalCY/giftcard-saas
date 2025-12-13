@@ -203,21 +203,21 @@ export default function AdminAuditLogsPage() {
       label: 'User',
       sortable: true,
       render: (value) => (
-        <span className="text-plum-300">{value || 'System'}</span>
+        <span className="text-slate-700 dark:text-slate-300">{value || 'System'}</span>
       ),
     },
     {
       key: 'resourceId',
       label: 'Resource ID',
       render: (value) => (
-        <span className="text-navy-300 font-mono text-xs">{value || '-'}</span>
+        <span className="text-slate-500 dark:text-slate-400 font-mono text-xs">{value || '-'}</span>
       ),
     },
     {
       key: 'ipAddress',
       label: 'IP Address',
       render: (value) => (
-        <span className="text-navy-300 font-mono text-xs">{value || '-'}</span>
+        <span className="text-slate-500 dark:text-slate-400 font-mono text-xs">{value || '-'}</span>
       ),
     },
     {
@@ -225,7 +225,7 @@ export default function AdminAuditLogsPage() {
       label: 'Timestamp',
       sortable: true,
       render: (value) => (
-        <span className="text-sm text-plum-300">{formatDateTime(value)}</span>
+        <span className="text-sm text-slate-600 dark:text-slate-400">{formatDateTime(value)}</span>
       ),
     },
   ];
@@ -239,11 +239,11 @@ export default function AdminAuditLogsPage() {
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-4xl font-serif font-bold text-plum-300 mb-2 flex items-center space-x-3">
+          <h1 className="text-4xl font-serif font-bold text-slate-900 dark:text-slate-100 mb-2 flex items-center space-x-3">
             <Shield className="w-8 h-8" />
             <span>Audit Logs</span>
           </h1>
-          <p className="text-navy-200 text-lg">View and monitor all system activities</p>
+          <p className="text-slate-600 dark:text-slate-400 text-lg">View and monitor all system activities</p>
         </div>
         <div className="flex items-center space-x-2">
           <Button
