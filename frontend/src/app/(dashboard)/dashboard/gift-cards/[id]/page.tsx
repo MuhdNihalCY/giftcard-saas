@@ -9,6 +9,7 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 import Link from 'next/link';
 import QRCode from 'react-qr-code';
 import { GiftCardDisplay } from '@/components/GiftCardDisplay';
+import logger from '@/lib/logger';
 
 interface GiftCard {
   id: string;
@@ -53,7 +54,7 @@ export default function GiftCardDetailsPage() {
       const response = await api.get(`/gift-cards/${params.id}`);
       setGiftCard(response.data.data);
     } catch (error) {
-      console.error('Failed to fetch gift card:', error);
+      logger.error('Failed to fetch gift card', { error });
     } finally {
       setIsLoading(false);
     }
@@ -73,7 +74,7 @@ export default function GiftCardDetailsPage() {
         setRedemptions([]);
       }
     } catch (error) {
-      console.error('Failed to fetch redemptions:', error);
+      logger.error('Failed to fetch redemptions', { error });
       setRedemptions([]); // Set to empty array on error
     }
   };
@@ -85,7 +86,7 @@ export default function GiftCardDetailsPage() {
       await api.delete(`/gift-cards/${params.id}`);
       router.push('/dashboard/gift-cards');
     } catch (error) {
-      console.error('Failed to delete gift card:', error);
+      logger.error('Failed to delete gift card', { error });
     }
   };
 
@@ -321,7 +322,7 @@ export default function GiftCardDetailsPage() {
                     link.click();
                     link.remove();
                   } catch (error) {
-                    console.error('Failed to download PDF:', error);
+                    logger.error('Failed to download PDF', { error });
                   }
                 }}
               >

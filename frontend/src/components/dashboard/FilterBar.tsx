@@ -8,6 +8,7 @@ import { Search, X, Filter, Loader2 } from 'lucide-react';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import { useAutocomplete, Suggestion } from '@/hooks/useAutocomplete';
 import api from '@/lib/api';
+import logger from '@/lib/logger';
 
 interface DateRange {
   start: Date | null;
@@ -66,7 +67,7 @@ export function FilterBar({
           });
           return response.data.data || [];
         } catch (error) {
-          console.error('Failed to fetch suggestions:', error);
+          logger.error('Failed to fetch suggestions', { error });
           return [];
         }
       }

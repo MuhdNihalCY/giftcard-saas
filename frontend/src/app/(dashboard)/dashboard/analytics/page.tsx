@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/authStore';
 import { FeatureFlagGuard } from '@/components/FeatureFlagGuard';
 import api from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
+import logger from '@/lib/logger';
 import {
   BarChart,
   Bar,
@@ -49,7 +50,7 @@ export default function AnalyticsPage() {
       setCustomerData(customers.data.data);
       setGiftCardStats(stats.data.data);
     } catch (error) {
-      console.error('Failed to fetch analytics:', error);
+      logger.error('Failed to fetch analytics', { error });
     } finally {
       setIsLoading(false);
     }

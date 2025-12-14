@@ -7,6 +7,7 @@ import { ChartContainer } from '@/components/dashboard/ChartContainer';
 import { FilterBar } from '@/components/dashboard/FilterBar';
 import { formatCurrency } from '@/lib/utils';
 import { Card } from '@/components/ui/Card';
+import logger from '@/lib/logger';
 import { Badge } from '@/components/ui/Badge';
 import {
   BarChart,
@@ -94,7 +95,7 @@ export default function BreakagePage() {
       setMetrics(metricsRes.data.data);
       setReport(reportRes.data.data);
     } catch (error: any) {
-      console.error('Failed to load breakage data:', error);
+      logger.error('Failed to load breakage data', { error });
       setError(error?.response?.data?.error?.message || error?.response?.data?.message || error?.message || 'Failed to load breakage data');
     } finally {
       setLoading(false);

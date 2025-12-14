@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/Switch';
 import { ChartContainer } from '@/components/dashboard/ChartContainer';
 import api from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
+import logger from '@/lib/logger';
 import { MessageSquare, Mail, MessageCircle, Bell, Save } from 'lucide-react';
 import {
   BarChart,
@@ -74,7 +75,7 @@ export default function AdminCommunicationsPage() {
       const response = await api.get('/admin/communication-logs/statistics');
       setStats(response.data.data);
     } catch (err: any) {
-      console.error('Failed to load statistics:', err);
+      logger.error('Failed to load statistics', { error: err });
     }
   };
 

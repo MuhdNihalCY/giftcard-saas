@@ -7,6 +7,7 @@ import { FilterBar } from '@/components/dashboard/FilterBar';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import logger from '@/lib/logger';
 
 interface Chargeback {
   id: string;
@@ -68,7 +69,7 @@ export default function ChargebacksPage() {
       const response = await api.get('/chargebacks', { params });
       setChargebacks(response.data.data);
     } catch (error: any) {
-      console.error('Failed to load chargebacks:', error);
+      logger.error('Failed to load chargebacks', { error });
     } finally {
       setLoading(false);
     }
@@ -79,7 +80,7 @@ export default function ChargebacksPage() {
       const response = await api.get('/chargebacks/statistics');
       setStatistics(response.data.data);
     } catch (error: any) {
-      console.error('Failed to load statistics:', error);
+      logger.error('Failed to load statistics', { error });
     }
   };
 

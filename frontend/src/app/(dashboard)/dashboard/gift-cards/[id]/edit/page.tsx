@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import api from '@/lib/api';
+import logger from '@/lib/logger';
 
 const giftCardSchema = z.object({
   value: z.number().min(1, 'Value must be at least 1'),
@@ -53,7 +54,7 @@ export default function EditGiftCardPage() {
         allowPartialRedemption: giftCard.allowPartialRedemption,
       });
     } catch (error) {
-      console.error('Failed to fetch gift card:', error);
+      logger.error('Failed to fetch gift card', { error });
       setError('Failed to load gift card');
     } finally {
       setIsLoading(false);

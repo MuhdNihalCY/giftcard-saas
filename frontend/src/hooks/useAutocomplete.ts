@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import logger from '@/lib/logger';
 
 export interface Suggestion {
   id: string;
@@ -48,7 +49,7 @@ export function useAutocomplete<T extends Suggestion>(
       } catch (error: any) {
         // Ignore abort errors
         if (error.name !== 'AbortError') {
-          console.error('Failed to fetch suggestions:', error);
+          logger.error('Failed to fetch suggestions', { error });
           setSuggestions([]);
         }
       } finally {

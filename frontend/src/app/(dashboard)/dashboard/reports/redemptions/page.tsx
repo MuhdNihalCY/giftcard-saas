@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import api from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
+import logger from '@/lib/logger';
 import { useAuthStore } from '@/store/authStore';
 import {
   BarChart,
@@ -47,7 +48,7 @@ export default function RedemptionReportsPage() {
       setReportData(redemptionResponse.data.data);
       setRedemptions(redemptionsResponse.data.data || []);
     } catch (error) {
-      console.error('Failed to fetch redemption report:', error);
+      logger.error('Failed to fetch redemption report', { error });
     } finally {
       setIsLoading(false);
     }

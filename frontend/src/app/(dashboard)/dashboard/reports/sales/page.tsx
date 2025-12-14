@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
+import logger from '@/lib/logger';
 import {
   LineChart,
   Line,
@@ -47,7 +48,7 @@ export default function SalesReportsPage() {
       const response = await api.get('/analytics/sales', { params });
       setReportData(response.data.data);
     } catch (error) {
-      console.error('Failed to fetch sales report:', error);
+      logger.error('Failed to fetch sales report', { error });
     } finally {
       setIsLoading(false);
     }
@@ -78,7 +79,7 @@ export default function SalesReportsPage() {
       link.click();
       link.remove();
     } catch (error) {
-      console.error('Failed to export report:', error);
+      logger.error('Failed to export report', { error });
     }
   };
 

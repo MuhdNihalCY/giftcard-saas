@@ -8,6 +8,7 @@ import api from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import Link from 'next/link';
 import { Navigation } from '@/components/Navigation';
+import logger from '@/lib/logger';
 
 export default function RedeemSuccessPage() {
   const params = useParams();
@@ -25,7 +26,7 @@ export default function RedeemSuccessPage() {
       const response = await api.post('/redemptions/check-balance', { code });
       setGiftCard(response.data.data);
     } catch (error) {
-      console.error('Failed to fetch gift card:', error);
+      logger.error('Failed to fetch gift card', { error });
     }
   };
 

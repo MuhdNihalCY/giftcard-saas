@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { MetricCard } from '@/components/dashboard/MetricCard';
 import { Activity, Database, Mail, MessageSquare, CreditCard, Server } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
+import logger from '@/lib/logger';
 
 interface SystemStatus {
   api: {
@@ -84,7 +85,7 @@ export default function SystemStatusPage() {
       setMetrics(metricsRes.data.data);
       setLastUpdated(new Date());
     } catch (error: any) {
-      console.error('Failed to fetch system status:', error);
+      logger.error('Failed to fetch system status', { error });
       setError(error?.response?.data?.message || error?.message || 'Failed to fetch system status');
     } finally {
       setLoading(false);

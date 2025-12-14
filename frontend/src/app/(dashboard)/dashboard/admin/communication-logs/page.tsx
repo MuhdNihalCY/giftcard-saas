@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import api from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
+import logger from '@/lib/logger';
 
 interface CommunicationLog {
   id: string;
@@ -82,7 +83,7 @@ export default function AdminCommunicationLogsPage() {
       setLogs(response.data.data.logs);
       setPagination(response.data.data.pagination);
     } catch (err: any) {
-      console.error('Failed to load logs:', err);
+      logger.error('Failed to load logs', { error: err });
     } finally {
       setLoading(false);
     }
@@ -93,7 +94,7 @@ export default function AdminCommunicationLogsPage() {
       const response = await api.get('/admin/communication-logs/statistics');
       setStats(response.data.data);
     } catch (err: any) {
-      console.error('Failed to load statistics:', err);
+      logger.error('Failed to load statistics', { error: err });
     }
   };
 
@@ -102,7 +103,7 @@ export default function AdminCommunicationLogsPage() {
       const response = await api.get('/admin/communication-logs/statistics/channels');
       setChannelStats(response.data.data);
     } catch (err: any) {
-      console.error('Failed to load channel statistics:', err);
+      logger.error('Failed to load channel statistics', { error: err });
     }
   };
 

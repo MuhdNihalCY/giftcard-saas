@@ -1,3 +1,6 @@
+// Jest configuration for Next.js
+// Note: Jest config files use CommonJS (require/module.exports) as this is the standard
+// format expected by Jest and Next.js tooling. ES6 imports are not supported here.
 const nextJest = require('next/jest')
 
 const createJestConfig = nextJest({

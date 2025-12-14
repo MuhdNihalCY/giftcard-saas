@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
+import logger from '@/lib/logger';
 
 export default function AuthLayout({
   children,
@@ -41,7 +42,7 @@ export default function AuthLayout({
         } catch (e) {
           // Error in auth check - acceptable in layout
           if (process.env.NODE_ENV === 'development') {
-            console.error('Error checking auth:', e);
+            logger.error('Error checking auth', { error: e });
           }
         }
       }

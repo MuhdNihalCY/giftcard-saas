@@ -18,6 +18,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useFeatureFlagStore } from '@/store/featureFlagStore';
 import { Flag, Plus, Edit, Trash2, ToggleLeft, ToggleRight, RefreshCw } from 'lucide-react';
 import { useToast } from '@/components/ui/ToastContainer';
+import logger from '@/lib/logger';
 
 interface FeatureFlag {
   id: string;
@@ -105,7 +106,7 @@ export default function AdminFeatureFlagsPage() {
 
       setFlags(allFlags);
     } catch (error: any) {
-      console.error('Failed to load feature flags:', error);
+      logger.error('Failed to load feature flags', { error });
       toast.error(error.response?.data?.error?.message || 'Failed to load feature flags');
     } finally {
       setLoading(false);
@@ -117,7 +118,7 @@ export default function AdminFeatureFlagsPage() {
       const response = await api.get('/feature-flags/admin/statistics');
       setStats(response.data.data);
     } catch (error: any) {
-      console.error('Failed to load statistics:', error);
+      logger.error('Failed to load statistics', { error });
     }
   };
 
@@ -132,7 +133,7 @@ export default function AdminFeatureFlagsPage() {
       // Refresh frontend flags
       fetchFlags();
     } catch (error: any) {
-      console.error('Failed to create feature flag:', error);
+      logger.error('Failed to create feature flag', { error });
       toast.error(error.response?.data?.error?.message || 'Failed to create feature flag');
     }
   };
@@ -150,7 +151,7 @@ export default function AdminFeatureFlagsPage() {
       // Refresh frontend flags
       fetchFlags();
     } catch (error: any) {
-      console.error('Failed to update feature flag:', error);
+      logger.error('Failed to update feature flag', { error });
       toast.error(error.response?.data?.error?.message || 'Failed to update feature flag');
     }
   };
@@ -168,7 +169,7 @@ export default function AdminFeatureFlagsPage() {
       // Refresh frontend flags
       fetchFlags();
     } catch (error: any) {
-      console.error('Failed to delete feature flag:', error);
+      logger.error('Failed to delete feature flag', { error });
       toast.error(error.response?.data?.error?.message || 'Failed to delete feature flag');
     }
   };
@@ -182,7 +183,7 @@ export default function AdminFeatureFlagsPage() {
       // Refresh frontend flags
       fetchFlags();
     } catch (error: any) {
-      console.error('Failed to toggle feature flag:', error);
+      logger.error('Failed to toggle feature flag', { error });
       toast.error(error.response?.data?.error?.message || 'Failed to toggle feature flag');
     }
   };

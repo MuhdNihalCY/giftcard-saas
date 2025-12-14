@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
 import { formatDate } from '@/lib/utils';
 import Link from 'next/link';
+import logger from '@/lib/logger';
 
 interface Template {
   id: string;
@@ -29,7 +30,7 @@ export default function TemplatesPage() {
       const response = await api.get('/gift-cards/templates');
       setTemplates(response.data.data || []);
     } catch (error) {
-      console.error('Failed to fetch templates:', error);
+      logger.error('Failed to fetch templates', { error });
     } finally {
       setIsLoading(false);
     }
@@ -42,7 +43,7 @@ export default function TemplatesPage() {
       await api.delete(`/gift-cards/templates/${id}`);
       fetchTemplates();
     } catch (error) {
-      console.error('Failed to delete template:', error);
+      logger.error('Failed to delete template', { error });
     }
   };
 

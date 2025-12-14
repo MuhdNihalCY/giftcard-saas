@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/Input';
 import { formatDate } from '@/lib/utils';
 import { Plus, Trash2, Edit2, X } from 'lucide-react';
 import { useToast } from '@/components/ui/ToastContainer';
+import logger from '@/lib/logger';
 
 interface BlacklistEntry {
   id: string;
@@ -77,7 +78,7 @@ export default function BlacklistPage() {
         });
       }
     } catch (error: any) {
-      console.error('Failed to load blacklist:', error);
+      logger.error('Failed to load blacklist', { error });
       toast.error(error.response?.data?.error?.message || 'Failed to load blacklist entries');
     } finally {
       setLoading(false);
@@ -112,7 +113,7 @@ export default function BlacklistPage() {
       });
       loadBlacklist();
     } catch (error: any) {
-      console.error('Failed to add blacklist entry:', error);
+      logger.error('Failed to add blacklist entry', { error });
       toast.error(error.response?.data?.error?.message || 'Failed to add blacklist entry');
     }
   };
@@ -162,7 +163,7 @@ export default function BlacklistPage() {
       });
       loadBlacklist();
     } catch (error: any) {
-      console.error('Failed to update blacklist entry:', error);
+      logger.error('Failed to update blacklist entry', { error });
       toast.error(error.response?.data?.error?.message || 'Failed to update blacklist entry');
     }
   };
@@ -189,7 +190,7 @@ export default function BlacklistPage() {
       toast.success('Blacklist entry deleted successfully');
       loadBlacklist();
     } catch (error: any) {
-      console.error('Failed to delete entry:', error);
+      logger.error('Failed to delete entry', { error });
       toast.error(error.response?.data?.error?.message || 'Failed to delete blacklist entry');
     }
   };

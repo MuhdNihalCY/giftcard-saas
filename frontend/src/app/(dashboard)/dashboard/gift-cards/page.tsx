@@ -10,6 +10,7 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
 import { FeatureFlagGuard } from '@/components/FeatureFlagGuard';
 import Link from 'next/link';
+import logger from '@/lib/logger';
 
 interface GiftCard {
   id: string;
@@ -73,7 +74,7 @@ export default function GiftCardsPage() {
       const response = await api.get('/gift-cards', { params });
       setGiftCards(response.data.data || []);
     } catch (error) {
-      console.error('Failed to fetch gift cards:', error);
+      logger.error('Failed to fetch gift cards', { error });
     } finally {
       setIsLoading(false);
     }
@@ -86,7 +87,7 @@ export default function GiftCardsPage() {
       await api.delete(`/gift-cards/${id}`);
       fetchGiftCards();
     } catch (error) {
-      console.error('Failed to delete gift card:', error);
+      logger.error('Failed to delete gift card', { error });
     }
   };
 
