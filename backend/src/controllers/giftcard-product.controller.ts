@@ -76,6 +76,20 @@ export class GiftCardProductController {
     }
   }
 
+  async suggestions(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { q } = req.query;
+      const userId = req.user?.userId;
+      const role = req.user?.role;
+      const filterMerchantId = role === 'ADMIN' ? undefined : userId;
+      
+      const suggestions = await giftCardProductService.suggestions(q as string, filterMerchantId);
+      res.json({ success: true, data: suggestions });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async update(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;

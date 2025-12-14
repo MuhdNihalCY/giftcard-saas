@@ -53,12 +53,13 @@ export class PaymentController {
 
   async listPayments(req: Request, res: Response, next: NextFunction) {
     try {
-      const { giftCardId, customerId, status, paymentMethod, page, limit } = req.query;
+      const { giftCardId, customerId, status, paymentMethod, search, page, limit } = req.query;
       const result = await paymentService.list({
         giftCardId: giftCardId as string,
         customerId: customerId as string,
         status: status as any,
         paymentMethod: paymentMethod as any,
+        search: search as string,
         page: page ? parseInt(page as string) : undefined,
         limit: limit ? parseInt(limit as string) : undefined,
       });
@@ -67,6 +68,16 @@ export class PaymentController {
         data: result.payments,
         pagination: result.pagination,
       });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async suggestions(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { q } = req.query;
+      const suggestions = await paymentService.suggestions(q as string);
+      res.json({ success: true, data: suggestions });
     } catch (error) {
       next(error);
     }

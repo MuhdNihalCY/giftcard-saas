@@ -35,13 +35,20 @@ export function TopBar({ onMenuClick }: TopBarProps) {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      // Navigate to appropriate search page
+      // Navigate to appropriate search page based on current path
       if (pathname?.startsWith('/dashboard/gift-cards')) {
-        // Search within gift cards
         router.push(`/dashboard/gift-cards?search=${encodeURIComponent(searchQuery.trim())}`);
+      } else if (pathname?.startsWith('/dashboard/gift-card-products')) {
+        router.push(`/dashboard/gift-card-products?search=${encodeURIComponent(searchQuery.trim())}`);
+      } else if (pathname?.startsWith('/dashboard/payments')) {
+        router.push(`/dashboard/payments?search=${encodeURIComponent(searchQuery.trim())}`);
+      } else if (pathname?.startsWith('/dashboard/redemptions')) {
+        router.push(`/dashboard/redemptions?search=${encodeURIComponent(searchQuery.trim())}`);
+      } else if (pathname?.startsWith('/dashboard/users')) {
+        router.push(`/dashboard/users?search=${encodeURIComponent(searchQuery.trim())}`);
       } else {
-        // Global search - could navigate to a search results page
-        router.push(`/dashboard?search=${encodeURIComponent(searchQuery.trim())}`);
+        // Default to gift cards page
+        router.push(`/dashboard/gift-cards?search=${encodeURIComponent(searchQuery.trim())}`);
       }
       setSearchQuery('');
     }

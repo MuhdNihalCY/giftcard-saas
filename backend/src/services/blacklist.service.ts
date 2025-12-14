@@ -93,8 +93,11 @@ export class BlacklistService {
     const normalizedValue = this.normalizeValue(data.type, data.value);
 
     // Check if already exists
-    const existing = await prisma.fraudBlacklist.findUnique({
-      where: { value: normalizedValue },
+    const existing = await prisma.fraudBlacklist.findFirst({
+      where: { 
+        type: data.type,
+        value: normalizedValue 
+      },
     });
 
     if (existing) {
@@ -249,8 +252,11 @@ export class BlacklistService {
       const normalizedValue = this.normalizeValue(type, value);
 
       // Check if already exists
-      const existing = await prisma.fraudBlacklist.findUnique({
-        where: { value: normalizedValue },
+      const existing = await prisma.fraudBlacklist.findFirst({
+        where: { 
+          type,
+          value: normalizedValue 
+        },
       });
 
       if (existing) {

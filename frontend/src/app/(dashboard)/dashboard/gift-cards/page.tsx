@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { FilterBar } from '@/components/dashboard/FilterBar';
 import api from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
@@ -25,13 +27,25 @@ interface GiftCard {
 
 export default function GiftCardsPage() {
   const { user } = useAuthStore();
+  const searchParams = useSearchParams();
   const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState(searchParams?.get('search') || '');
   const [filters, setFilters] = useState({
     status: '',
+    search: searchParams?.get('search') || '',
     page: 1,
     limit: 20,
   });
+
+  // Initialize search from URL on mount
+  useEffect(() => {
+    const urlSearch = searchParams?.get('search') || '';
+    if (urlSearch) {
+      setSearchQuery(urlSearch);
+      setFilters(prev => ({ ...prev, search: urlSearch }));
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     fetchGiftCards();
@@ -50,6 +64,10 @@ export default function GiftCardsPage() {
 
       if (filters.status) {
         params.status = filters.status;
+      }
+
+      if (filters.search) {
+        params.search = filters.search;
       }
 
       const response = await api.get('/gift-cards', { params });
@@ -75,7 +93,7 @@ export default function GiftCardsPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-cyan-500/20 border-t-cyan-500"></div>
       </div>
     );
   }
@@ -94,18 +112,35 @@ export default function GiftCardsPage() {
       </div>
 
       {/* Filters */}
-      <div className="mb-6 flex space-x-4">
-        <select
-          className="px-4 py-3 border-2 border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
-          value={filters.status}
-          onChange={(e) => setFilters({ ...filters, status: e.target.value, page: 1 })}
-        >
-          <option value="" className="bg-white dark:bg-slate-800">All Status</option>
-          <option value="ACTIVE" className="bg-white dark:bg-slate-800">Active</option>
-          <option value="REDEEMED" className="bg-white dark:bg-slate-800">Redeemed</option>
-          <option value="EXPIRED" className="bg-white dark:bg-slate-800">Expired</option>
-          <option value="CANCELLED" className="bg-white dark:bg-slate-800">Cancelled</option>
-        </select>
+      <div className="mb-6 space-y-4">
+        <FilterBar
+          searchPlaceholder="Search by code, merchant name, or recipient email..."
+          searchValue={searchQuery}
+          onSearchChange={(value) => {
+            setSearchQuery(value);
+            setFilters({ ...filters, search: value, page: 1 });
+          }}
+          suggestionEndpoint="/gift-cards/suggestions"
+          filters={[
+            {
+              key: 'status',
+              label: 'Status',
+              value: filters.status,
+              options: [
+                { label: 'All Status', value: '' },
+                { label: 'Active', value: 'ACTIVE' },
+                { label: 'Redeemed', value: 'REDEEMED' },
+                { label: 'Expired', value: 'EXPIRED' },
+                { label: 'Cancelled', value: 'CANCELLED' },
+              ],
+              onChange: (value) => setFilters({ ...filters, status: value, page: 1 }),
+            },
+          ]}
+          onClear={() => {
+            setSearchQuery('');
+            setFilters({ status: '', search: '', page: 1, limit: 20 });
+          }}
+        />
       </div>
 
       {/* Gift Cards List */}

@@ -27,6 +27,12 @@ router.get(
   giftCardController.list.bind(giftCardController)
 );
 
+router.get(
+  '/suggestions',
+  authenticate,
+  giftCardController.suggestions.bind(giftCardController)
+);
+
 // Template Routes - MUST be defined before /:id routes to avoid route conflicts
 router.post(
   '/templates',

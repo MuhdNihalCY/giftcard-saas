@@ -381,57 +381,84 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Quick Actions */}
             <Card>
-              <CardHeader>
-                <CardTitle className="text-xl flex items-center space-x-2">
-                  <Activity className="w-5 h-5" />
+              <CardHeader className="pb-4">
+                <CardTitle className="text-xl font-semibold text-slate-900 dark:text-slate-100 flex items-center space-x-2">
+                  <div className="p-2 rounded-lg bg-cyan-100 dark:bg-cyan-900/30">
+                    <Activity className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
+                  </div>
                   <span>Quick Actions</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <Link href="/dashboard/gift-cards/create">
-                  <Button variant="gold" className="w-full justify-between">
-                    <span className="flex items-center space-x-2">
-                      <Gift className="w-4 h-4" />
-                      <span>Create Gift Card</span>
-                    </span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </Link>
-                <Link href="/dashboard/gift-card-products/create">
-                  <Button variant="outline" className="w-full justify-between">
-                    <span className="flex items-center space-x-2">
-                      <Package className="w-4 h-4" />
-                      <span>Create Product</span>
-                    </span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </Link>
-                <Link href="/dashboard/templates/create">
-                  <Button variant="outline" className="w-full justify-between">
-                    <span className="flex items-center space-x-2">
-                      <Activity className="w-4 h-4" />
-                      <span>Create Template</span>
-                    </span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </Link>
-                <Link href="/dashboard/redeem">
-                  <Button variant="outline" className="w-full justify-between">
-                    <span className="flex items-center space-x-2">
-                      <CreditCard className="w-4 h-4" />
-                      <span>Process Redemption</span>
-                    </span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </Link>
-                <Link href="/dashboard/analytics">
-                  <Button variant="outline" className="w-full justify-between">
-                    <span className="flex items-center space-x-2">
-                      <TrendingUp className="w-4 h-4" />
-                      <span>View Analytics</span>
-                    </span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Link href="/dashboard/gift-cards/create" className="group no-underline">
+                    <div className="p-4 rounded-lg border-2 border-slate-200 dark:border-slate-700 bg-gradient-to-br from-cyan-50 to-cyan-100/50 dark:from-cyan-900/20 dark:to-cyan-800/10 hover:border-cyan-300 dark:hover:border-cyan-600 hover:shadow-md transition-all duration-200 h-full">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="p-2 rounded-lg bg-cyan-500/10 dark:bg-cyan-500/20 group-hover:bg-cyan-500/20 dark:group-hover:bg-cyan-500/30 transition-colors">
+                          <Gift className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
+                        </div>
+                        <ArrowRight className="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 group-hover:translate-x-1 transition-all" />
+                      </div>
+                      <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-1">Create Gift Card</h3>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Generate a new gift card instantly</p>
+                    </div>
+                  </Link>
+                  
+                  <Link href="/dashboard/gift-card-products/create" className="group no-underline">
+                    <div className="p-4 rounded-lg border-2 border-slate-200 dark:border-slate-700 bg-gradient-to-br from-rose-50 to-rose-100/50 dark:from-rose-900/20 dark:to-rose-800/10 hover:border-rose-300 dark:hover:border-rose-600 hover:shadow-md transition-all duration-200 h-full">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="p-2 rounded-lg bg-rose-500/10 dark:bg-rose-500/20 group-hover:bg-rose-500/20 dark:group-hover:bg-rose-500/30 transition-colors">
+                          <Package className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+                        </div>
+                        <ArrowRight className="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover:text-rose-600 dark:group-hover:text-rose-400 group-hover:translate-x-1 transition-all" />
+                      </div>
+                      <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-1">Create Product</h3>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Set up a new gift card product</p>
+                    </div>
+                  </Link>
+                  
+                  <Link href="/dashboard/templates/create" className="group no-underline">
+                    <div className="p-4 rounded-lg border-2 border-slate-200 dark:border-slate-700 bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-900/20 dark:to-amber-800/10 hover:border-amber-300 dark:hover:border-amber-600 hover:shadow-md transition-all duration-200 h-full">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="p-2 rounded-lg bg-amber-500/10 dark:bg-amber-500/20 group-hover:bg-amber-500/20 dark:group-hover:bg-amber-500/30 transition-colors">
+                          <Activity className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                        </div>
+                        <ArrowRight className="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover:text-amber-600 dark:group-hover:text-amber-400 group-hover:translate-x-1 transition-all" />
+                      </div>
+                      <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-1">Create Template</h3>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Design a custom gift card template</p>
+                    </div>
+                  </Link>
+                  
+                  <Link href="/dashboard/redeem" className="group no-underline">
+                    <div className="p-4 rounded-lg border-2 border-slate-200 dark:border-slate-700 bg-gradient-to-br from-indigo-50 to-indigo-100/50 dark:from-indigo-900/20 dark:to-indigo-800/10 hover:border-indigo-300 dark:hover:border-indigo-600 hover:shadow-md transition-all duration-200 h-full">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="p-2 rounded-lg bg-indigo-500/10 dark:bg-indigo-500/20 group-hover:bg-indigo-500/20 dark:group-hover:bg-indigo-500/30 transition-colors">
+                          <CreditCard className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                        </div>
+                        <ArrowRight className="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 group-hover:translate-x-1 transition-all" />
+                      </div>
+                      <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-1">Process Redemption</h3>
+                      <p className="text-xs text-slate-600 dark:text-slate-400">Redeem gift cards via QR or code</p>
+                    </div>
+                  </Link>
+                </div>
+                
+                <Link href="/dashboard/analytics" className="group mt-3 block no-underline">
+                  <div className="p-4 rounded-lg border-2 border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 to-slate-100/50 dark:from-slate-800/50 dark:to-slate-700/30 hover:border-slate-300 dark:hover:border-slate-600 hover:shadow-md transition-all duration-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="p-2 rounded-lg bg-slate-500/10 dark:bg-slate-500/20 group-hover:bg-slate-500/20 dark:group-hover:bg-slate-500/30 transition-colors">
+                          <TrendingUp className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-slate-900 dark:text-slate-100">View Analytics</h3>
+                          <p className="text-xs text-slate-600 dark:text-slate-400">Track performance and insights</p>
+                        </div>
+                      </div>
+                      <ArrowRight className="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover:text-slate-600 dark:group-hover:text-slate-400 group-hover:translate-x-1 transition-all" />
+                    </div>
+                  </div>
                 </Link>
               </CardContent>
             </Card>

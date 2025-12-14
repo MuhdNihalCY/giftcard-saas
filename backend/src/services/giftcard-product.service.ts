@@ -333,6 +333,50 @@ export class GiftCardProductService {
   }
 
   /**
+   * Get suggestions for autocomplete
+   */
+  async suggestions(query: string, merchantId?: string): Promise<Array<{
+    id: string;
+    name: string;
+    description?: string;
+    displayText: string;
+  }>> {
+    if (!query || !query.trim()) {
+      return [];
+    }
+
+    const searchTerm = query.trim();
+    const where: any = {};
+    
+    if (merchantId) {
+      where.merchantId = merchantId;
+    }
+
+    where.OR = [
+      { name: { contains: searchTerm, mode: 'insensitive' } },
+      { description: { contains: searchTerm, mode: 'insensitive' } },
+    ];
+
+    const products = await prisma.giftCardProduct.findMany({
+      where,
+      take: 10,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+      },
+    });
+
+    return products.map((product) => ({
+      id: product.id,
+      name: product.name,
+      description: product.description || undefined,
+      displayText: `${product.name}${product.description ? ` - ${product.description.substring(0, 50)}${product.description.length > 50 ? '...' : ''}` : ''}`,
+    }));
+  }
+
+  /**
    * Update product
    */
   async update(id: string, data: UpdateProductData, userId: string) {

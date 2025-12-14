@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { DataTable, Column } from '@/components/ui/DataTable';
@@ -28,9 +29,10 @@ interface User {
 export default function UsersPage() {
   const { user } = useAuthStore();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(searchParams?.get('search') || '');
   const [roleFilter, setRoleFilter] = useState('');
   const [pagination, setPagination] = useState({
     page: 1,
@@ -39,6 +41,14 @@ export default function UsersPage() {
   });
   const [sortKey, setSortKey] = useState<string>('');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+  // Initialize search from URL on mount
+  useEffect(() => {
+    const urlSearch = searchParams?.get('search') || '';
+    if (urlSearch && urlSearch !== searchQuery) {
+      setSearchQuery(urlSearch);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (user?.role !== 'ADMIN') {
@@ -223,6 +233,7 @@ export default function UsersPage() {
             searchPlaceholder="Search by email or name..."
             searchValue={searchQuery}
             onSearchChange={setSearchQuery}
+            suggestionEndpoint="/users/suggestions"
             filters={[
               {
                 key: 'role',

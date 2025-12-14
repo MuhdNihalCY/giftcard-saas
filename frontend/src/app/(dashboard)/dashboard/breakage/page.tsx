@@ -71,6 +71,7 @@ export default function BreakagePage() {
   const [report, setReport] = useState<BreakageReport | null>(null);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -131,8 +132,9 @@ export default function BreakagePage() {
       </div>
 
       <FilterBar
-        searchValue=""
-        onSearchChange={() => {}}
+        searchPlaceholder="Search expired cards by code..."
+        searchValue={searchQuery}
+        onSearchChange={setSearchQuery}
         dateRange={{
           start: startDate,
           end: endDate,
@@ -140,6 +142,11 @@ export default function BreakagePage() {
         onDateRangeChange={(range) => {
           setStartDate(range.start);
           setEndDate(range.end);
+        }}
+        onClear={() => {
+          setSearchQuery('');
+          setStartDate(null);
+          setEndDate(null);
         }}
       />
 
@@ -260,24 +267,38 @@ export default function BreakagePage() {
             </div>
           )}
 
-          {report && report.expiredCards.length > 0 && (
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
-                Expired Cards ({report.expiredCards.length})
-              </h3>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-700">
-                      <th className="text-left py-3 px-4 text-slate-600 dark:text-slate-400">Code</th>
-                      <th className="text-left py-3 px-4 text-slate-600 dark:text-slate-400">Value</th>
-                      <th className="text-left py-3 px-4 text-slate-600 dark:text-slate-400">Balance</th>
-                      <th className="text-left py-3 px-4 text-slate-600 dark:text-slate-400">Expiry Date</th>
-                      <th className="text-left py-3 px-4 text-slate-600 dark:text-slate-400">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {report.expiredCards.slice(0, 10).map((card) => (
+          {report && report.expiredCards.length > 0 && (() => {
+            const filteredCards = searchQuery.trim()
+              ? report.expiredCards.filter(card =>
+                  card.code.toLowerCase().includes(searchQuery.toLowerCase().trim())
+                )
+              : report.expiredCards;
+            
+            return (
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
+                  Expired Cards ({filteredCards.length}{searchQuery.trim() ? ` of ${report.expiredCards.length}` : ''})
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-slate-200 dark:border-slate-700">
+                        <th className="text-left py-3 px-4 text-slate-600 dark:text-slate-400">Code</th>
+                        <th className="text-left py-3 px-4 text-slate-600 dark:text-slate-400">Value</th>
+                        <th className="text-left py-3 px-4 text-slate-600 dark:text-slate-400">Balance</th>
+                        <th className="text-left py-3 px-4 text-slate-600 dark:text-slate-400">Expiry Date</th>
+                        <th className="text-left py-3 px-4 text-slate-600 dark:text-slate-400">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredCards.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="py-8 text-center text-slate-600 dark:text-slate-400">
+                            No expired cards found matching your search.
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredCards.slice(0, 10).map((card) => (
                       <tr key={card.id} className="border-b border-slate-200 dark:border-slate-700">
                         <td className="py-3 px-4 text-slate-900 dark:text-slate-100 font-mono text-sm">{card.code}</td>
                         <td className="py-3 px-4 text-slate-900 dark:text-slate-100">{formatCurrency(card.value)}</td>
@@ -293,12 +314,14 @@ export default function BreakagePage() {
                           </Badge>
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
-          )}
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            );
+          })()}
         </>
       )}
     </div>

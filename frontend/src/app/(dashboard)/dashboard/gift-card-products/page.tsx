@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { FilterBar } from '@/components/dashboard/FilterBar';
 import api from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
@@ -31,13 +33,25 @@ interface GiftCardProduct {
 
 export default function GiftCardProductsPage() {
   const { user } = useAuthStore();
+  const searchParams = useSearchParams();
   const [products, setProducts] = useState<GiftCardProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState(searchParams?.get('search') || '');
   const [filters, setFilters] = useState({
     isActive: '',
+    search: searchParams?.get('search') || '',
     page: 1,
     limit: 20,
   });
+
+  // Initialize search from URL on mount
+  useEffect(() => {
+    const urlSearch = searchParams?.get('search') || '';
+    if (urlSearch) {
+      setSearchQuery(urlSearch);
+      setFilters(prev => ({ ...prev, search: urlSearch }));
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     fetchProducts();
@@ -56,6 +70,10 @@ export default function GiftCardProductsPage() {
 
       if (filters.isActive !== '') {
         params.isActive = String(filters.isActive === 'true');
+      }
+
+      if (filters.search) {
+        params.search = filters.search;
       }
 
       const response = await api.get('/gift-card-products', { params });
@@ -96,7 +114,7 @@ export default function GiftCardProductsPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-cyan-500/20 border-t-cyan-500"></div>
       </div>
     );
   }
@@ -114,16 +132,33 @@ export default function GiftCardProductsPage() {
       </div>
 
       {/* Filters */}
-      <div className="mb-6 flex space-x-4">
-        <select
-          className="px-4 py-3 border-2 border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
-          value={filters.isActive}
-          onChange={(e) => setFilters({ ...filters, isActive: e.target.value, page: 1 })}
-        >
-          <option value="" className="bg-navy-800">All Products</option>
-          <option value="true" className="bg-navy-800">Active</option>
-          <option value="false" className="bg-navy-800">Inactive</option>
-        </select>
+      <div className="mb-6 space-y-4">
+          <FilterBar
+            searchPlaceholder="Search by product name or description..."
+            searchValue={searchQuery}
+            onSearchChange={(value) => {
+              setSearchQuery(value);
+              setFilters({ ...filters, search: value, page: 1 });
+            }}
+            suggestionEndpoint="/gift-card-products/suggestions"
+          filters={[
+            {
+              key: 'isActive',
+              label: 'Status',
+              value: filters.isActive,
+              options: [
+                { label: 'All Products', value: '' },
+                { label: 'Active', value: 'true' },
+                { label: 'Inactive', value: 'false' },
+              ],
+              onChange: (value) => setFilters({ ...filters, isActive: value, page: 1 }),
+            },
+          ]}
+          onClear={() => {
+            setSearchQuery('');
+            setFilters({ isActive: '', search: '', page: 1, limit: 20 });
+          }}
+        />
       </div>
 
       {/* Products List */}
@@ -132,12 +167,12 @@ export default function GiftCardProductsPage() {
           <Card>
             <CardContent className="text-center py-16">
               <div className="text-6xl mb-4">🎁</div>
-              <h3 className="text-2xl font-serif font-semibold text-plum-300 mb-2">
+              <h3 className="text-2xl font-serif font-semibold text-slate-900 dark:text-slate-100 mb-2">
                 No products found
               </h3>
-              <p className="text-plum-200 mb-6">Create your first product to get started</p>
+              <p className="text-slate-600 dark:text-slate-400 mb-6">Create your first product to get started</p>
               <Link href="/dashboard/gift-card-products/create">
-                <Button variant="gold">Create Product</Button>
+                <Button variant="primary">Create Product</Button>
               </Link>
             </CardContent>
           </Card>
@@ -158,12 +193,12 @@ export default function GiftCardProductsPage() {
                   )}
                   <div className="flex-1">
                     <div className="flex items-center space-x-4 mb-4">
-                      <h3 className="text-xl font-serif font-semibold text-navy-50">{product.name}</h3>
+                      <h3 className="text-xl font-serif font-semibold text-slate-900 dark:text-slate-100">{product.name}</h3>
                       <span
                         className={`px-3 py-1 text-xs font-semibold rounded ${
                           product.isActive
                             ? 'bg-green-900/30 text-green-400 border border-green-500/30'
-                            : 'bg-navy-700/50 text-plum-300 border border-navy-600'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600'
                         }`}
                       >
                         {product.isActive ? 'Active' : 'Inactive'}

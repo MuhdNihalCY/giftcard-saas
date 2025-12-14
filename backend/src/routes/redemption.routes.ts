@@ -55,6 +55,12 @@ router.get(
 );
 
 router.get(
+  '/suggestions',
+  authenticate,
+  redemptionController.suggestions.bind(redemptionController)
+);
+
+router.get(
   '/:id',
   authenticate,
   redemptionController.getRedemption.bind(redemptionController)

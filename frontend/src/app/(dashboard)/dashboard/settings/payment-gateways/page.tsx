@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
 import api from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
-import { CreditCard, CheckCircle, XCircle, AlertCircle, ExternalLink, Trash2, ArrowLeft, X } from 'lucide-react';
+import { CreditCard, CheckCircle, XCircle, AlertCircle, ExternalLink, Trash2, X } from 'lucide-react';
 import { useToast } from '@/components/ui/ToastContainer';
 import { FeatureFlagGuard } from '@/components/FeatureFlagGuard';
 
@@ -185,112 +185,98 @@ export default function PaymentGatewaysPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div className="h-8 bg-gray-200 rounded w-1/4 animate-pulse" />
-        <div className="h-64 bg-gray-200 rounded animate-pulse" />
+      <div className="page-transition">
+        <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-1/4 animate-pulse mb-4" />
+        <div className="h-64 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
       </div>
     );
   }
 
   return (
     <FeatureFlagGuard feature="payments" redirectTo="/dashboard/settings">
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push('/dashboard/settings')}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Settings
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold">Payment Gateways</h1>
-              <p className="text-gray-600 mt-1">Connect and manage your payment gateways</p>
-            </div>
-          </div>
-        </div>
+      <div className="page-transition">
+        <h1 className="text-4xl font-serif font-bold text-slate-900 dark:text-slate-100 mb-4">Payment Gateways</h1>
+        <p className="text-slate-600 dark:text-slate-400 mb-8 text-lg">Connect and manage your payment gateways to receive payments directly to your account</p>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Available Gateways</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div className="border rounded-lg p-4">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <CreditCard className="w-5 h-5" />
-                  <h3 className="font-semibold">Stripe Connect</h3>
+        <Card>
+          <CardHeader>
+            <CardTitle>Available Gateways</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div className="border-2 border-slate-200 dark:border-slate-700 rounded-lg p-4 bg-white dark:bg-slate-800">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="w-5 h-5 text-slate-700 dark:text-slate-300" />
+                    <h3 className="font-semibold text-slate-900 dark:text-slate-100">Stripe Connect</h3>
+                  </div>
+                  {gateways.some((g) => g.gatewayType === 'STRIPE') && (
+                    <Badge variant="success">Connected</Badge>
+                  )}
                 </div>
-                {gateways.some((g) => g.gatewayType === 'STRIPE') && (
-                  <Badge variant="success">Connected</Badge>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                  Connect your Stripe account to receive payments directly
+                </p>
+                {!gateways.some((g) => g.gatewayType === 'STRIPE') ? (
+                  <Button
+                    onClick={createStripeConnectAccount}
+                    disabled={connectingStripe}
+                    variant="primary"
+                    className="w-full"
+                  >
+                    {connectingStripe ? 'Connecting...' : 'Connect Stripe'}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      const stripeGateway = gateways.find((g) => g.gatewayType === 'STRIPE');
+                      if (stripeGateway) {
+                        window.open(
+                          `/api/v1/merchant/payment-gateways/stripe/connect-link`,
+                          '_blank'
+                        );
+                      }
+                    }}
+                    className="w-full"
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Update Account
+                  </Button>
                 )}
               </div>
-              <p className="text-sm text-gray-600 mb-4">
-                Connect your Stripe account to receive payments directly
-              </p>
-              {!gateways.some((g) => g.gatewayType === 'STRIPE') ? (
-                <Button
-                  onClick={createStripeConnectAccount}
-                  disabled={connectingStripe}
-                  className="w-full"
-                >
-                  {connectingStripe ? 'Connecting...' : 'Connect Stripe'}
-                </Button>
-              ) : (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    const stripeGateway = gateways.find((g) => g.gatewayType === 'STRIPE');
-                    if (stripeGateway) {
-                      window.open(
-                        `/api/v1/merchant/payment-gateways/stripe/connect-link`,
-                        '_blank'
-                      );
-                    }
-                  }}
-                  className="w-full"
-                >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Update Account
-                </Button>
-              )}
-            </div>
 
-            <div className="border rounded-lg p-4">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <CreditCard className="w-5 h-5" />
-                  <h3 className="font-semibold">PayPal</h3>
+              <div className="border-2 border-slate-200 dark:border-slate-700 rounded-lg p-4 bg-white dark:bg-slate-800">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="w-5 h-5 text-slate-700 dark:text-slate-300" />
+                    <h3 className="font-semibold text-slate-900 dark:text-slate-100">PayPal</h3>
+                  </div>
+                  {gateways.some((g) => g.gatewayType === 'PAYPAL') && (
+                    <Badge variant="success">Connected</Badge>
+                  )}
                 </div>
-                {gateways.some((g) => g.gatewayType === 'PAYPAL') && (
-                  <Badge variant="success">Connected</Badge>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                  Connect your PayPal Business account
+                </p>
+                {!gateways.some((g) => g.gatewayType === 'PAYPAL') ? (
+                  <Button
+                    onClick={connectPayPal}
+                    disabled={connectingPayPal}
+                    variant="primary"
+                    className="w-full"
+                  >
+                    {connectingPayPal ? 'Connecting...' : 'Connect PayPal'}
+                  </Button>
+                ) : (
+                  <Button variant="outline" className="w-full" disabled>
+                    Connected
+                  </Button>
                 )}
               </div>
-              <p className="text-sm text-gray-600 mb-4">
-                Connect your PayPal Business account
-              </p>
-              {!gateways.some((g) => g.gatewayType === 'PAYPAL') ? (
-                <Button
-                  onClick={connectPayPal}
-                  disabled={connectingPayPal}
-                  variant="outline"
-                  className="w-full"
-                >
-                  {connectingPayPal ? 'Connecting...' : 'Connect PayPal'}
-                </Button>
-              ) : (
-                <Button variant="outline" className="w-full" disabled>
-                  Connected
-                </Button>
-              )}
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
       {gateways.length > 0 && (
         <Card>
@@ -302,12 +288,12 @@ export default function PaymentGatewaysPage() {
               {gateways.map((gateway) => (
                 <div
                   key={gateway.id}
-                  className="border rounded-lg p-4 flex items-center justify-between"
+                  className="border-2 border-slate-200 dark:border-slate-700 rounded-lg p-4 flex items-center justify-between bg-white dark:bg-slate-800"
                 >
                   <div className="flex items-center gap-4">
-                    <CreditCard className="w-8 h-8 text-gray-400" />
+                    <CreditCard className="w-8 h-8 text-slate-400 dark:text-slate-500" />
                     <div>
-                      <h3 className="font-semibold">{getGatewayName(gateway.gatewayType)}</h3>
+                      <h3 className="font-semibold text-slate-900 dark:text-slate-100">{getGatewayName(gateway.gatewayType)}</h3>
                       <div className="flex items-center gap-2 mt-1">
                         {getStatusBadge(gateway.verificationStatus)}
                         {gateway.isActive ? (
@@ -317,7 +303,7 @@ export default function PaymentGatewaysPage() {
                         )}
                       </div>
                       {gateway.connectAccountId && (
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                           Account: {gateway.connectAccountId.substring(0, 20)}...
                         </p>
                       )}
@@ -347,7 +333,7 @@ export default function PaymentGatewaysPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => deleteGateway(gateway.id)}
-                      className="text-red-600 hover:text-red-700"
+                      className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -359,30 +345,30 @@ export default function PaymentGatewaysPage() {
         </Card>
       )}
 
-      {/* PayPal Connection Modal */}
-      {showPayPalModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Connect PayPal Account</CardTitle>
-                <button
-                  onClick={() => {
-                    setShowPayPalModal(false);
-                    setPayPalForm({ clientId: '', clientSecret: '', mode: 'sandbox' });
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Client ID
-                  </label>
+        {/* PayPal Connection Modal */}
+        {showPayPalModal && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <Card className="w-full max-w-md">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Connect PayPal Account</CardTitle>
+                  <button
+                    onClick={() => {
+                      setShowPayPalModal(false);
+                      setPayPalForm({ clientId: '', clientSecret: '', mode: 'sandbox' });
+                    }}
+                    className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      Client ID
+                    </label>
                   <Input
                     type="text"
                     value={payPalForm.clientId}
@@ -391,39 +377,39 @@ export default function PaymentGatewaysPage() {
                     className="w-full"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Client Secret
-                  </label>
-                  <Input
-                    type="password"
-                    value={payPalForm.clientSecret}
-                    onChange={(e) => setPayPalForm({ ...payPalForm, clientSecret: e.target.value })}
-                    placeholder="Enter your PayPal Client Secret"
-                    className="w-full"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Mode
-                  </label>
-                  <select
-                    value={payPalForm.mode}
-                    onChange={(e) => setPayPalForm({ ...payPalForm, mode: e.target.value as 'live' | 'sandbox' })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-gold-500"
-                  >
-                    <option value="sandbox">Sandbox (Testing)</option>
-                    <option value="live">Live (Production)</option>
-                  </select>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Use Sandbox for testing, Live for production
-                  </p>
-                </div>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <p className="text-sm text-blue-800">
-                    <strong>Where to find these credentials:</strong>
-                  </p>
-                  <ul className="text-xs text-blue-700 mt-2 list-disc list-inside space-y-1">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      Client Secret
+                    </label>
+                    <Input
+                      type="password"
+                      value={payPalForm.clientSecret}
+                      onChange={(e) => setPayPalForm({ ...payPalForm, clientSecret: e.target.value })}
+                      placeholder="Enter your PayPal Client Secret"
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      Mode
+                    </label>
+                    <select
+                      value={payPalForm.mode}
+                      onChange={(e) => setPayPalForm({ ...payPalForm, mode: e.target.value as 'live' | 'sandbox' })}
+                      className="w-full px-3 py-2 border-2 border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                    >
+                      <option value="sandbox">Sandbox (Testing)</option>
+                      <option value="live">Live (Production)</option>
+                    </select>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      Use Sandbox for testing, Live for production
+                    </p>
+                  </div>
+                  <div className="bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-500/30 rounded-lg p-3">
+                    <p className="text-sm text-cyan-800 dark:text-cyan-200">
+                      <strong>Where to find these credentials:</strong>
+                    </p>
+                    <ul className="text-xs text-cyan-700 dark:text-cyan-300 mt-2 list-disc list-inside space-y-1">
                     <li>Log in to your PayPal Developer account</li>
                     <li>Go to Apps & Credentials</li>
                     <li>Create or select your app</li>
@@ -444,6 +430,7 @@ export default function PaymentGatewaysPage() {
                   <Button
                     onClick={submitPayPalConnection}
                     disabled={submittingPayPal || !payPalForm.clientId || !payPalForm.clientSecret}
+                    variant="primary"
                     className="flex-1"
                   >
                     {submittingPayPal ? 'Connecting...' : 'Connect PayPal'}
@@ -453,7 +440,7 @@ export default function PaymentGatewaysPage() {
             </CardContent>
           </Card>
         </div>
-      )}
+        )}
       </div>
     </FeatureFlagGuard>
   );

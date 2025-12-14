@@ -62,7 +62,7 @@ export class GiftCardController {
 
   async list(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { merchantId, status, page, limit } = req.query;
+      const { merchantId, status, search, page, limit } = req.query;
       const userId = req.user!.userId;
       const role = req.user!.role;
 
@@ -72,6 +72,7 @@ export class GiftCardController {
       const result = await giftCardService.list({
         merchantId: filterMerchantId,
         status: status as any,
+        search: search as string,
         page: page ? parseInt(page as string) : undefined,
         limit: limit ? parseInt(limit as string) : undefined,
       });
@@ -80,6 +81,20 @@ export class GiftCardController {
         data: result.giftCards,
         pagination: result.pagination,
       });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async suggestions(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { q } = req.query;
+      const userId = req.user!.userId;
+      const role = req.user!.role;
+      const filterMerchantId = role === 'ADMIN' ? undefined : userId;
+      
+      const suggestions = await giftCardService.suggestions(q as string, filterMerchantId);
+      res.json({ success: true, data: suggestions });
     } catch (error) {
       next(error);
     }

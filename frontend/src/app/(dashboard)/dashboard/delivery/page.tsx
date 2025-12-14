@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { FilterBar } from '@/components/dashboard/FilterBar';
@@ -31,9 +32,10 @@ interface Delivery {
 
 export default function DeliveryPage() {
   const { user } = useAuthStore();
+  const searchParams = useSearchParams();
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(searchParams?.get('search') || '');
   const [channelFilter, setChannelFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({
@@ -47,6 +49,14 @@ export default function DeliveryPage() {
   });
   const [sortKey, setSortKey] = useState<string>('createdAt');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
+  // Initialize search from URL on mount
+  useEffect(() => {
+    const urlSearch = searchParams?.get('search') || '';
+    if (urlSearch && urlSearch !== searchQuery) {
+      setSearchQuery(urlSearch);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     fetchDeliveries();
@@ -269,6 +279,7 @@ export default function DeliveryPage() {
             searchPlaceholder="Search by recipient email or phone..."
             searchValue={searchQuery}
             onSearchChange={setSearchQuery}
+            suggestionEndpoint="/delivery/suggestions"
             dateRange={dateRange}
             onDateRangeChange={setDateRange}
             filters={[

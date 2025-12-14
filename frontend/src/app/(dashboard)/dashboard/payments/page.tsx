@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { FilterBar } from '@/components/dashboard/FilterBar';
@@ -39,6 +40,7 @@ interface Payment {
 
 export default function PaymentsPage() {
   const { user } = useAuthStore();
+  const searchParams = useSearchParams();
   
   // Redirect customers - they should never access payments page
   useEffect(() => {
@@ -52,7 +54,7 @@ export default function PaymentsPage() {
   }
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(searchParams?.get('search') || '');
   const [statusFilter, setStatusFilter] = useState('');
   const [methodFilter, setMethodFilter] = useState('');
   const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({
@@ -66,6 +68,14 @@ export default function PaymentsPage() {
   });
   const [sortKey, setSortKey] = useState<string>('createdAt');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
+  // Initialize search from URL on mount
+  useEffect(() => {
+    const urlSearch = searchParams?.get('search') || '';
+    if (urlSearch && urlSearch !== searchQuery) {
+      setSearchQuery(urlSearch);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     fetchPayments();
@@ -271,6 +281,7 @@ export default function PaymentsPage() {
             searchPlaceholder="Search by payment ID or customer email..."
             searchValue={searchQuery}
             onSearchChange={setSearchQuery}
+            suggestionEndpoint="/payments/suggestions"
             dateRange={dateRange}
             onDateRangeChange={setDateRange}
             filters={[

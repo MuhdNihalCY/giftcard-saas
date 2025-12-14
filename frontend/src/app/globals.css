@@ -127,7 +127,7 @@ a {
 
 a:hover {
   color: rgb(8, 145, 178); /* cyan-600 */
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 .dark a {

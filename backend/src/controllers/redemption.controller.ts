@@ -55,6 +55,7 @@ export class RedemptionController {
         giftCardId,
         merchantId,
         redemptionMethod,
+        search,
         page,
         limit,
       } = req.query;
@@ -62,6 +63,7 @@ export class RedemptionController {
         giftCardId: giftCardId as string,
         merchantId: merchantId as string,
         redemptionMethod: redemptionMethod as any,
+        search: search as string,
         page: page ? parseInt(page as string) : undefined,
         limit: limit ? parseInt(limit as string) : undefined,
       });
@@ -70,6 +72,16 @@ export class RedemptionController {
         data: result.redemptions,
         pagination: result.pagination,
       });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async suggestions(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { q } = req.query;
+      const suggestions = await redemptionService.suggestions(q as string);
+      res.json({ success: true, data: suggestions });
     } catch (error) {
       next(error);
     }

@@ -588,3 +588,40 @@ model FeatureFlag {
   @@index([isEnabled])
   @@map("feature_flags")
 }
+
+enum BlacklistType {
+  EMAIL
+  IP
+  PHONE
+  PAYMENT_METHOD
+  USER_ID
+}
+
+enum BlacklistSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model FraudBlacklist {
+  id         String            @id @default(uuid())
+  type       BlacklistType
+  value      String
+  reason     String?           @db.Text
+  severity   BlacklistSeverity @default(HIGH)
+  autoBlock  Boolean           @default(true) @map("auto_block")
+  expiresAt  DateTime?         @map("expires_at")
+  createdBy String?           @map("created_by")
+  metadata   Json?             @default("{}")
+  createdAt  DateTime          @default(now()) @map("created_at")
+  updatedAt  DateTime          @updatedAt @map("updated_at")
+
+  @@unique([type, value])
+  @@index([type])
+  @@index([value])
+  @@index([severity])
+  @@index([expiresAt])
+  @@index([createdAt])
+  @@map("fraud_blacklist")
+}

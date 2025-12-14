@@ -39,6 +39,13 @@ router.get(
 );
 
 router.get(
+  '/suggestions',
+  authenticate,
+  checkFeatureFlag('payments'),
+  paymentController.suggestions.bind(paymentController)
+);
+
+router.get(
   '/:id',
   authenticate,
   checkFeatureFlag('payments'), // Feature flag protection for viewing payment details

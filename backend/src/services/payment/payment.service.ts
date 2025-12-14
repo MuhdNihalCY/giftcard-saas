@@ -559,10 +559,11 @@ export class PaymentService {
     customerId?: string;
     status?: PaymentStatus;
     paymentMethod?: PaymentMethod;
+    search?: string;
     page?: number;
     limit?: number;
   }) {
-    const { giftCardId, customerId, status, paymentMethod, page = 1, limit = 20 } = filters;
+    const { giftCardId, customerId, status, paymentMethod, search, page = 1, limit = 20 } = filters;
     const skip = (page - 1) * limit;
 
     const where: Prisma.PaymentWhereInput = {};
@@ -570,6 +571,23 @@ export class PaymentService {
     if (customerId) where.customerId = customerId;
     if (status) where.status = status;
     if (paymentMethod) where.paymentMethod = paymentMethod;
+    
+    // Add search functionality
+    if (search && search.trim()) {
+      where.OR = [
+        { paymentIntentId: { contains: search.trim(), mode: 'insensitive' } },
+        {
+          giftCard: {
+            code: { contains: search.trim(), mode: 'insensitive' },
+          },
+        },
+        {
+          customer: {
+            email: { contains: search.trim(), mode: 'insensitive' },
+          },
+        },
+      ];
+    }
 
     const [payments, total] = await Promise.all([
       prisma.payment.findMany({
@@ -605,6 +623,64 @@ export class PaymentService {
         totalPages: Math.ceil(total / limit),
       },
     };
+  }
+
+  /**
+   * Get suggestions for autocomplete
+   */
+  async suggestions(query: string): Promise<Array<{
+    id: string;
+    paymentIntentId: string;
+    giftCardCode?: string;
+    customerEmail?: string;
+    displayText: string;
+  }>> {
+    if (!query || !query.trim()) {
+      return [];
+    }
+
+    const searchTerm = query.trim();
+    const where: Prisma.PaymentWhereInput = {
+      OR: [
+        { paymentIntentId: { contains: searchTerm, mode: 'insensitive' } },
+        {
+          giftCard: {
+            code: { contains: searchTerm, mode: 'insensitive' },
+          },
+        },
+        {
+          customer: {
+            email: { contains: searchTerm, mode: 'insensitive' },
+          },
+        },
+      ],
+    };
+
+    const payments = await prisma.payment.findMany({
+      where,
+      take: 10,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        giftCard: {
+          select: {
+            code: true,
+          },
+        },
+        customer: {
+          select: {
+            email: true,
+          },
+        },
+      },
+    });
+
+    return payments.map((payment) => ({
+      id: payment.id,
+      paymentIntentId: payment.paymentIntentId,
+      giftCardCode: payment.giftCard?.code,
+      customerEmail: payment.customer?.email,
+      displayText: `${payment.paymentIntentId}${payment.giftCard?.code ? ` - ${payment.giftCard.code}` : ''}${payment.customer?.email ? ` (${payment.customer.email})` : ''}`,
+    }));
   }
 
   /**

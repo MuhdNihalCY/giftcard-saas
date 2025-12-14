@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { FilterBar } from '@/components/dashboard/FilterBar';
@@ -33,9 +34,10 @@ interface Redemption {
 
 export default function RedemptionsPage() {
   const { user } = useAuthStore();
+  const searchParams = useSearchParams();
   const [redemptions, setRedemptions] = useState<Redemption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(searchParams?.get('search') || '');
   const [methodFilter, setMethodFilter] = useState('');
   const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({
     start: null,
@@ -48,6 +50,14 @@ export default function RedemptionsPage() {
   });
   const [sortKey, setSortKey] = useState<string>('createdAt');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
+  // Initialize search from URL on mount
+  useEffect(() => {
+    const urlSearch = searchParams?.get('search') || '';
+    if (urlSearch && urlSearch !== searchQuery) {
+      setSearchQuery(urlSearch);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     fetchRedemptions();
@@ -203,6 +213,7 @@ export default function RedemptionsPage() {
             searchPlaceholder="Search by gift card code..."
             searchValue={searchQuery}
             onSearchChange={setSearchQuery}
+            suggestionEndpoint="/redemptions/suggestions"
             dateRange={dateRange}
             onDateRangeChange={setDateRange}
             filters={[

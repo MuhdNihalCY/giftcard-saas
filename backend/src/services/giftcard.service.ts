@@ -246,17 +246,27 @@ export class GiftCardService {
   async list(filters: {
     merchantId?: string;
     status?: GiftCardStatus;
+    search?: string;
     page?: number;
     limit?: number;
   }): Promise<{ giftCards: GiftCardWithRelations[]; pagination: PaginationResult }> {
-    const { merchantId, status, page = 1, limit = 20 } = filters;
+    const { merchantId, status, search, page = 1, limit = 20 } = filters;
     
     // Build cache key
     let cacheKey: string;
     if (merchantId) {
       cacheKey = CacheKeys.merchantGiftCards(merchantId, page, limit);
+      if (search) {
+        cacheKey += `:search:${search}`;
+      }
+      if (status) {
+        cacheKey += `:status:${status}`;
+      }
     } else {
       cacheKey = `giftcards:all:page:${page}:limit:${limit}:status:${status || 'all'}`;
+      if (search) {
+        cacheKey += `:search:${search}`;
+      }
     }
 
     // Try to get from cache (errors are handled internally, won't throw)
@@ -276,6 +286,20 @@ export class GiftCardService {
     const where: Prisma.GiftCardWhereInput = {};
     if (merchantId) where.merchantId = merchantId;
     if (status) where.status = status;
+    
+    // Add search functionality
+    if (search && search.trim()) {
+      where.OR = [
+        { code: { contains: search.trim(), mode: 'insensitive' } },
+        { recipientEmail: { contains: search.trim(), mode: 'insensitive' } },
+        { recipientName: { contains: search.trim(), mode: 'insensitive' } },
+        {
+          merchant: {
+            businessName: { contains: search.trim(), mode: 'insensitive' },
+          },
+        },
+      ];
+    }
 
     const [giftCards, total] = await Promise.all([
       prisma.giftCard.findMany({
@@ -317,6 +341,61 @@ export class GiftCardService {
     }
 
     return result;
+  }
+
+  /**
+   * Get suggestions for autocomplete
+   */
+  async suggestions(query: string, merchantId?: string): Promise<Array<{
+    id: string;
+    code: string;
+    merchantName: string;
+    recipientEmail?: string;
+    displayText: string;
+  }>> {
+    if (!query || !query.trim()) {
+      return [];
+    }
+
+    const searchTerm = query.trim();
+    const where: Prisma.GiftCardWhereInput = {};
+    
+    if (merchantId) {
+      where.merchantId = merchantId;
+    }
+
+    // Add search functionality
+    where.OR = [
+      { code: { contains: searchTerm, mode: 'insensitive' } },
+      { recipientEmail: { contains: searchTerm, mode: 'insensitive' } },
+      { recipientName: { contains: searchTerm, mode: 'insensitive' } },
+      {
+        merchant: {
+          businessName: { contains: searchTerm, mode: 'insensitive' },
+        },
+      },
+    ];
+
+    const giftCards = await prisma.giftCard.findMany({
+      where,
+      take: 10,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        merchant: {
+          select: {
+            businessName: true,
+          },
+        },
+      },
+    });
+
+    return giftCards.map((card) => ({
+      id: card.id,
+      code: card.code,
+      merchantName: card.merchant.businessName || 'Unknown Merchant',
+      recipientEmail: card.recipientEmail || undefined,
+      displayText: `${card.code}${card.merchant.businessName ? ` - ${card.merchant.businessName}` : ''}${card.recipientEmail ? ` (${card.recipientEmail})` : ''}`,
+    }));
   }
 
   /**

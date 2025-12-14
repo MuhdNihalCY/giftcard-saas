@@ -24,6 +24,12 @@ router.get(
   giftCardProductController.list.bind(giftCardProductController)
 );
 
+router.get(
+  '/suggestions',
+  authenticate,
+  giftCardProductController.suggestions.bind(giftCardProductController)
+);
+
 // Public product listing (no auth required)
 router.get(
   '/public',

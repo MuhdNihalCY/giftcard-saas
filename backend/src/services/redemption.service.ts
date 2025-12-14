@@ -307,6 +307,7 @@ export class RedemptionService {
     giftCardId?: string;
     merchantId?: string;
     redemptionMethod?: RedemptionMethod;
+    search?: string;
     page?: number;
     limit?: number;
   }) {
@@ -314,6 +315,7 @@ export class RedemptionService {
       giftCardId,
       merchantId,
       redemptionMethod,
+      search,
       page = 1,
       limit = 20,
     } = filters;
@@ -323,6 +325,19 @@ export class RedemptionService {
     if (giftCardId) where.giftCardId = giftCardId;
     if (merchantId) where.merchantId = merchantId;
     if (redemptionMethod) where.redemptionMethod = redemptionMethod;
+    
+    // Add search functionality
+    if (search && search.trim()) {
+      where.OR = [
+        { location: { contains: search.trim(), mode: 'insensitive' } },
+        { notes: { contains: search.trim(), mode: 'insensitive' } },
+        {
+          giftCard: {
+            code: { contains: search.trim(), mode: 'insensitive' },
+          },
+        },
+      ];
+    }
 
     const [redemptions, total] = await Promise.all([
       prisma.redemption.findMany({
@@ -360,6 +375,53 @@ export class RedemptionService {
         totalPages: Math.ceil(total / limit),
       },
     };
+  }
+
+  /**
+   * Get suggestions for autocomplete
+   */
+  async suggestions(query: string): Promise<Array<{
+    id: string;
+    giftCardCode: string;
+    location?: string;
+    displayText: string;
+  }>> {
+    if (!query || !query.trim()) {
+      return [];
+    }
+
+    const searchTerm = query.trim();
+    const where: any = {
+      OR: [
+        { location: { contains: searchTerm, mode: 'insensitive' } },
+        { notes: { contains: searchTerm, mode: 'insensitive' } },
+        {
+          giftCard: {
+            code: { contains: searchTerm, mode: 'insensitive' },
+          },
+        },
+      ],
+    };
+
+    const redemptions = await prisma.redemption.findMany({
+      where,
+      take: 10,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        giftCard: {
+          select: {
+            code: true,
+          },
+        },
+      },
+    });
+
+    return redemptions.map((redemption) => ({
+      id: redemption.id,
+      giftCardCode: redemption.giftCard.code,
+      location: redemption.location || undefined,
+      displayText: `${redemption.giftCard.code}${redemption.location ? ` - ${redemption.location}` : ''}`,
+    }));
   }
 
   /**
