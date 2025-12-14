@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import authService from '../services/auth.service';
 import { UnauthorizedError } from '../utils/errors';
 import prisma from '../config/database';
+import logger from '../utils/logger';
 
 export interface AuthRequest extends Request {
   user?: {
@@ -76,7 +77,6 @@ export const authorize = (...roles: string[]) => {
 
     // Debug logging in development
     if (process.env.NODE_ENV === 'development') {
-      const logger = require('../utils/logger').default;
       logger.debug('Authorization check', {
         userRole: req.user.role,
         allowedRoles: roles,

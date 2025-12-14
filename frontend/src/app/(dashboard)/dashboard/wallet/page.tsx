@@ -7,7 +7,7 @@ import api from '@/lib/api';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
 import Link from 'next/link';
-import { QRCodeSVG } from 'qrcode.react';
+import QRCode from 'react-qr-code';
 import { formatDateTime } from '@/lib/utils';
 import { GiftCardSkeleton } from '@/components/ui/Skeleton';
 import { GiftCardShare } from '@/components/GiftCardShare';
@@ -293,7 +293,7 @@ export default function WalletPage() {
               </div>
               {selectedCard.qrCodeUrl && (
                 <div className="flex justify-center p-4 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
-                  <QRCodeSVG value={selectedCard.code} size={200} />
+                  <QRCode value={selectedCard.code} size={200} />
                 </div>
               )}
               <div className="space-y-4">

@@ -7,6 +7,7 @@ import session from 'express-session';
 import Redis from 'ioredis';
 import { env } from './env';
 import logger from '../utils/logger';
+import { RedisStore } from 'connect-redis';
 
 let redisClient: Redis | null = null;
 let sessionStore: session.Store | undefined = undefined;
@@ -14,9 +15,6 @@ let sessionStore: session.Store | undefined = undefined;
 // Initialize Redis client and store if Redis URL is provided
 if (env.REDIS_URL) {
   try {
-    // connect-redis exports RedisStore as a named export
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { RedisStore } = require('connect-redis');
     
     redisClient = new Redis(env.REDIS_URL, {
       maxRetriesPerRequest: null,

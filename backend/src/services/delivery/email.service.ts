@@ -3,6 +3,7 @@ import * as brevo from '@getbrevo/brevo';
 import { env } from '../../config/env';
 import { ValidationError } from '../../utils/errors';
 import logger from '../../utils/logger';
+import { mergeDesignWithDefaults, getBackgroundGradient } from '../../utils/template-design.util';
 
 export interface EmailOptions {
   to: string;
@@ -234,8 +235,7 @@ export class EmailService {
       template,
     } = data;
 
-    // Import template utilities
-    const { mergeDesignWithDefaults, getBackgroundGradient } = require('../../utils/template-design.util');
+    // Use template utilities
     const design = mergeDesignWithDefaults(template?.designData);
     
     const primaryColor = design.colors.primary;

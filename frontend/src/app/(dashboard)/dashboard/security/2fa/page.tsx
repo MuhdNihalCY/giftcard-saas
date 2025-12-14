@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { QRCodeSVG } from 'qrcode.react';
+import QRCode from 'react-qr-code';
 import api from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import logger from '@/lib/logger';
@@ -248,7 +248,7 @@ export default function TwoFactorSetupPage() {
               <div className="text-center">
                 <h3 className="text-lg font-semibold mb-4">Scan this QR code with your authenticator app</h3>
                 <div className="flex justify-center p-4 bg-white rounded-lg inline-block">
-                  <QRCodeSVG value={setup.qrCodeUrl} size={256} />
+                  <QRCode value={setup.qrCodeUrl} size={256} />
                 </div>
               </div>
 

@@ -93,8 +93,11 @@ giftcard-saas/
 
 ## 📚 Documentation
 
-- **[DOCUMENTATION.md](./DOCUMENTATION.md)** - Complete documentation (Setup, API, Redemption, Payment Flow)
-- **[srs.md](./srs.md)** - Software Requirements Specification
+- **[DOCUMENTATION.md](./documentation/DOCUMENTATION.md)** - Complete documentation (Setup, API, Redemption, Payment Flow)
+- **[srs.md](./documentation/srs.md)** - Software Requirements Specification
+- **[Documentation Index](./documentation/INDEX.md)** - Complete list of all documentation files
+
+For test accounts and setup guides, see the [documentation](./documentation/) folder.
 
 ## 🛠️ Tech Stack
 

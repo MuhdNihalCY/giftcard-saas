@@ -11,6 +11,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "prisma:seed": "tsx prisma/seed.ts",
+    "create-test-accounts": "tsx scripts/create-test-accounts.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "lint": "eslint src --ext .ts",
@@ -30,6 +31,7 @@
   "dependencies": {
     "@getbrevo/brevo": "^3.0.1",
     "@prisma/client": "^5.7.1",
+    "axios": "^1.6.2",
     "@types/cookie-parser": "^1.4.10",
     "@types/express-session": "^1.18.2",
     "@types/speakeasy": "^2.0.10",
