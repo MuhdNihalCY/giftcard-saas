@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import { env } from './config/env';
+import prisma from './config/database';
 import { errorHandler } from './middleware/error.middleware';
 import { requestLogger } from './middleware/logger.middleware';
 import { attachCSRFToken, validateCSRF, generateCSRFToken } from './middleware/csrf.middleware';
@@ -327,6 +328,17 @@ app.use(errorHandler);
 
 const PORT = env.PORT;
 
+function redactDatabaseUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    if (u.password) u.password = '********';
+    return u.toString();
+  } catch {
+    // If it's not a valid URL, do a best-effort redaction of ":password@"
+    return url.replace(/:\/\/([^:]+):([^@]+)@/g, '://$1:********@');
+  }
+}
+
 // Start workers and schedulers (only in production or when explicitly enabled)
 if (env.NODE_ENV === 'production' || process.env.ENABLE_WORKERS === 'true') {
   import('./workers').then(({ closeWorkers }) => {
@@ -344,15 +356,32 @@ if (env.NODE_ENV === 'production' || process.env.ENABLE_WORKERS === 'true') {
   });
 }
 
-app.listen(PORT, () => {
-  logger.info('='.repeat(60));
-  logger.info(`🚀 Server is running on port ${PORT}`);
-  logger.info(`🌍 Environment: ${env.NODE_ENV}`);
-  logger.info(`🔗 CORS_ORIGIN: ${env.CORS_ORIGIN}`);
-  logger.info(`📡 Health endpoint: http://localhost:${PORT}/health`);
-  logger.info(`🔌 API endpoint: http://localhost:${PORT}/api/${env.API_VERSION}`);
-  logger.info('='.repeat(60));
-});
+async function start() {
+  try {
+    await prisma.$connect();
+    logger.info(`✅ Database connected: ${redactDatabaseUrl(env.DATABASE_URL)}`);
+  } catch (err) {
+    logger.error('❌ Database connection failed (Prisma)', {
+      databaseUrl: redactDatabaseUrl(env.DATABASE_URL),
+      error: err instanceof Error ? { name: err.name, message: err.message } : err,
+      hint:
+        'If using Docker, ensure docker-compose Postgres is running and DATABASE_URL matches: postgresql://postgres:postgres@localhost:5432/giftcard_db?schema=public',
+    });
+    process.exit(1);
+  }
+
+  app.listen(PORT, () => {
+    logger.info('='.repeat(60));
+    logger.info(`🚀 Server is running on port ${PORT}`);
+    logger.info(`🌍 Environment: ${env.NODE_ENV}`);
+    logger.info(`🔗 CORS_ORIGIN: ${env.CORS_ORIGIN}`);
+    logger.info(`📡 Health endpoint: http://localhost:${PORT}/health`);
+    logger.info(`🔌 API endpoint: http://localhost:${PORT}/api/${env.API_VERSION}`);
+    logger.info('='.repeat(60));
+  });
+}
+
+void start();
 
 export default app;
 

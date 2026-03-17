@@ -4,6 +4,30 @@ echo "🎁 Starting Gift Card SaaS Platform"
 echo "===================================="
 echo ""
 
+# Pick free host ports to avoid conflicts with other projects (common on dev machines)
+find_free_port() {
+    for p in "$@"; do
+        if ! lsof -nP -iTCP:"$p" -sTCP:LISTEN >/dev/null 2>&1; then
+            echo "$p"
+            return 0
+        fi
+    done
+    # fallback to first candidate
+    echo "$1"
+}
+
+# Default ports (will stay the same on a clean machine; will shift if ports are taken)
+export POSTGRES_PORT="$(find_free_port 5432 5433 5434 15432)"
+export REDIS_PORT="$(find_free_port 6379 6380 6381 16379)"
+
+# Ensure app points at the same host ports we publish from docker-compose.yml
+export DATABASE_URL="postgresql://postgres:postgres@localhost:${POSTGRES_PORT}/giftcard_db?schema=public"
+export REDIS_URL="redis://localhost:${REDIS_PORT}"
+
+# Helpful log line so you can see what was chosen
+echo "Using Postgres on localhost:${POSTGRES_PORT} and Redis on localhost:${REDIS_PORT}"
+echo ""
+
 # Check if Docker is running
 if docker ps &>/dev/null; then
     echo "✅ Docker is running"
@@ -29,7 +53,7 @@ echo "Setting up database..."
 cd backend
 npx prisma generate
 
-if docker ps | grep -q postgres; then
+if docker ps --format '{{.Names}}' | grep -q '^giftcard-postgres$'; then
     echo "Checking database migration status..."
     # Check migration status - if already up to date, skip migration
     MIGRATION_STATUS=$(npx prisma migrate status 2>&1)

@@ -11,6 +11,19 @@ if [ ! -f "backend/.env" ]; then
     echo "Creating backend/.env from .env.example..."
     cp backend/.env.example backend/.env
     
+    # Ensure local Docker database URL matches docker-compose.yml defaults
+    DEFAULT_DATABASE_URL='postgresql://postgres:postgres@localhost:5432/giftcard_db?schema=public'
+    if grep -qE '^[[:space:]]*DATABASE_URL=' backend/.env; then
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            sed -i '' "s|^[[:space:]]*DATABASE_URL=.*|DATABASE_URL=\"$DEFAULT_DATABASE_URL\"|g" backend/.env
+        else
+            sed -i "s|^[[:space:]]*DATABASE_URL=.*|DATABASE_URL=\"$DEFAULT_DATABASE_URL\"|g" backend/.env
+        fi
+    else
+        echo "" >> backend/.env
+        echo "DATABASE_URL=\"$DEFAULT_DATABASE_URL\"" >> backend/.env
+    fi
+    
     # Generate JWT secrets
     echo "Generating JWT secrets..."
     JWT_SECRET=$(openssl rand -base64 32 | tr -d '\n')

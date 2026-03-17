@@ -9,10 +9,15 @@ export const env = {
   API_VERSION: process.env.API_VERSION || 'v1',
 
   // Database
-  DATABASE_URL: process.env.DATABASE_URL || '',
+  // Default to local Docker Postgres credentials from docker-compose.yml in non-production
+  DATABASE_URL:
+    process.env.DATABASE_URL ||
+    (process.env.NODE_ENV === 'production'
+      ? ''
+      : 'postgresql://postgres:postgres@localhost:5432/giftcard_db?schema=public'),
 
   // Redis
-  REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',
+  REDIS_URL: process.env.REDIS_URL || `redis://localhost:${process.env.REDIS_PORT || '6379'}`,
 
   // JWT
   JWT_SECRET: process.env.JWT_SECRET || '',

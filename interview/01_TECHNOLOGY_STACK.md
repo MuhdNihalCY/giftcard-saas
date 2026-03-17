@@ -639,3 +639,4 @@ MongoDB's eventual consistency and lack of ACID guarantees make it unsuitable fo
 ---
 
 *This document covers technology choices. See other documents for architecture, features, and implementation details.*
+

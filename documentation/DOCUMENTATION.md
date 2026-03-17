@@ -99,7 +99,7 @@ Visit http://localhost:3001
 #### Backend (.env)
 ```env
 # Required
-DATABASE_URL="postgresql://user:password@localhost:5432/giftcard_db"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/giftcard_db?schema=public"
 JWT_SECRET="your-secret-key-min-32-chars"
 JWT_REFRESH_SECRET="your-refresh-secret-min-32-chars"
 PORT=8000
@@ -122,6 +122,8 @@ AWS_ACCESS_KEY_ID="..."
 AWS_SECRET_ACCESS_KEY="..."
 AWS_S3_BUCKET="..."
 ```
+
+Note: if you start via `./start.sh`, the script may automatically select different local ports (e.g. `5433`/`6380`) to avoid conflicts with other projects. In that case, update `DATABASE_URL` (and optionally `REDIS_URL`) to match the printed ports.
 
 #### Frontend (.env.local)
 ```env

@@ -1,9 +1,15 @@
 import { PrismaClient } from '@prisma/client';
 import logger from '../utils/logger';
+import { env } from './env';
 
 // Initialize Prisma Client
 const prisma: PrismaClient = new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+  datasources: {
+    db: {
+      url: env.DATABASE_URL,
+    },
+  },
 });
 
 // Verify Prisma client is properly initialized on module load

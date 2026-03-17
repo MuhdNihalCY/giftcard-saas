@@ -709,3 +709,4 @@ Supports 4 methods: QR code, code entry, link, API.
 ---
 
 *See other documents for payment integration, background jobs, and security details.*
+

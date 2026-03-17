@@ -1,6 +1,4 @@
-// import prisma from '../config/database';
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
+import prisma from '../config/database';
 import { ValidationError } from '../utils/errors';
 import logger from '../utils/logger';
 
