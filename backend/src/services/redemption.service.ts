@@ -1,6 +1,6 @@
 import { Decimal } from '@prisma/client/runtime/library';
 import prisma from '../config/database';
-import { NotFoundError, ValidationError } from '../utils/errors';
+import { NotFoundError, ValidationError, ForbiddenError } from '../utils/errors';
 import { RedemptionMethod, PaymentMethod } from '@prisma/client';
 import giftCardService from './giftcard.service';
 import cacheService, { CacheKeys } from './cache.service';
@@ -14,6 +14,7 @@ export interface RedeemGiftCardData {
   code?: string;
   amount: number;
   merchantId: string;
+  userRole?: string;
   redemptionMethod: RedemptionMethod;
   location?: string;
   notes?: string;
@@ -68,6 +69,7 @@ export class RedemptionService {
       code,
       amount,
       merchantId,
+      userRole,
       redemptionMethod,
       location,
       notes,
@@ -81,6 +83,11 @@ export class RedemptionService {
       giftCard = await giftCardService.getByCode(code);
     } else {
       throw new ValidationError('Either giftCardId or code must be provided');
+    }
+
+    // Only the merchant who created the gift card (or an ADMIN) can redeem it
+    if (userRole !== 'ADMIN' && giftCard.merchantId !== merchantId) {
+      throw new ForbiddenError('You are not authorized to redeem this gift card');
     }
 
     // Validate gift card status

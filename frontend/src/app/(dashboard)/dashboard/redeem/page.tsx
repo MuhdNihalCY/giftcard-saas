@@ -135,7 +135,7 @@ export default function RedeemPage() {
       });
 
       setSuccess(
-        `Successfully redeemed ${formatCurrency(data.amount, giftCard.currency)}! New balance: ${formatCurrency(response.data.data.giftCard.balance, giftCard.currency)}`
+        `Successfully redeemed ${formatCurrency(data.amount, giftCard.currency)}! New balance: ${formatCurrency(response.data.data.remainingBalance, giftCard.currency)}`
       );
 
       // Refresh gift card data

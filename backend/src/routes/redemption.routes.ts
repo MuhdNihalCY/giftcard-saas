@@ -25,12 +25,6 @@ router.post(
   redemptionController.checkBalance.bind(redemptionController)
 );
 
-router.post(
-  '/redeem/:code',
-  validate(redeemViaLinkSchema),
-  redemptionController.redeemViaLink.bind(redemptionController)
-);
-
 // Authenticated endpoints
 router.post(
   '/redeem',
@@ -46,6 +40,13 @@ router.post(
   authorize('ADMIN', 'MERCHANT'),
   validate(redeemViaQRSchema),
   redemptionController.redeemViaQR.bind(redemptionController)
+);
+
+// Public link redemption — must come AFTER specific routes to avoid :code matching "qr"
+router.post(
+  '/redeem/:code',
+  validate(redeemViaLinkSchema),
+  redemptionController.redeemViaLink.bind(redemptionController)
 );
 
 router.get(
