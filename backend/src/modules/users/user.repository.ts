@@ -41,6 +41,26 @@ export class UserRepository {
     });
   }
 
+  async findManyWithOrder(where: Prisma.UserWhereInput, skip: number, take: number, orderBy: Prisma.UserOrderByWithRelationInput) {
+    return prisma.user.findMany({
+      where,
+      skip,
+      take,
+      orderBy,
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        businessName: true,
+        isEmailVerified: true,
+        isActive: true,
+        createdAt: true,
+      },
+    });
+  }
+
   async count(where: Prisma.UserWhereInput) {
     return prisma.user.count({ where });
   }

@@ -113,6 +113,13 @@ export class PayoutRepository {
     });
   }
 
+  async decrementMerchantBalance(merchantId: string, amount: Decimal) {
+    return prisma.user.update({
+      where: { id: merchantId },
+      data: { merchantBalance: { decrement: amount } },
+    });
+  }
+
   async getCompletedRedemptionsAmount(merchantId: string) {
     const result = await prisma.redemption.aggregate({
       where: { merchantId },

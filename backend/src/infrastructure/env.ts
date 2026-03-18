@@ -39,6 +39,9 @@ export const env = {
   RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID || '',
   RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET || '',
 
+  ENCRYPTION_KEY: process.env.ENCRYPTION_KEY || '',
+  PAYPAL_WEBHOOK_ID: process.env.PAYPAL_WEBHOOK_ID || '',
+
   // Email
   EMAIL_SERVICE: process.env.EMAIL_SERVICE || 'sendgrid',
   SENDGRID_API_KEY: process.env.SENDGRID_API_KEY || '',
@@ -75,7 +78,7 @@ export const env = {
 };
 
 // Validate required environment variables
-const requiredEnvVars = ['DATABASE_URL', 'JWT_SECRET', 'JWT_REFRESH_SECRET'];
+const requiredEnvVars = ['DATABASE_URL', 'JWT_SECRET', 'JWT_REFRESH_SECRET', 'ENCRYPTION_KEY'];
 
 if (env.JWT_SECRET && env.JWT_SECRET.length < 32) {
   throw new Error('JWT_SECRET must be at least 32 characters long');
@@ -94,5 +97,17 @@ if (env.NODE_ENV === 'production') {
 
   if (!env.CORS_ORIGIN || env.CORS_ORIGIN === 'http://localhost:3000') {
     console.warn('⚠️  WARNING: CORS_ORIGIN is set to localhost in production. This should be your production domain.');
+  }
+
+  const paymentKeyWarnings = [
+    ['STRIPE_SECRET_KEY', env.STRIPE_SECRET_KEY],
+    ['STRIPE_WEBHOOK_SECRET', env.STRIPE_WEBHOOK_SECRET],
+    ['PAYPAL_CLIENT_ID', env.PAYPAL_CLIENT_ID],
+    ['PAYPAL_SECRET', env.PAYPAL_SECRET],
+    ['RAZORPAY_KEY_ID', env.RAZORPAY_KEY_ID],
+    ['RAZORPAY_KEY_SECRET', env.RAZORPAY_KEY_SECRET],
+  ];
+  for (const [name, value] of paymentKeyWarnings) {
+    if (!value) console.warn(`WARNING: ${name} is not set — this payment provider will not work in production.`);
   }
 }

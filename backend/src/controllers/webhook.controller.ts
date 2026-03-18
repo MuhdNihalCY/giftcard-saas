@@ -2,14 +2,17 @@ import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 import { Decimal } from '@prisma/client/runtime/library';
 import stripeService from '../services/payment/stripe.service';
+import paypalService from '../services/payment/paypal.service';
 import { PaymentMethod, PaymentStatus, PayoutStatus } from '@prisma/client';
 import { env } from '../config/env';
 import { PaymentRepository } from '../modules/payments/payment.repository';
 import { PayoutRepository } from '../modules/payouts/payout.repository';
+import { GiftCardRepository } from '../modules/gift-cards/gift-card.repository';
+import logger from '../utils/logger';
 
 const paymentRepository = new PaymentRepository();
 const payoutRepository = new PayoutRepository();
-import logger from '../utils/logger';
+const giftCardRepository = new GiftCardRepository();
 
 export class WebhookController {
   async stripeWebhook(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
@@ -59,8 +62,8 @@ export class WebhookController {
     const paymentIntentId = paymentIntent.id as string | undefined;
     if (!paymentIntentId) return;
 
-    // Find payment by payment intent ID
-    const payment = await paymentRepository.findPaymentByIntentIdAndMethod(paymentIntentId, PaymentMethod.STRIPE);
+    // Find payment by payment intent ID (with gift card balance)
+    const payment = await paymentRepository.findPaymentByIntentIdWithGiftCard(paymentIntentId, PaymentMethod.STRIPE);
 
     if (!payment || payment.status === PaymentStatus.COMPLETED) {
       return;
@@ -72,13 +75,16 @@ export class WebhookController {
       transactionId: (paymentIntent.latest_charge as string | undefined) || null,
     });
 
+    const balanceBefore = payment.giftCard?.balance ?? new Decimal(0);
+    const balanceAfter = (payment.giftCard?.balance ?? new Decimal(0)).add(payment.amount);
+
     // Create transaction record
     await paymentRepository.createTransaction({
       giftCardId: payment.giftCardId,
       type: 'PURCHASE',
       amount: payment.amount,
-      balanceBefore: new Decimal(0),
-      balanceAfter: payment.amount,
+      balanceBefore,
+      balanceAfter,
       userId: payment.customerId || null,
       metadata: {
         paymentId: payment.id,
@@ -99,11 +105,43 @@ export class WebhookController {
   }
 
   private async handleStripeRefund(charge: Record<string, unknown>): Promise<void> {
-    // Handle refund webhook if needed
     const chargeId = charge.id as string | undefined;
-    if (chargeId) {
-      logger.info('Stripe refund webhook received', { chargeId });
+    if (!chargeId) return;
+
+    const payment = await paymentRepository.findPaymentByTransactionId(chargeId);
+    if (!payment || payment.status === PaymentStatus.REFUNDED) {
+      logger.info('Stripe refund: payment not found or already refunded', { chargeId });
+      return;
     }
+
+    const amountRefunded = (charge.amount_refunded as number) / 100; // cents → dollars
+    const giftCard = payment.giftCard;
+
+    await paymentRepository.updatePayment(payment.id, { status: PaymentStatus.REFUNDED });
+
+    if (giftCard) {
+      const balanceBefore = giftCard.balance;
+      const newBalance = new Decimal(Math.max(0, Number(balanceBefore) - amountRefunded));
+
+      await giftCardRepository.update(giftCard.id, {
+        balance: newBalance,
+        ...(Number(newBalance) <= 0 ? { status: 'CANCELLED' as any } : {}),
+      });
+
+      await payoutRepository.decrementMerchantBalance(giftCard.merchantId, new Decimal(amountRefunded));
+
+      await paymentRepository.createTransaction({
+        giftCardId: giftCard.id,
+        type: 'REFUND',
+        amount: new Decimal(amountRefunded),
+        balanceBefore,
+        balanceAfter: newBalance,
+        userId: payment.customerId || null,
+        metadata: { paymentId: payment.id, chargeId, source: 'stripe_webhook' },
+      });
+    }
+
+    logger.info('Stripe refund processed via webhook', { chargeId, paymentId: payment.id, amountRefunded });
   }
 
   async razorpayWebhook(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
@@ -147,7 +185,7 @@ export class WebhookController {
     const paymentId = payment.id as string | undefined;
     if (!paymentId) return;
     
-    const paymentRecord = await paymentRepository.findPaymentByIntentIdAndMethod(paymentId, PaymentMethod.RAZORPAY);
+    const paymentRecord = await paymentRepository.findPaymentByIntentIdWithGiftCard(paymentId, PaymentMethod.RAZORPAY);
 
     if (!paymentRecord || paymentRecord.status === PaymentStatus.COMPLETED) {
       return;
@@ -158,12 +196,15 @@ export class WebhookController {
       transactionId: paymentId,
     });
 
+    const balanceBefore = paymentRecord.giftCard?.balance ?? new Decimal(0);
+    const balanceAfter = (paymentRecord.giftCard?.balance ?? new Decimal(0)).add(paymentRecord.amount);
+
     await paymentRepository.createTransaction({
       giftCardId: paymentRecord.giftCardId,
       type: 'PURCHASE',
       amount: paymentRecord.amount,
-      balanceBefore: new Decimal(0),
-      balanceAfter: paymentRecord.amount,
+      balanceBefore,
+      balanceAfter,
       userId: paymentRecord.customerId || null,
       metadata: {
         paymentId: paymentRecord.id,
@@ -295,9 +336,18 @@ export class WebhookController {
     try {
       const event = req.body;
 
-      // Verify webhook signature (PayPal provides verification mechanism)
-      // For now, we'll process the webhook
-      // In production, verify the webhook signature from PayPal
+      const webhookId = env.PAYPAL_WEBHOOK_ID;
+      if (webhookId) {
+        const isValid = await paypalService.verifyWebhookSignature(
+          webhookId,
+          req.headers as Record<string, string>,
+          event
+        );
+        if (!isValid) {
+          logger.warn('PayPal webhook signature verification failed');
+          return res.status(400).json({ error: 'Invalid webhook signature' });
+        }
+      }
 
       switch (event.event_type) {
         case 'PAYMENT.PAYOUTSBATCH':

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import crypto from 'crypto';
 import { ValidationError } from '../../utils/errors';
 import logger from '../../utils/logger';
 import merchantPaymentGatewayService from '../merchant-payment-gateway.service';
@@ -330,7 +331,7 @@ export class PayPalConnectService {
 
       const payoutData = {
         sender_batch_header: {
-          sender_batch_id: `payout_${merchantId}_${Date.now()}`,
+          sender_batch_id: `payout_${merchantId}_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`,
           email_subject: 'Gift Card SaaS Payout',
         },
         items: [

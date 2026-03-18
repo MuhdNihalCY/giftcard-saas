@@ -1,17 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useRouter, usePathname } from 'next/navigation';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { updateProfile, changePassword } from '@/features/auth';
 import { useAuthStore } from '@/store/authStore';
-import { useFeatureFlag } from '@/hooks/useFeatureFlag';
-import { useFeatureFlagStore } from '@/store/featureFlagStore';
 
 const profileSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -34,42 +31,9 @@ type PasswordFormData = z.infer<typeof passwordSchema>;
 
 export default function SettingsPage() {
   const { user, setUser } = useAuthStore();
-  const router = useRouter();
-  const pathname = usePathname();
-  const [activeTab, setActiveTab] = useState<'profile' | 'password' | 'notifications' | 'payment-gateways'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'password' | 'notifications'>('profile');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  
-  // Check if user is merchant or admin
-  const isMerchantOrAdmin = user?.role === 'MERCHANT' || user?.role === 'ADMIN';
-  
-  // Get feature flag store to force refresh
-  const { fetchFlags } = useFeatureFlagStore();
-  
-  // Check if payments feature is enabled
-  const isPaymentsEnabled = useFeatureFlag('payments');
-
-  // Set active tab based on pathname
-  useEffect(() => {
-    if (pathname?.includes('/payment-gateways')) {
-      setActiveTab('payment-gateways');
-    }
-  }, [pathname]);
-
-  // Force refresh feature flags when component mounts or user changes
-  useEffect(() => {
-    if (user) {
-      // Force refresh flags to get latest values (bypass cache)
-      fetchFlags(true);
-    }
-  }, [user, fetchFlags]);
-
-  // Also refresh flags when pathname changes (user navigates to settings)
-  useEffect(() => {
-    if (user && pathname?.includes('/settings')) {
-      fetchFlags(true);
-    }
-  }, [pathname, user, fetchFlags]);
 
   const profileForm = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -158,21 +122,6 @@ export default function SettingsPage() {
         >
           Notifications
         </button>
-        {isMerchantOrAdmin && isPaymentsEnabled && (
-          <button
-            onClick={() => {
-              setActiveTab('payment-gateways');
-              router.push('/dashboard/settings/payment-gateways');
-            }}
-            className={`px-4 py-2 font-medium transition-colors ${
-              activeTab === 'payment-gateways'
-                ? 'border-b-2 border-cyan-500 text-cyan-600 dark:text-cyan-400'
-                : 'text-slate-600 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400'
-            }`}
-          >
-            Payment Gateways
-          </button>
-        )}
       </div>
 
       {message && (
@@ -323,26 +272,6 @@ export default function SettingsPage() {
         </Card>
       )}
 
-      {activeTab === 'payment-gateways' && isMerchantOrAdmin && isPaymentsEnabled && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Payment Gateways</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <p className="text-slate-600 dark:text-slate-400 mb-4">
-                Connect and manage your payment gateways to receive payments directly to your account.
-              </p>
-              <Button
-                variant="primary"
-                onClick={() => router.push('/dashboard/settings/payment-gateways')}
-              >
-                Manage Payment Gateways
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }

@@ -29,6 +29,7 @@ import merchantPaymentGatewayRoutes from '../routes/merchant-payment-gateway.rou
 import payoutRoutes from '../routes/payout.routes';
 import adminPayoutRoutes from '../routes/admin-payout.routes';
 import featureFlagRoutes from '../routes/feature-flag.routes';
+import adminUsersRoutes from '../routes/admin-users.routes';
 
 const MODULE_ROUTES = [
   // Health
@@ -70,6 +71,7 @@ const MODULE_ROUTES = [
   { path: `${V}/admin/communication-logs`, router: communicationLogRoutes },
   { path: `${V}/admin/audit-logs`, router: auditLogRoutes },
   { path: `${V}/admin/blacklist`, router: blacklistRoutes },
+  { path: `${V}/admin/users`, router: adminUsersRoutes },
   { path: `${V}/feature-flags`, router: featureFlagRoutes },
 
   // Payouts

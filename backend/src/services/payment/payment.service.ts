@@ -636,7 +636,7 @@ export class PaymentService {
       }
 
       case PaymentMethod.PAYPAL: {
-        const result = await paypalService.refundPayment(payment.transactionId, amount);
+        const result = await paypalService.refundPayment(payment.transactionId, amount, payment.currency);
         refundResult = {
           success: true,
           refundId: result.refundId ? String(result.refundId) : undefined,

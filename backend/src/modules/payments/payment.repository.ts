@@ -75,6 +75,20 @@ export class PaymentRepository {
     });
   }
 
+  async findPaymentByTransactionId(transactionId: string) {
+    return prisma.payment.findFirst({
+      where: { transactionId },
+      include: { giftCard: { select: { id: true, balance: true, merchantId: true } } },
+    });
+  }
+
+  async findPaymentByIntentIdWithGiftCard(paymentIntentId: string, paymentMethod: string) {
+    return prisma.payment.findFirst({
+      where: { paymentIntentId, paymentMethod: paymentMethod as any },
+      include: { giftCard: { select: { balance: true } } },
+    });
+  }
+
   async updatePayment(id: string, data: any) {
     return prisma.payment.update({ where: { id }, data });
   }

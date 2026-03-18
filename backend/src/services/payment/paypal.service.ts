@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { env } from '../../config/env';
 import { ValidationError } from '../../utils/errors';
+import logger from '../../utils/logger';
 
 interface PayPalAccessToken {
   access_token: string;
@@ -159,9 +160,35 @@ export class PayPalService {
   }
 
   /**
+   * Verify PayPal webhook signature
+   */
+  async verifyWebhookSignature(webhookId: string, headers: Record<string, string>, body: unknown): Promise<boolean> {
+    try {
+      const accessToken = await this.getAccessToken();
+      const response = await axios.post(
+        `${this.baseUrl}/v1/notifications/verify-webhook-signature`,
+        {
+          auth_algo: headers['paypal-auth-algo'],
+          cert_url: headers['paypal-cert-url'],
+          transmission_id: headers['paypal-transmission-id'],
+          transmission_sig: headers['paypal-transmission-sig'],
+          transmission_time: headers['paypal-transmission-time'],
+          webhook_id: webhookId,
+          webhook_event: body,
+        },
+        { headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' } }
+      );
+      return response.data.verification_status === 'SUCCESS';
+    } catch (error: any) {
+      logger.error('PayPal webhook verification failed', { error: error.message });
+      return false;
+    }
+  }
+
+  /**
    * Process refund
    */
-  async refundPayment(captureId: string, amount?: number) {
+  async refundPayment(captureId: string, amount?: number, currency: string = 'USD') {
     try {
       const accessToken = await this.getAccessToken();
 
@@ -169,7 +196,7 @@ export class PayPalService {
       if (amount) {
         refundData.amount = {
           value: amount.toFixed(2),
-          currency_code: 'USD', // Should be dynamic based on original payment
+          currency_code: currency,
         };
       }
 

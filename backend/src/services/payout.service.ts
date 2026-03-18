@@ -205,14 +205,16 @@ export class PayoutService {
           break;
 
         case 'BANK_TRANSFER':
-          // Bank transfer requires manual processing
-          // For now, mark as processing and require admin action
-          logger.info('Bank transfer payout requires manual processing', {
-            payoutId,
-            merchantId: payout.merchantId,
-            amount,
+          await this.repository.updatePayout(payoutId, {
+            status: PayoutStatus.PENDING,
+            webhookData: {
+              requiresManualProcessing: true,
+              method: 'BANK_TRANSFER',
+              requestedAt: new Date().toISOString(),
+              note: 'Awaiting admin action to initiate bank transfer',
+            },
           });
-          // Keep status as PROCESSING - admin needs to manually complete
+          logger.info('Bank transfer payout flagged for manual processing', { payoutId });
           return await this.repository.findPayoutById(payoutId);
         default:
           throw new ValidationError(`Unsupported payout method: ${payout.payoutMethod}`);
@@ -230,22 +232,13 @@ export class PayoutService {
           },
         });
 
-        // Deduct from merchant balance
-        const merchant = await this.repository.getMerchantBalance(payout.merchantId);
+        // Atomically deduct from merchant balance
+        await this.repository.decrementMerchantBalance(payout.merchantId, new Decimal(amount));
 
-        if (merchant) {
-          const currentBalance = Number(merchant.merchantBalance);
-          const newBalance = Math.max(0, currentBalance - amount);
-
-          await this.repository.updateMerchantBalance(payout.merchantId, new Decimal(newBalance));
-
-          logger.info('Merchant balance updated after payout', {
-            merchantId: payout.merchantId,
-            payoutAmount: amount,
-            previousBalance: currentBalance,
-            newBalance,
-          });
-        }
+        logger.info('Merchant balance decremented after payout', {
+          merchantId: payout.merchantId,
+          payoutAmount: amount,
+        });
 
         logger.info('Payout processed successfully', {
           payoutId,
