@@ -555,6 +555,23 @@ const useAuthStore = create((set) => ({
 
 ---
 
+### 14. Email Providers (SendGrid / Brevo)
+
+**What:** Transactional email delivery services
+
+**Configured providers:**
+- **SendGrid:** Default provider (`EMAIL_SERVICE=sendgrid`)
+- **Brevo (Sendinblue):** Alternative provider (`EMAIL_SERVICE=brevo`)
+
+**Brevo also supports SMS** via `SMS_SERVICE=brevo` with `BREVO_SMS_SENDER`
+
+**Why dual-provider support?**
+- Flexibility to switch providers without code changes
+- Brevo provides both email + SMS in a single platform
+- Configurable at runtime via environment variables
+
+---
+
 ## Summary Table
 
 | Technology | Purpose | Key Reason |
@@ -570,6 +587,8 @@ const useAuthStore = create((set) => ({
 | React | UI Library | Component reusability |
 | Zustand | State | Simplicity, performance |
 | Tailwind | Styling | Rapid development, flexibility |
+| Zod | Validation | Type-safe schema validation |
+| SendGrid/Brevo | Email/SMS | Transactional messaging |
 
 ---
 

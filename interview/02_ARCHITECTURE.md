@@ -31,16 +31,20 @@ This document covers the overall system architecture, design patterns, and archi
                 └──────────────┘   └──────────────┘
 ```
 
-### Architecture Pattern: Monolithic with Queue System
+### Architecture Pattern: Modular Monolith with Queue System
 
-**Decision:** Monolithic backend with queue-based background jobs
+**Decision:** Modular monolith backend with queue-based background jobs
 
-**Why Monolith?**
-- **Simplicity:** Easier to develop, test, and deploy
-- **Performance:** No network overhead between services
-- **Transactions:** Easier to maintain ACID transactions across features
-- **Team Size:** Small team, monolith is more manageable
-- **Deployment:** Single deployment unit, simpler operations
+**What is a Modular Monolith?**
+A single deployable unit (monolith) internally organized into well-defined, loosely-coupled feature modules. Each module owns its routes, controllers, services, and repositories — providing microservice-like boundaries without the distributed systems overhead.
+
+**Why Modular Monolith?**
+- **Clear Boundaries:** Feature modules enforce separation of concerns
+- **Simplicity:** Single deployment unit, no inter-service networking
+- **Performance:** No network overhead between features
+- **Transactions:** Easy ACID transactions across module boundaries
+- **Maintainability:** Each module is self-contained and testable
+- **Migration Path:** Modules can be extracted into microservices later if needed
 
 **Why Not Microservices?**
 - **Complexity:** More complex deployment, monitoring, debugging
@@ -48,10 +52,10 @@ This document covers the overall system architecture, design patterns, and archi
 - **Distributed Transactions:** Harder to maintain consistency
 - **Over-engineering:** Not needed for current scale
 
-**Future Consideration:** Can split into microservices when:
+**Future Consideration:** Can split individual modules into microservices when:
 - Team grows significantly
-- Different services need independent scaling
-- Clear service boundaries emerge
+- Different modules need independent scaling
+- Clear, stable service boundaries emerge
 
 ---
 
@@ -129,20 +133,38 @@ async create(data: CreateGiftCardData) {
 - **Maintainability:** Business logic in one place
 - **Consistency:** Consistent business rules across the app
 
-**Service Organization:**
+**Service Organization (flat services/ for shared logic):**
 ```
 services/
 ├── auth.service.ts              # Authentication logic
 ├── giftcard.service.ts          # Gift card operations
 ├── payment/
 │   ├── payment.service.ts       # Payment orchestration
-│   ├── stripe.service.ts       # Stripe integration
-│   └── paypal.service.ts       # PayPal integration
+│   ├── stripe.service.ts        # Stripe integration
+│   ├── paypal.service.ts        # PayPal integration
+│   ├── razorpay.service.ts      # Razorpay integration
+│   └── upi.service.ts           # UPI integration
 ├── delivery/
-│   ├── delivery.service.ts     # Delivery orchestration
-│   ├── email.service.ts        # Email delivery
-│   └── sms.service.ts          # SMS delivery
+│   ├── delivery.service.ts      # Delivery orchestration
+│   ├── email.service.ts         # Email delivery
+│   └── sms.service.ts           # SMS delivery
 └── ...
+```
+
+**Feature modules (modules/ for self-contained domain logic):**
+```
+modules/
+├── admin/
+├── analytics/
+├── auth/
+├── delivery/
+├── fraud/
+├── gift-cards/
+├── notifications/
+├── payments/
+├── payouts/
+├── redemptions/
+└── users/
 ```
 
 **Code Example:**
@@ -170,36 +192,45 @@ export class PaymentService {
 
 ### 3. Middleware Chain Pattern
 
-**Purpose:** Process requests through a chain of middleware functions
+**Purpose:** Process requests through a chain of middleware functions, configured centrally in `server/middleware.ts`.
 
 **Middleware Order:**
-1. CORS handling
-2. Security headers (Helmet)
-3. Compression
-4. Body parsing
-5. Session management
-6. CSRF token generation
-7. Request logging
-8. Rate limiting
-9. Authentication
-10. Authorization
-11. Validation
-12. Route handlers
-13. Error handling
+1. Health check (short-circuits before all other middleware)
+2. OPTIONS preflight handling
+3. CORS
+4. Security headers (Helmet + custom CSP/HSTS)
+5. Compression
+6. Cookie parser
+7. Session management (Redis-backed)
+8. Body parsing (JSON + URL-encoded)
+9. CSRF token attachment
+10. CSRF token validation (skipped for public endpoints & Bearer-authenticated requests)
+11. Request logging
+12. Rate limiting
+13. Route handlers (via module registry)
+14. Error handling
 
 **Code Example:**
 ```typescript
-// Middleware chain in app.ts
-app.use(cors(corsOptions));           // 1. CORS
-app.use(helmet());                    // 2. Security headers
-app.use(compression());               // 3. Compression
-app.use(cookieParser());              // 4. Cookies
-app.use(sessionMiddleware);           // 5. Sessions
-app.use(attachCSRFToken);            // 6. CSRF token
-app.use(requestLogger);               // 7. Logging
-app.use(apiRateLimiter);              // 8. Rate limiting
-app.use('/api/v1/gift-cards', authenticate); // 9. Auth
-app.use('/api/v1/gift-cards', authorize('MERCHANT')); // 10. Authorization
+// server/middleware.ts — configureMiddleware()
+app.use(cors(corsOptions));
+app.use(helmet({ ... }));
+app.use(removeServerHeaders);
+app.use(cspHeaders);
+app.use(hstsHeaders);
+app.use(compression());
+app.use(cookieParser());
+app.use(sessionMiddleware);
+app.use(express.json({ limit: '10mb' }));
+app.use(attachCSRFToken);   // CSRF token on all non-health routes
+app.use(validateCSRF);      // Skipped for public endpoints & Bearer tokens
+app.use(requestLogger);
+app.use(`/api/${env.API_VERSION}`, apiRateLimiter);
+
+// server/module-registry.ts — registerModules()
+for (const { path, router } of MODULE_ROUTES) {
+  app.use(path, router);    // All 27 routes registered here
+}
 ```
 
 **Interview Talking Points:**
@@ -210,30 +241,57 @@ app.use('/api/v1/gift-cards', authorize('MERCHANT')); // 10. Authorization
 
 ---
 
-### 4. Repository Pattern (via Prisma)
+### 4. Repository Pattern (Explicit Repository Files)
 
-**Purpose:** Abstract database access, provide type-safe queries
+**Purpose:** Abstract database access, provide type-safe queries, separate data access from business logic.
 
 **Implementation:**
-- Prisma Client acts as repository
-- Type-safe queries
-- Automatic query optimization
-- Connection pooling handled by Prisma
+- Each feature module has a dedicated `*.repository.ts` file
+- Repository files wrap Prisma queries and expose domain-specific methods
+- Services depend on repositories, not directly on Prisma
+- Type-safe queries via Prisma Client
+
+**Example:**
+```
+modules/
+├── gift-cards/
+│   ├── gift-card.repository.ts   # Database access methods
+│   └── gift-card.service.ts      # Business logic (uses repository)
+├── payments/
+│   ├── payment.repository.ts
+│   └── payment.service.ts
+```
 
 **Code Example:**
 ```typescript
-// Prisma as repository
-const giftCard = await prisma.giftCard.findUnique({
-  where: { id },
-  include: { merchant: true, template: true },
-});
+// gift-card.repository.ts
+export class GiftCardRepository {
+  async findById(id: string) {
+    return prisma.giftCard.findUnique({
+      where: { id },
+      include: { merchant: true, template: true },
+    });
+  }
+}
+
+// gift-card.service.ts
+export class GiftCardService {
+  constructor(private readonly repo: GiftCardRepository) {}
+
+  async getGiftCard(id: string) {
+    const card = await this.repo.findById(id);
+    if (!card) throw new NotFoundError('Gift card not found');
+    return card;
+  }
+}
 ```
 
 **Benefits:**
 - Type safety
 - Prevents SQL injection
-- Easy to test (can mock Prisma)
-- Consistent query interface
+- Easy to test (mock repository)
+- Clear separation between data and business logic
+- Consistent query interface per module
 
 ---
 
@@ -287,8 +345,25 @@ app/
 │   └── register/
 ├── (dashboard)/     # Route group
 │   └── dashboard/
+│       ├── gift-cards/
+│       ├── payments/
+│       ├── redemptions/
+│       ├── analytics/
+│       ├── payouts/
+│       └── admin/
 └── (public)/        # Route group
-    └── browse/
+    ├── browse/
+    ├── [slug]/
+    └── redeem/
+
+features/            # Feature-colocated modules (api, store, hooks, types)
+├── auth/
+├── gift-cards/
+├── payments/
+├── redemptions/
+├── analytics/
+├── admin/
+└── payouts/
 ```
 
 **Route Groups:** Organize routes without affecting URL structure
@@ -370,12 +445,16 @@ export function GiftCardForm() {
 
 **Library:** Zustand
 
-**Store Structure:**
+**Store Structure (feature-colocated):**
 ```
+features/
+├── auth/
+│   └── store/
+│       └── authStore.ts     # Authentication state (persisted to localStorage)
+└── ...
+
 store/
-├── authStore.ts         # Authentication state
-├── featureFlagStore.ts  # Feature flags
-└── themeStore.ts        # Theme (dark/light)
+└── authStore.ts             # Re-exports from features/auth/store
 ```
 
 **Why Zustand?**
@@ -592,33 +671,36 @@ CORS → Helmet → CSRF → Auth → Authorization → Validation → Handler
 
 ## Interview Questions & Answers
 
-### Q: Why did you choose a monolith over microservices?
+### Q: Why did you choose a modular monolith over microservices?
 
-**A:** Chose monolith because:
+**A:** Chose modular monolith because:
 1. **Team Size:** Small team, monolith easier to manage
-2. **Simplicity:** Easier development, testing, deployment
-3. **Performance:** No network overhead between services
-4. **Transactions:** Easier to maintain ACID across features
-5. **Current Scale:** Not at scale where microservices needed
+2. **Simplicity:** Single deployment, no inter-service networking
+3. **Performance:** No network overhead between features
+4. **Transactions:** Easy ACID transactions across module boundaries
+5. **Module Boundaries:** Feature modules enforce clear separation like microservices, without the complexity
+6. **Current Scale:** Not at scale where microservices are needed
 
-**Future:** Can split into microservices when:
+**Future:** Individual modules can be extracted into microservices when:
 - Team grows significantly
-- Clear service boundaries emerge
-- Different services need independent scaling
+- A specific module needs independent scaling
+- Clear, stable service boundaries emerge
 
 ### Q: Explain your backend architecture pattern.
 
-**A:** Using modified MVC pattern:
-- **Routes:** Define endpoints, apply middleware
-- **Controllers:** Handle HTTP, call services
-- **Services:** Business logic, database operations
-- **Database:** Prisma as repository layer
+**A:** Using a Modular Monolith with MVC-inspired layers:
+- **`server/middleware.ts`:** Centralized middleware chain configuration
+- **`server/module-registry.ts`:** All 27+ routes registered in one place
+- **`infrastructure/`:** Core singletons (Prisma, Redis, session, env)
+- **`modules/`:** Feature modules with self-contained logic
+- **Routes → Controllers → Services → Repositories → Prisma**
 
 Benefits:
 - Clear separation of concerns
 - Easy to test each layer
 - Reusable services
-- Maintainable codebase
+- Maintainable, scalable codebase
+- Module boundaries act like internal APIs
 
 ### Q: How does your multi-tenant architecture work?
 
@@ -722,14 +804,17 @@ sequenceDiagram
 
 ## Key Takeaways
 
-1. **Monolith chosen** for simplicity and current scale
-2. **MVC pattern** with service layer for organization
-3. **Multi-tenant** via data-level isolation
-4. **Queue system** for async operations
-5. **Stateless API** for horizontal scaling
-6. **RESTful design** for simplicity
-7. **Type-safe** with TypeScript and Prisma
-8. **Security** via defense in depth
+1. **Modular Monolith** — clear module boundaries without microservice complexity
+2. **Module Registry** — all routes registered centrally in `server/module-registry.ts`
+3. **Infrastructure layer** — core singletons (Prisma, Redis, session) isolated in `infrastructure/`
+4. **Explicit Repositories** — each module has a `*.repository.ts` separating data access
+5. **MVC pattern** with service layer for organization
+6. **Multi-tenant** via data-level isolation (`merchantId` on all tables)
+7. **Queue system** for async operations (BullMQ + Redis)
+8. **Stateless API** for horizontal scaling
+9. **RESTful design** for simplicity
+10. **Type-safe** with TypeScript, Prisma, and Zod
+11. **Security** via defense in depth
 
 ---
 

@@ -31,7 +31,7 @@ This document covers Next.js App Router structure, component architecture, state
 ```
 frontend/
 ├── src/
-│   ├── app/                    # Next.js App Router
+│   ├── app/                    # Next.js App Router (pages & layouts)
 │   │   ├── (auth)/            # Route group
 │   │   │   ├── login/
 │   │   │   └── register/
@@ -39,17 +39,39 @@ frontend/
 │   │   │   └── dashboard/
 │   │   │       ├── gift-cards/
 │   │   │       ├── payments/
-│   │   │       └── ...
+│   │   │       ├── redemptions/
+│   │   │       ├── analytics/
+│   │   │       ├── payouts/
+│   │   │       └── admin/
 │   │   └── (public)/         # Route group
-│   │       └── browse/
+│   │       ├── browse/
+│   │       ├── [slug]/
+│   │       └── redeem/
+│   ├── features/              # Feature-colocated modules (Phase 7)
+│   │   ├── auth/
+│   │   │   ├── api/           # API call functions
+│   │   │   ├── store/         # Zustand store
+│   │   │   ├── hooks/         # Custom hooks
+│   │   │   ├── types/         # TypeScript types
+│   │   │   └── index.ts       # Public exports
+│   │   ├── gift-cards/        # api/, hooks/, types/, index.ts
+│   │   ├── payments/
+│   │   ├── redemptions/
+│   │   ├── analytics/
+│   │   ├── admin/
+│   │   └── payouts/
 │   ├── components/            # Reusable components
-│   │   ├── ui/               # UI primitives
+│   │   ├── ui/               # UI primitives (Button, Card, Input…)
+│   │   ├── dashboard/         # Dashboard-specific components
+│   │   ├── forms/             # Form components
+│   │   ├── layout/            # Layout components
 │   │   └── ...
 │   ├── lib/                   # Utilities
-│   │   ├── api.ts            # API client
-│   │   ├── auth.ts           # Auth utilities
+│   │   ├── api.ts            # Axios client with interceptors
+│   │   ├── auth.ts           # Auth token utilities
 │   │   └── logger.ts         # Logging
-│   └── store/                 # State management
+│   ├── shared/                # Shared hooks, store, types, ui
+│   └── store/                 # Global Zustand state (re-exports from features/)
 │       └── authStore.ts
 ```
 
@@ -203,12 +225,18 @@ export function GiftCardForm() {
 - **Size:** Small bundle size (~1KB)
 - **No Provider:** No context provider needed
 
-**Store Structure:**
+**Store Structure (feature-colocated):**
 ```
+features/
+├── auth/
+│   └── store/
+│       └── authStore.ts        # Authentication state (persisted)
+├── gift-cards/
+│   └── store/                  # Gift card state (if needed)
+└── ...
+
 store/
-├── authStore.ts         # Authentication state
-├── featureFlagStore.ts  # Feature flags
-└── themeStore.ts        # Theme (dark/light)
+└── authStore.ts                # Re-exports from features/auth/store
 ```
 
 **Code Example:**
@@ -590,14 +618,15 @@ Benefits: Type-safe forms, runtime validation, minimal re-renders.
 
 ## Key Takeaways
 
-1. **Next.js App Router:** Server components, file-based routing
-2. **Component Architecture:** Reusable, composable components
-3. **State Management:** Zustand for global state
-4. **Form Handling:** React Hook Form + Zod
-5. **API Integration:** Axios with interceptors
-6. **Error Handling:** Error boundaries, try-catch
-7. **Loading States:** Loading indicators, Suspense
-8. **45+ Pages:** Well-organized route structure
+1. **Next.js App Router:** Server components, file-based routing, route groups
+2. **Feature Colocation:** `features/` directory — each feature owns its api/, store/, hooks/, types/
+3. **Component Architecture:** Reusable, composable components in `components/`
+4. **State Management:** Zustand stores colocated inside each feature module
+5. **Form Handling:** React Hook Form + Zod
+6. **API Integration:** Axios client with auth + CSRF interceptors in `lib/api.ts`
+7. **Error Handling:** Error boundaries, try-catch
+8. **Loading States:** Loading indicators, Suspense boundaries
+9. **37+ Pages:** Well-organized route structure across (auth), (dashboard), (public) groups
 
 ---
 

@@ -80,7 +80,7 @@ cd backend
 npm install
 npx prisma generate
 npx prisma migrate dev
-npm run dev  # Runs on port 8000
+npm run dev  # Runs on port 5000
 
 # 3. Setup frontend
 cd frontend
@@ -102,32 +102,57 @@ Visit http://localhost:3001
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/giftcard_db?schema=public"
 JWT_SECRET="your-secret-key-min-32-chars"
 JWT_REFRESH_SECRET="your-refresh-secret-min-32-chars"
-PORT=8000
+SESSION_SECRET="your-session-secret-min-32-chars"
+PORT=5000
+
+# CORS / URLs
+CORS_ORIGIN="http://localhost:3001"
+FRONTEND_URL="http://localhost:3001"
+BACKEND_URL="http://localhost:5000"
+
+# Redis
+REDIS_URL="redis://localhost:6379"
 
 # Optional - Payment Gateways
 STRIPE_SECRET_KEY="sk_test_..."
+STRIPE_PUBLISHABLE_KEY="pk_test_..."
+STRIPE_WEBHOOK_SECRET="whsec_..."
 PAYPAL_CLIENT_ID="..."
 PAYPAL_SECRET="..."
+PAYPAL_MODE="sandbox"        # sandbox | live
 RAZORPAY_KEY_ID="..."
 RAZORPAY_KEY_SECRET="..."
 
-# Optional - Email/SMS
+# Optional - Email
+EMAIL_SERVICE="sendgrid"     # sendgrid | brevo
 SENDGRID_API_KEY="..."
+BREVO_API_KEY="..."
+EMAIL_FROM="noreply@giftcard.com"
+EMAIL_FROM_NAME="Gift Card SaaS"
+
+# Optional - SMS
+SMS_SERVICE="twilio"         # twilio | brevo
 TWILIO_ACCOUNT_SID="..."
 TWILIO_AUTH_TOKEN="..."
 TWILIO_PHONE_NUMBER="..."
+BREVO_SMS_SENDER="..."
 
 # Optional - Storage
 AWS_ACCESS_KEY_ID="..."
 AWS_SECRET_ACCESS_KEY="..."
 AWS_S3_BUCKET="..."
+AWS_REGION="us-east-1"
+
+# Optional - Rate Limiting
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=1000
 ```
 
 Note: if you start via `./start.sh`, the script may automatically select different local ports (e.g. `5433`/`6380`) to avoid conflicts with other projects. In that case, update `DATABASE_URL` (and optionally `REDIS_URL`) to match the printed ports.
 
 #### Frontend (.env.local)
 ```env
-NEXT_PUBLIC_API_URL="http://localhost:8000/api/v1"
+NEXT_PUBLIC_API_URL="http://localhost:5000/api/v1"
 ```
 
 ### 3.2 Database Setup
@@ -155,7 +180,7 @@ openssl rand -base64 32
 ## 4. API Documentation
 
 ### Base URL
-`http://localhost:8000/api/v1`
+`http://localhost:5000/api/v1`
 
 ### Authentication
 Protected endpoints require Bearer token:
@@ -168,8 +193,30 @@ Authorization: Bearer <access_token>
 #### Authentication
 - `POST /auth/register` - Register new user
 - `POST /auth/login` - Login
+- `POST /auth/logout` - Logout
 - `POST /auth/refresh` - Refresh access token
 - `GET /auth/profile` - Get user profile
+- `PUT /auth/profile` - Update profile
+
+#### Two-Factor Authentication
+- `POST /auth/2fa/enable` - Enable 2FA
+- `POST /auth/2fa/verify` - Verify 2FA setup
+- `POST /auth/2fa/disable` - Disable 2FA
+- `POST /auth/2fa/validate` - Validate 2FA code on login
+
+#### Device Management
+- `GET /auth/devices` - List trusted devices
+- `DELETE /auth/devices/:id` - Remove trusted device
+
+#### Email & Password
+- `POST /email-verification/send` - Send verification email
+- `POST /email-verification/verify` - Verify email
+- `POST /password-reset/request` - Request password reset
+- `POST /password-reset/reset` - Reset password
+
+#### OTP
+- `POST /otp/send` - Send OTP
+- `POST /otp/verify` - Verify OTP
 
 #### Gift Cards
 - `GET /gift-cards` - List gift cards
@@ -180,15 +227,32 @@ Authorization: Bearer <access_token>
 - `POST /gift-cards/bulk` - Bulk create
 - `GET /gift-cards/:id/qr` - Get QR code
 
+#### Gift Card Share
+- `POST /gift-card-share` - Share a gift card
+- `GET /gift-card-share/:token` - Get shared gift card
+
+#### Gift Card Products
+- `GET /gift-card-products` - List products
+- `POST /gift-card-products` - Create product
+- `PUT /gift-card-products/:id` - Update product
+- `DELETE /gift-card-products/:id` - Delete product
+
 #### Payments
 - `POST /payments/create-intent` - Create payment intent
 - `POST /payments/confirm` - Confirm payment
 - `POST /payments/:id/refund` - Process refund
+- `GET /payments` - List payments
+
+#### Merchant Payment Gateways
+- `GET /merchant/payment-gateways` - List configured gateways
+- `POST /merchant/payment-gateways` - Add gateway config
+- `PUT /merchant/payment-gateways/:id` - Update gateway config
+- `DELETE /merchant/payment-gateways/:id` - Remove gateway config
 
 #### Redemptions
 - `POST /redemptions/validate` - Validate gift card code
 - `POST /redemptions/check-balance` - Check balance
-- `POST /redemptions/redeem` - Redeem (authenticated)
+- `POST /redemptions/redeem` - Redeem (authenticated merchant)
 - `POST /redemptions/redeem/qr` - Redeem via QR code
 - `POST /redemptions/redeem/:code` - Redeem via link (public)
 - `GET /redemptions/gift-card/:id/history` - Get redemption history
@@ -202,6 +266,33 @@ Authorization: Bearer <access_token>
 - `GET /analytics/sales` - Sales analytics
 - `GET /analytics/redemptions` - Redemption analytics
 - `GET /analytics/customers` - Customer analytics
+
+#### Breakage & Chargebacks
+- `GET /breakage` - Breakage analytics
+- `GET /chargebacks` - Chargeback records
+- `POST /chargebacks` - File chargeback
+
+#### Payouts
+- `GET /payouts` - List merchant payouts
+- `POST /payouts/request` - Request payout
+- `GET /admin/payouts` - Admin: list all payouts
+- `PUT /admin/payouts/:id` - Admin: approve/reject payout
+
+#### Upload
+- `POST /upload` - Upload file (templates, assets)
+
+#### Feature Flags
+- `GET /feature-flags` - Get feature flags
+- `PUT /feature-flags/:flag` - Toggle feature flag
+
+#### Admin
+- `GET /admin/communication-settings` - Get communication settings
+- `PUT /admin/communication-settings` - Update settings
+- `GET /admin/communication-logs` - Get communication logs
+- `GET /admin/audit-logs` - Get audit logs
+- `GET /admin/blacklist` - Get blacklisted IPs/devices
+- `POST /admin/blacklist` - Add to blacklist
+- `DELETE /admin/blacklist/:id` - Remove from blacklist
 
 ### Response Format
 
@@ -331,21 +422,58 @@ When a gift card is redeemed at a merchant:
 
 ```
 giftcard-saas/
-├── backend/              # Express.js API
+├── backend/                   # Express.js API (Modular Monolith)
 │   ├── src/
-│   │   ├── config/       # Configuration
-│   │   ├── controllers/  # Request handlers
-│   │   ├── services/     # Business logic
-│   │   ├── routes/       # API routes
-│   │   ├── middleware/   # Express middleware
-│   │   └── utils/        # Utilities
-│   └── prisma/           # Database schema
-├── frontend/             # Next.js app
+│   │   ├── infrastructure/    # Core singletons (database, redis, session, env)
+│   │   ├── server/            # App bootstrap
+│   │   │   ├── middleware.ts  # Middleware chain configuration
+│   │   │   └── module-registry.ts  # Centralized route registration
+│   │   ├── modules/           # Feature modules
+│   │   │   ├── admin/
+│   │   │   ├── analytics/
+│   │   │   ├── auth/
+│   │   │   ├── delivery/
+│   │   │   ├── fraud/
+│   │   │   ├── gift-cards/
+│   │   │   ├── notifications/
+│   │   │   ├── payments/
+│   │   │   ├── payouts/
+│   │   │   ├── redemptions/
+│   │   │   └── users/
+│   │   ├── config/            # App configuration
+│   │   ├── controllers/       # HTTP request handlers
+│   │   ├── services/          # Business logic services
+│   │   ├── routes/            # Route definitions
+│   │   ├── middleware/        # Express middleware
+│   │   ├── validators/        # Zod schema validators
+│   │   ├── shared/            # Shared utilities (cache, scheduler)
+│   │   ├── jobs/              # BullMQ job definitions
+│   │   ├── workers/           # BullMQ workers
+│   │   ├── types/             # TypeScript types
+│   │   ├── utils/             # Utility functions
+│   │   └── constants/         # App constants
+│   └── prisma/                # Database schema & migrations
+├── frontend/                  # Next.js 14 App Router
 │   └── src/
-│       ├── app/          # Pages (App Router)
-│       ├── components/   # React components
-│       └── lib/          # Utilities
-└── docker-compose.yml    # Docker services
+│       ├── app/               # Pages & layouts (App Router)
+│       │   ├── (auth)/        # Auth route group
+│       │   ├── (dashboard)/   # Dashboard route group
+│       │   └── (public)/      # Public route group
+│       ├── features/          # Feature-colocated modules
+│       │   ├── auth/          # api/, store/, hooks/, types/
+│       │   ├── gift-cards/
+│       │   ├── payments/
+│       │   ├── redemptions/
+│       │   ├── analytics/
+│       │   ├── admin/
+│       │   └── payouts/
+│       ├── components/        # Reusable React components
+│       │   ├── ui/            # UI primitives (Button, Card, Input…)
+│       │   └── ...
+│       ├── lib/               # Utilities (api client, auth, logger)
+│       ├── shared/            # Shared hooks, types, store
+│       └── store/             # Global Zustand state
+└── docker-compose.yml         # Docker services (PostgreSQL + Redis)
 ```
 
 ### Tech Stack
@@ -374,30 +502,55 @@ giftcard-saas/
 - `DATABASE_URL` - PostgreSQL connection string
 - `JWT_SECRET` - JWT signing secret (min 32 chars)
 - `JWT_REFRESH_SECRET` - Refresh token secret (min 32 chars)
-- `PORT` - Server port (default: 8000)
+- `SESSION_SECRET` - Session signing secret (min 32 chars)
+- `PORT` - Server port (default: 5000)
 
 **Frontend:**
-- `NEXT_PUBLIC_API_URL` - Backend API URL
+- `NEXT_PUBLIC_API_URL` - Backend API URL (e.g. `http://localhost:5000/api/v1`)
 
 ### Optional Variables
 
+**CORS / URLs:**
+- `CORS_ORIGIN` - Allowed frontend origin (default: `http://localhost:3001`)
+- `FRONTEND_URL` - Frontend base URL
+- `BACKEND_URL` - Backend base URL
+
+**Redis:**
+- `REDIS_URL` - Redis connection URL (default: `redis://localhost:6379`)
+
 **Payment Gateways:**
 - `STRIPE_SECRET_KEY` - Stripe secret key
+- `STRIPE_PUBLISHABLE_KEY` - Stripe publishable key
+- `STRIPE_WEBHOOK_SECRET` - Stripe webhook signing secret
 - `PAYPAL_CLIENT_ID` - PayPal client ID
 - `PAYPAL_SECRET` - PayPal secret
+- `PAYPAL_MODE` - `sandbox` or `live` (default: `sandbox`)
 - `RAZORPAY_KEY_ID` - Razorpay key ID
 - `RAZORPAY_KEY_SECRET` - Razorpay secret
 
-**Email/SMS:**
+**Email:**
+- `EMAIL_SERVICE` - `sendgrid` or `brevo` (default: `sendgrid`)
 - `SENDGRID_API_KEY` - SendGrid API key
+- `BREVO_API_KEY` - Brevo (Sendinblue) API key
+- `EMAIL_FROM` - Sender email address
+- `EMAIL_FROM_NAME` - Sender display name
+
+**SMS:**
+- `SMS_SERVICE` - `twilio` or `brevo` (default: `twilio`)
 - `TWILIO_ACCOUNT_SID` - Twilio account SID
 - `TWILIO_AUTH_TOKEN` - Twilio auth token
 - `TWILIO_PHONE_NUMBER` - Twilio phone number
+- `BREVO_SMS_SENDER` - Brevo SMS sender name
 
 **Storage:**
 - `AWS_ACCESS_KEY_ID` - AWS access key
 - `AWS_SECRET_ACCESS_KEY` - AWS secret key
 - `AWS_S3_BUCKET` - S3 bucket name
+- `AWS_REGION` - AWS region (default: `us-east-1`)
+
+**Rate Limiting:**
+- `RATE_LIMIT_WINDOW_MS` - Rate limit window in ms (default: `900000`)
+- `RATE_LIMIT_MAX_REQUESTS` - Max requests per window (default: `1000`)
 
 ---
 
@@ -460,6 +613,6 @@ npm run lint         # Run linter
 
 ---
 
-**Last Updated**: 2024
+**Last Updated**: 2026-03-18
 **Version**: 1.0.0
 
