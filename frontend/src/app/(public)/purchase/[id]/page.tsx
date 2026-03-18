@@ -5,7 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import api from '@/lib/api';
+import { fetchGiftCardById } from '@/features/gift-cards';
+import { createPaymentIntent } from '@/features/payments';
 import { formatCurrency } from '@/lib/utils';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -54,8 +55,8 @@ export default function PurchasePage() {
 
   const fetchGiftCard = async () => {
     try {
-      const response = await api.get(`/gift-cards/${giftCardId}`);
-      setGiftCard(response.data.data);
+      const giftCardData = await fetchGiftCardById(giftCardId);
+      setGiftCard(giftCardData);
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Gift card not found');
     } finally {
@@ -69,25 +70,25 @@ export default function PurchasePage() {
       setError('');
 
       // Create payment intent
-      const paymentResponse = await api.post('/payments/create-intent', {
+      const paymentData = await createPaymentIntent({
         giftCardId,
         amount: Number(giftCard.value),
         currency: giftCard.currency,
         paymentMethod: data.paymentMethod,
         returnUrl: `${window.location.origin}/purchase/${giftCardId}/success`,
         cancelUrl: `${window.location.origin}/purchase/${giftCardId}`,
-      });
+      }) as any;
 
-      setPaymentIntent(paymentResponse.data.data);
+      setPaymentIntent(paymentData);
 
       // Handle different payment methods
-      if (data.paymentMethod === 'STRIPE' && paymentResponse.data.data.clientSecret) {
+      if (data.paymentMethod === 'STRIPE' && paymentData.clientSecret) {
         // Redirect to Stripe checkout or handle client-side
         // For now, we'll show a message
-        router.push(`/purchase/${giftCardId}/payment?intent=${paymentResponse.data.data.payment.paymentIntentId}`);
-      } else if (data.paymentMethod === 'PAYPAL' && paymentResponse.data.data.orderId) {
+        router.push(`/purchase/${giftCardId}/payment?intent=${paymentData.payment.paymentIntentId}`);
+      } else if (data.paymentMethod === 'PAYPAL' && paymentData.orderId) {
         // Redirect to PayPal
-        const approvalUrl = paymentResponse.data.data.links?.find(
+        const approvalUrl = paymentData.links?.find(
           (link: any) => link.rel === 'approve'
         )?.href;
         if (approvalUrl) {
@@ -95,7 +96,7 @@ export default function PurchasePage() {
         }
       } else if (data.paymentMethod === 'RAZORPAY') {
         // Handle Razorpay payment
-        router.push(`/purchase/${giftCardId}/payment?orderId=${paymentResponse.data.data.orderId}`);
+        router.push(`/purchase/${giftCardId}/payment?orderId=${paymentData.orderId}`);
       }
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Payment initialization failed');

@@ -85,7 +85,7 @@ export function GiftCardShare({ giftCardId, onClose }: GiftCardShareProps) {
       await navigator.clipboard.writeText(shareData.shareUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
+    } catch {
       setError('Failed to copy link');
     }
   };

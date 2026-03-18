@@ -1,10 +1,16 @@
 import { Decimal } from '@prisma/client/runtime/library';
-import prisma from '../config/database';
 import { ValidationError } from '../utils/errors';
 import logger from '../utils/logger';
 import { PaymentMethod } from '@prisma/client';
 import blacklistService from './blacklist.service';
 import ipTrackingService from './ip-tracking.service';
+import { GiftCardRepository } from '../modules/gift-cards/gift-card.repository';
+import { PaymentRepository } from '../modules/payments/payment.repository';
+import { RedemptionRepository } from '../modules/redemptions/redemption.repository';
+
+const giftCardRepository = new GiftCardRepository();
+const paymentRepository = new PaymentRepository();
+const redemptionRepository = new RedemptionRepository();
 
 export interface VelocityLimitConfig {
   maxGiftCardsPerUserPerDay: number;
@@ -63,14 +69,9 @@ export class FraudPreventionService {
     }
 
     // Check user's gift cards created today
-    const userGiftCardsToday = await prisma.giftCard.count({
-      where: {
-        merchantId: userId,
-        createdAt: {
-          gte: startOfDay,
-          lte: endOfDay,
-        },
-      },
+    const userGiftCardsToday = await giftCardRepository.count({
+      merchantId: userId,
+      createdAt: { gte: startOfDay, lte: endOfDay },
     });
 
     if (userGiftCardsToday >= this.velocityLimits.maxGiftCardsPerUserPerDay) {
@@ -83,19 +84,10 @@ export class FraudPreventionService {
     }
 
     // Check user's total value today
-    const userPaymentsToday = await prisma.payment.findMany({
-      where: {
-        customerId: userId,
-        createdAt: {
-          gte: startOfDay,
-          lte: endOfDay,
-        },
-        status: 'COMPLETED',
-      },
-      select: {
-        amount: true,
-        currency: true,
-      },
+    const userPaymentsToday = await paymentRepository.findPaymentAmountsByCriteria({
+      customerId: userId,
+      createdAt: { gte: startOfDay, lte: endOfDay },
+      status: 'COMPLETED',
     });
 
     let totalValueToday = 0;
@@ -151,18 +143,10 @@ export class FraudPreventionService {
     const amountInUSD = await this.convertToUSD(amount, currency);
 
     // Check for multiple high-value cards in short time (3+ cards > $1,000 within 1 hour)
-    const recentHighValuePayments = await prisma.payment.findMany({
-      where: {
-        customerId: userId,
-        createdAt: {
-          gte: oneHourAgo,
-        },
-        status: 'COMPLETED',
-      },
-      select: {
-        amount: true,
-        currency: true,
-      },
+    const recentHighValuePayments = await paymentRepository.findPaymentAmountsByCriteria({
+      customerId: userId,
+      createdAt: { gte: oneHourAgo },
+      status: 'COMPLETED',
     });
 
     let highValueCount = 0;
@@ -246,18 +230,10 @@ export class FraudPreventionService {
     paymentMethod: PaymentMethod
   ): Promise<FraudCheckResult> {
     // Check if same payment method used across multiple accounts recently
-    const recentPayments = await prisma.payment.findMany({
-      where: {
-        paymentMethod,
-        createdAt: {
-          gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24 hours
-        },
-      },
-      select: {
-        customerId: true,
-      },
-      distinct: ['customerId'],
-    });
+    const recentPayments = await paymentRepository.findDistinctCustomersByPaymentMethod(
+      paymentMethod,
+      new Date(Date.now() - 24 * 60 * 60 * 1000)
+    );
 
     if (recentPayments.length > 3) {
       return {
@@ -282,19 +258,7 @@ export class FraudPreventionService {
     giftCardId: string,
     merchantId: string
   ): Promise<FraudCheckResult> {
-    const giftCard = await prisma.giftCard.findUnique({
-      where: { id: giftCardId },
-      include: {
-        payments: {
-          where: { status: 'COMPLETED' },
-          orderBy: { createdAt: 'desc' },
-          take: 1,
-        },
-        redemptions: {
-          orderBy: { createdAt: 'desc' },
-        },
-      },
-    });
+    const giftCard = await giftCardRepository.findByIdWithPaymentsAndRedemptions(giftCardId);
 
     if (!giftCard) {
       throw new ValidationError('Gift card not found');
@@ -318,13 +282,9 @@ export class FraudPreventionService {
     }
 
     // Check for multiple redemptions from same merchant in short time
-    const recentRedemptions = await prisma.redemption.count({
-      where: {
-        merchantId,
-        createdAt: {
-          gte: new Date(Date.now() - 60 * 60 * 1000), // Last hour
-        },
-      },
+    const recentRedemptions = await redemptionRepository.count({
+      merchantId,
+      createdAt: { gte: new Date(Date.now() - 60 * 60 * 1000) },
     });
 
     if (recentRedemptions > 10) {

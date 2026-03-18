@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { FilterBar } from '@/components/dashboard/FilterBar';
-import api from '@/lib/api';
+import { fetchGiftCards as fetchGiftCardsApi, deleteGiftCard } from '@/features/gift-cards';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
 import { FeatureFlagGuard } from '@/components/FeatureFlagGuard';
@@ -71,8 +71,8 @@ export default function GiftCardsPage() {
         params.search = filters.search;
       }
 
-      const response = await api.get('/gift-cards', { params });
-      setGiftCards(response.data.data || []);
+      const result = await fetchGiftCardsApi(params);
+      setGiftCards((result.data || []) as unknown as GiftCard[]);
     } catch (error) {
       logger.error('Failed to fetch gift cards', { error });
     } finally {
@@ -84,7 +84,7 @@ export default function GiftCardsPage() {
     if (!confirm('Are you sure you want to delete this gift card?')) return;
 
     try {
-      await api.delete(`/gift-cards/${id}`);
+      await deleteGiftCard(id);
       fetchGiftCards();
     } catch (error) {
       logger.error('Failed to delete gift card', { error });

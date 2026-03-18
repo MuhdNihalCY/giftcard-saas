@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import api from '@/lib/api';
+import { fetchGiftCardById, updateGiftCard } from '@/features/gift-cards';
 import logger from '@/lib/logger';
 
 const giftCardSchema = z.object({
@@ -42,15 +42,14 @@ export default function EditGiftCardPage() {
 
   const fetchGiftCard = async () => {
     try {
-      const response = await api.get(`/gift-cards/${params.id}`);
-      const giftCard = response.data.data;
-      
+      const giftCard = await fetchGiftCardById(params.id as string);
+
       reset({
         value: giftCard.value,
         expiryDate: giftCard.expiryDate
           ? new Date(giftCard.expiryDate).toISOString().split('T')[0]
           : undefined,
-        customMessage: giftCard.customMessage || '',
+        customMessage: (giftCard as any).customMessage || '',
         allowPartialRedemption: giftCard.allowPartialRedemption,
       });
     } catch (error) {
@@ -72,7 +71,7 @@ export default function EditGiftCardPage() {
         expiryDate: data.expiryDate ? new Date(data.expiryDate).toISOString() : undefined,
       };
 
-      await api.put(`/gift-cards/${params.id}`, payload);
+      await updateGiftCard(params.id as string, payload);
       router.push(`/dashboard/gift-cards/${params.id}`);
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to update gift card');

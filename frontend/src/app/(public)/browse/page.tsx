@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import api from '@/lib/api';
+import { fetchPublicGiftCardProducts } from '@/features/gift-cards';
 import { Navigation } from '@/components/Navigation';
 import { GiftCardSkeleton } from '@/components/ui/Skeleton';
 import { ProductCard } from '@/components/ProductCard';
@@ -47,10 +47,8 @@ function BrowsePageContent() {
 
   const fetchProducts = async () => {
     try {
-      const response = await api.get('/gift-card-products/public', {
-        params: { isActive: true },
-      });
-      setProducts(response.data.data || []);
+      const data = await fetchPublicGiftCardProducts({ isActive: true }) as GiftCardProduct[];
+      setProducts(data);
     } catch (error) {
       logger.error('Failed to fetch products', { error });
     } finally {
@@ -92,20 +90,22 @@ function BrowsePageContent() {
       case 'name-desc':
         filtered.sort((a, b) => b.name.localeCompare(a.name));
         break;
-      case 'price-asc':
+      case 'price-asc': {
         const getMinPrice = (p: GiftCardProduct) => {
           if (p.fixedAmounts && p.fixedAmounts.length > 0) return Math.min(...p.fixedAmounts);
           return p.minAmount || 0;
         };
         filtered.sort((a, b) => getMinPrice(a) - getMinPrice(b));
         break;
-      case 'price-desc':
+      }
+      case 'price-desc': {
         const getMaxPrice = (p: GiftCardProduct) => {
           if (p.fixedAmounts && p.fixedAmounts.length > 0) return Math.max(...p.fixedAmounts);
           return p.maxAmount || p.minAmount || 0;
         };
         filtered.sort((a, b) => getMaxPrice(b) - getMaxPrice(a));
         break;
+      }
       default:
         break;
     }

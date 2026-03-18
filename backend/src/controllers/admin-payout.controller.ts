@@ -1,8 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import payoutService from '../services/payout.service';
-import prisma from '../config/database';
 import { PayoutStatus } from '@prisma/client';
+import { PayoutRepository } from '../modules/payouts/payout.repository';
+
+const payoutRepository = new PayoutRepository();
 
 export class AdminPayoutController {
   /**
@@ -34,48 +36,15 @@ export class AdminPayoutController {
    */
   async getPayoutStats(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const [totalPayouts, totalAmount, byStatus, recentPayouts] = await Promise.all([
-        prisma.payout.count(),
-        prisma.payout.aggregate({
-          _sum: {
-            amount: true,
-          },
-          where: {
-            status: PayoutStatus.COMPLETED,
-          },
-        }),
-        prisma.payout.groupBy({
-          by: ['status'],
-          _count: {
-            id: true,
-          },
-          _sum: {
-            amount: true,
-          },
-        }),
-        prisma.payout.findMany({
-          take: 10,
-          orderBy: {
-            createdAt: 'desc',
-          },
-          include: {
-            merchant: {
-              select: {
-                id: true,
-                email: true,
-                businessName: true,
-              },
-            },
-          },
-        }),
-      ]);
+      const { totalPayouts, totalAmount, byStatus, recentPayouts } =
+        await payoutRepository.getPayoutStats();
 
       res.json({
         success: true,
         data: {
           totalPayouts,
           totalAmount: Number(totalAmount._sum.amount || 0),
-          byStatus: byStatus.map((s) => ({
+          byStatus: (byStatus as any[]).map((s: any) => ({
             status: s.status,
             count: s._count.id,
             amount: Number(s._sum.amount || 0),

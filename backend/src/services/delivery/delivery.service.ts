@@ -1,9 +1,11 @@
-import prisma from '../../config/database';
 import emailService from './email.service';
 import smsService from './sms.service';
 import giftCardService from '../giftcard.service';
 import { env } from '../../config/env';
 import { ValidationError } from '../../utils/errors';
+import { GiftCardRepository } from '../../modules/gift-cards/gift-card.repository';
+
+const giftCardRepository = new GiftCardRepository();
 
 export interface DeliveryOptions {
   giftCardId: string;
@@ -144,12 +146,9 @@ export class DeliveryService {
 
     // Update gift card with recipient info if provided
     if (recipientEmail || recipientName) {
-      await prisma.giftCard.update({
-        where: { id: giftCardId },
-        data: {
-          recipientEmail: recipientEmail || giftCard.recipientEmail,
-          recipientName: recipientName || giftCard.recipientName,
-        },
+      await giftCardRepository.update(giftCardId, {
+        recipientEmail: recipientEmail || giftCard.recipientEmail,
+        recipientName: recipientName || giftCard.recipientName,
       });
     }
 

@@ -7,7 +7,7 @@ import { DataTable, Column } from '@/components/ui/DataTable';
 import { FilterBar } from '@/components/dashboard/FilterBar';
 import { Badge } from '@/components/ui/Badge';
 import { useAuthStore } from '@/store/authStore';
-import api from '@/lib/api';
+import { fetchRedemptions as fetchRedemptionsApi } from '@/features/redemptions';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import logger from '@/lib/logger';
 import { FileText, Download } from 'lucide-react';
@@ -82,11 +82,11 @@ export default function RedemptionsPage() {
         params.sortOrder = sortDirection;
       }
 
-      const response = await api.get('/redemptions', { params });
-      setRedemptions(response.data.data || []);
+      const result = await fetchRedemptionsApi(params);
+      setRedemptions(result.data || []);
       setPagination((prev) => ({
         ...prev,
-        total: response.data.pagination?.total || response.data.data?.length || 0,
+        total: result.pagination?.total || result.data?.length || 0,
       }));
     } catch (error) {
       logger.error('Failed to fetch redemptions', { error });
@@ -264,7 +264,7 @@ export default function RedemptionsPage() {
             exportable
             onExport={handleExport}
             emptyMessage="No redemptions found"
-            onRowClick={(row) => {
+            onRowClick={(_row) => {
               // Could navigate to redemption detail
             }}
           />

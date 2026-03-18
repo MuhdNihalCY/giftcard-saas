@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { TemplateEditor } from '@/components/TemplateEditor';
-import api from '@/lib/api';
+import { createGiftCardTemplate } from '@/features/gift-cards';
 import type { TemplateDesignData } from '@/lib/template-design';
 import { TEMPLATE_PRESETS } from '@/lib/template-presets';
 
@@ -72,7 +72,7 @@ export default function CreateTemplatePage() {
         designData,
       };
 
-      await api.post('/gift-cards/templates', payload);
+      await createGiftCardTemplate(payload as Record<string, unknown>);
       router.push('/dashboard/templates');
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to create template');

@@ -18,6 +18,16 @@ module.exports = {
   },
   ignorePatterns: ['.eslintrc.js', 'dist', 'node_modules', 'prisma'],
   rules: {
+    // Enforce repository pattern: only *.repository.ts may import prisma directly
+    'no-restricted-imports': ['error', {
+      patterns: [
+        {
+          group: ['**/infrastructure/database', '**/config/database'],
+          message: 'Direct prisma imports are only allowed in *.repository.ts files. Use a repository instead.',
+        },
+      ],
+    }],
+
     // TypeScript specific rules
     '@typescript-eslint/no-explicit-any': 'error',
     '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
@@ -46,6 +56,28 @@ module.exports = {
       memberSyntaxSortOrder: ['none', 'all', 'multiple', 'single'],
     }],
   },
+  overrides: [
+    {
+      // Repository files are the only place allowed to import prisma directly
+      files: [
+        '**/*.repository.ts',
+        '**/infrastructure/*.ts',
+        '**/server/*.ts',
+        '**/app.ts',
+        '**/jobs/*.ts',
+        // health controller needs raw DB queries for connection checks
+        '**/controllers/health.controller.ts',
+        // device controller references a non-existent schema model (pre-existing issue)
+        '**/controllers/device.controller.ts',
+        // these services reference non-existent Prisma models (pre-existing issue)
+        '**/services/ip-tracking.service.ts',
+        '**/services/chargeback.service.ts',
+      ],
+      rules: {
+        'no-restricted-imports': 'off',
+      },
+    },
+  ],
 };
 
 

@@ -7,7 +7,8 @@ import { z } from 'zod';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import api from '@/lib/api';
+import { validateGiftCardForRedemption, redeemGiftCardQR } from '@/features/redemptions';
+import { fetchGiftCardByShareToken } from '@/features/gift-cards';
 import { formatCurrency } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
 import QRCode from 'react-qr-code';
@@ -50,8 +51,8 @@ export default function RedeemPage() {
       setError('');
       setGiftCard(null);
 
-      const response = await api.post('/redemptions/validate', { code });
-      const giftCardData = response.data.data.giftCard;
+      const validationResult = await validateGiftCardForRedemption({ code }) as any;
+      const giftCardData = validationResult.giftCard;
       setGiftCard(giftCardData);
 
       // Set default amount to full balance
@@ -90,9 +91,8 @@ export default function RedeemPage() {
   const handleNFCScan = async (data: { shareToken: string; url: string }) => {
     try {
       // Fetch gift card by share token
-      const response = await api.get(`/gift-card-share/token/${data.shareToken}`);
-      const giftCardData = response.data.data.giftCard;
-      
+      const giftCardData = await fetchGiftCardByShareToken(data.shareToken) as any;
+
       // Set gift card and populate form
       setGiftCard(giftCardData);
       setValue('amount', giftCardData.balance);
@@ -127,15 +127,15 @@ export default function RedeemPage() {
       // Redeem via QR code if we have the data
       // Merchant ID is automatically taken from authenticated user (via auth middleware)
       // Do NOT send merchantId in the body - it comes from the authenticated user
-      const response = await api.post('/redemptions/redeem/qr', {
+      const redeemResult = await redeemGiftCardQR({
         qrData: qrData || JSON.stringify({ code: data.code }),
         amount: data.amount,
         location: data.location || undefined,
         notes: data.notes || undefined,
-      });
+      }) as any;
 
       setSuccess(
-        `Successfully redeemed ${formatCurrency(data.amount, giftCard.currency)}! New balance: ${formatCurrency(response.data.data.remainingBalance, giftCard.currency)}`
+        `Successfully redeemed ${formatCurrency(data.amount, giftCard.currency)}! New balance: ${formatCurrency(redeemResult.remainingBalance, giftCard.currency)}`
       );
 
       // Refresh gift card data
@@ -266,7 +266,7 @@ export default function RedeemPage() {
           <CardContent>
             <div className="space-y-6">
               <div>
-                <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-3">Scan Customer's QR Code</h4>
+                <h4 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-3">Scan Customer&apos;s QR Code</h4>
                 <QRCodeScanner
                   onScanSuccess={handleQRScan}
                   onError={(error) => setError(error)}
@@ -312,10 +312,10 @@ export default function RedeemPage() {
               <div className="p-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-500/30 rounded-lg">
                 <h4 className="font-serif font-semibold text-slate-900 dark:text-slate-100 mb-3">How to Redeem:</h4>
                 <ol className="list-decimal list-inside space-y-2 text-sm text-slate-700 dark:text-slate-300">
-                  <li>Click "Start Scanner" and scan the customer's QR code, OR enter the gift card code manually</li>
-                  <li>If scanning, the gift card will be validated automatically. If entering manually, click "Validate Gift Card"</li>
+                  <li>Click &quot;Start Scanner&quot; and scan the customer&apos;s QR code, OR enter the gift card code manually</li>
+                  <li>If scanning, the gift card will be validated automatically. If entering manually, click &quot;Validate Gift Card&quot;</li>
                   <li>Enter redemption amount</li>
-                  <li>Click "Redeem Gift Card"</li>
+                  <li>Click &quot;Redeem Gift Card&quot;</li>
                   <li>Balance will be deducted automatically</li>
                 </ol>
               </div>

@@ -1,15 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { Card, CardContent } from '@/components/ui/Card';
-import api from '@/lib/api';
 import axios from 'axios';
+import { login as authLogin, register as authRegister, verify2FA, verify2FABackup } from '@/features/auth';
 import { useAuthStore } from '@/store/authStore';
 import logger from '@/lib/logger';
 import { Eye, EyeOff, Sparkles, Shield, Zap, ArrowRight, Gift, Lock, CheckCircle2 } from 'lucide-react';
@@ -37,7 +36,7 @@ const registerSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 type RegisterFormData = z.infer<typeof registerSchema>;
 
-export default function AuthPage() {
+function AuthPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { setUser, isAuthenticated, checkAuth, setTokens } = useAuthStore();
@@ -150,16 +149,16 @@ export default function AuthPage() {
       setIsLoginLoading(true);
       setLoginError('');
 
-      const response = await api.post('/auth/login', data);
-      
-      if (response.data.data.requires2FA) {
+      const result = await authLogin(data);
+
+      if ((result as any).requires2FA) {
         setRequires2FA(true);
         setLoginData(data);
         setIsLoginLoading(false);
         return;
       }
 
-      const { user, accessToken, refreshToken } = response.data.data;
+      const { user, accessToken, refreshToken } = result as any;
 
       if (typeof window !== 'undefined') {
         localStorage.setItem('accessToken', accessToken);
@@ -195,8 +194,8 @@ export default function AuthPage() {
       setIsRegisterLoading(true);
       setRegisterError('');
 
-      const response = await api.post('/auth/register', data);
-      const { user, accessToken, refreshToken } = response.data.data;
+      const result = await authRegister(data);
+      const { user, accessToken, refreshToken } = result as any;
 
       const { setTokens } = useAuthStore.getState();
       setTokens(accessToken, refreshToken);
@@ -221,22 +220,22 @@ export default function AuthPage() {
       setIsLoginLoading(true);
       setLoginError('');
 
-      let response;
+      let result;
       if (useBackupCode) {
-        response = await api.post('/auth/2fa/verify-backup', {
+        result = await verify2FABackup({
           email: loginData.email,
           password: loginData.password,
           backupCode: backupCode,
         });
       } else {
-        response = await api.post('/auth/2fa/verify', {
+        result = await verify2FA({
           email: loginData.email,
           password: loginData.password,
           token: twoFactorToken,
         });
       }
 
-      const { user, accessToken, refreshToken } = response.data.data;
+      const { user, accessToken, refreshToken } = result as any;
 
       if (typeof window !== 'undefined') {
         localStorage.setItem('accessToken', accessToken);
@@ -516,7 +515,7 @@ export default function AuthPage() {
                             onClick={() => setMode('register')}
                             className="text-sm text-slate-600 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors font-medium"
                           >
-                            Don't have an account? <span className="text-cyan-600 dark:text-cyan-400">Sign up</span>
+                            Don&apos;t have an account? <span className="text-cyan-600 dark:text-cyan-400">Sign up</span>
                           </button>
                         </div>
                       </form>
@@ -737,5 +736,13 @@ export default function AuthPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center"><div className="text-white">Loading...</div></div>}>
+      <AuthPageContent />
+    </Suspense>
   );
 }

@@ -5,7 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { MetricCard } from '@/components/dashboard/MetricCard';
 import { ChartContainer } from '@/components/dashboard/ChartContainer';
 import { useAuthStore } from '@/store/authStore';
-import api from '@/lib/api';
+import { fetchGiftCards } from '@/features/gift-cards';
+import { fetchPayments } from '@/features/payments';
+import { fetchRedemptions } from '@/features/redemptions';
+import { fetchSalesAnalytics, fetchRedemptionAnalytics, fetchCustomerAnalytics, fetchGiftCardAnalytics } from '@/features/analytics';
 import { formatCurrency } from '@/lib/utils';
 import logger from '@/lib/logger';
 import Link from 'next/link';
@@ -60,26 +63,26 @@ export default function DashboardPage() {
 
       // Fetch all data in parallel
       const [
-        giftCardsRes,
-        paymentsRes,
-        redemptionsRes,
+        giftCardsResult,
+        paymentsResult,
+        redemptionsResult,
         salesAnalytics,
         redemptionAnalytics,
         customerAnalytics,
         giftCardStats,
       ] = await Promise.all([
-        api.get('/gift-cards', { params: { limit: 100, merchantId } }),
-        api.get('/payments', { params: { status: 'COMPLETED', limit: 100 } }),
-        api.get('/redemptions', { params: { limit: 20 } }),
-        api.get('/analytics/sales', { params: { merchantId } }),
-        api.get('/analytics/redemptions', { params: { merchantId } }),
-        api.get('/analytics/customers', { params: { merchantId } }),
-        api.get('/analytics/gift-cards', { params: { merchantId } }),
+        fetchGiftCards({ limit: 100, merchantId } as any),
+        fetchPayments({ status: 'COMPLETED', limit: 100 } as any),
+        fetchRedemptions({ limit: 20 } as any),
+        fetchSalesAnalytics({ merchantId }),
+        fetchRedemptionAnalytics({ merchantId }),
+        fetchCustomerAnalytics({ merchantId }),
+        fetchGiftCardAnalytics({ merchantId }),
       ]);
 
-      const giftCards = giftCardsRes.data.data || [];
-      const payments = paymentsRes.data.data || [];
-      const redemptions = redemptionsRes.data.data || [];
+      const giftCards = giftCardsResult.data || [];
+      const payments = paymentsResult.data || [];
+      const redemptions = redemptionsResult.data || [];
 
       // Calculate stats
       const totalRevenue = payments.reduce(
@@ -102,10 +105,10 @@ export default function DashboardPage() {
       });
 
       setAnalytics({
-        sales: salesAnalytics.data.data,
-        redemptions: redemptionAnalytics.data.data,
-        customers: customerAnalytics.data.data,
-        giftCards: giftCardStats.data.data,
+        sales: salesAnalytics,
+        redemptions: redemptionAnalytics,
+        customers: customerAnalytics,
+        giftCards: giftCardStats,
       });
 
       // Prepare recent activity

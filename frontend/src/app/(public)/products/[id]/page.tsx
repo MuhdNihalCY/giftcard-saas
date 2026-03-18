@@ -5,7 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import api from '@/lib/api';
+import { fetchGiftCardProductById } from '@/features/gift-cards';
+import { createPaymentFromProduct } from '@/features/payments';
 import { formatCurrency } from '@/lib/utils';
 import { useForm } from 'react-hook-form';
 import { useAuthStore } from '@/store/authStore';
@@ -101,13 +102,13 @@ export default function ProductDetailPage() {
 
   const fetchProduct = async () => {
     try {
-      const response = await api.get(`/gift-card-products/${productId}`);
-      setProduct(response.data.data);
+      const productData = await fetchGiftCardProductById(productId);
+      setProduct(productData);
       // Set default amount
-      if (response.data.data.fixedAmounts && response.data.data.fixedAmounts.length > 0) {
-        setSelectedAmount(response.data.data.fixedAmounts[0]);
-      } else if (response.data.data.minAmount) {
-        setSelectedAmount(Number(response.data.data.minAmount));
+      if (productData.fixedAmounts && productData.fixedAmounts.length > 0) {
+        setSelectedAmount(productData.fixedAmounts[0]);
+      } else if (productData.minAmount) {
+        setSelectedAmount(Number(productData.minAmount));
       }
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Product not found');
@@ -142,7 +143,7 @@ export default function ProductDetailPage() {
       }
 
       // Create payment from product
-      const paymentResponse = await api.post('/payments/from-product', {
+      const paymentData = await createPaymentFromProduct({
         productId: product.id,
         amount: data.amount,
         currency: product.currency,
@@ -152,9 +153,7 @@ export default function ProductDetailPage() {
         customMessage: data.customMessage,
         returnUrl: `${window.location.origin}/purchase/${productId}/success`,
         cancelUrl: `${window.location.origin}/products/${productId}`,
-      });
-
-      const paymentData = paymentResponse.data.data;
+      }) as any;
 
       // Handle different payment methods
       if (data.paymentMethod === 'STRIPE' && paymentData.clientSecret) {

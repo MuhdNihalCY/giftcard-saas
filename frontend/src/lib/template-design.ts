@@ -97,17 +97,17 @@ export function designToCSSVariables(designData?: TemplateDesignData | null): Re
   const merged = mergeDesignWithDefaults(designData);
   
   return {
-    '--template-color-primary': merged.colors.primary,
-    '--template-color-secondary': merged.colors.secondary,
-    '--template-color-background': merged.colors.background,
-    '--template-color-text': merged.colors.text,
-    '--template-color-accent': merged.colors.accent,
-    '--template-font-family': merged.typography.fontFamily,
-    '--template-heading-size': merged.typography.headingSize,
-    '--template-body-size': merged.typography.bodySize,
-    '--template-font-weight': merged.typography.fontWeight,
-    '--template-padding': merged.spacing.padding,
-    '--template-margin': merged.spacing.margin,
+    '--template-color-primary': merged.colors.primary ?? '',
+    '--template-color-secondary': merged.colors.secondary ?? '',
+    '--template-color-background': merged.colors.background ?? '',
+    '--template-color-text': merged.colors.text ?? '',
+    '--template-color-accent': merged.colors.accent ?? '',
+    '--template-font-family': merged.typography.fontFamily ?? '',
+    '--template-heading-size': merged.typography.headingSize ?? '',
+    '--template-body-size': merged.typography.bodySize ?? '',
+    '--template-font-weight': merged.typography.fontWeight ?? '',
+    '--template-padding': merged.spacing.padding ?? '',
+    '--template-margin': merged.spacing.margin ?? '',
     '--template-border-radius': merged.borderRadius,
     '--template-box-shadow': merged.shadows ? '0 4px 6px rgba(0, 0, 0, 0.1)' : 'none',
   };
@@ -209,33 +209,33 @@ export function getLayoutStyles(designData?: TemplateDesignData | null): React.C
       break;
     case 'modern':
       styles.background = getBackgroundGradient(designData);
-      styles.color = getContrastTextColor(merged.colors.primary);
+      styles.color = getContrastTextColor(merged.colors.primary ?? '');
       styles.boxShadow = '0 12px 24px rgba(0, 0, 0, 0.15)';
       break;
     case 'minimal':
       styles.background = merged.colors.background;
-      styles.border = `1px solid ${merged.colors.primary}20`;
+      styles.border = `1px solid ${merged.colors.primary ?? ''}20`;
       styles.boxShadow = 'none';
       break;
     case 'premium':
-      styles.background = `linear-gradient(135deg, ${merged.colors.primary} 0%, ${merged.colors.secondary} 100%)`;
-      styles.color = getContrastTextColor(merged.colors.primary);
+      styles.background = `linear-gradient(135deg, ${merged.colors.primary ?? ''} 0%, ${merged.colors.secondary ?? ''} 100%)`;
+      styles.color = getContrastTextColor(merged.colors.primary ?? '');
       styles.boxShadow = '0 16px 32px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.1)';
       break;
     case 'bold':
       styles.background = merged.colors.primary;
-      styles.color = getContrastTextColor(merged.colors.primary);
-      styles.border = `4px solid ${merged.colors.accent}`;
+      styles.color = getContrastTextColor(merged.colors.primary ?? '');
+      styles.border = `4px solid ${merged.colors.accent ?? ''}`;
       styles.boxShadow = '0 8px 16px rgba(0, 0, 0, 0.3)';
       break;
     case 'elegant':
       styles.background = merged.colors.background;
-      styles.border = `2px solid ${merged.colors.primary}40`;
+      styles.border = `2px solid ${merged.colors.primary ?? ''}40`;
       styles.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.08)';
       break;
     default:
       styles.background = getBackgroundGradient(designData);
-      styles.color = getContrastTextColor(merged.colors.primary);
+      styles.color = getContrastTextColor(merged.colors.primary ?? '');
   }
 
   return styles;

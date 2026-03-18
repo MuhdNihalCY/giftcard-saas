@@ -1,4 +1,3 @@
-import prisma from '../config/database';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { PayoutStatus, GatewayType } from '@prisma/client';
 import logger from '../utils/logger';
@@ -7,6 +6,7 @@ import merchantPaymentGatewayService from './merchant-payment-gateway.service';
 import stripeConnectService from './payment/stripe-connect.service';
 import paypalConnectService from './payment/paypal-connect.service';
 import payoutSettingsService from './payout-settings.service';
+import { PayoutRepository } from '../modules/payouts/payout.repository';
 
 export interface RequestPayoutData {
   merchantId: string;
@@ -26,31 +26,20 @@ export interface SchedulePayoutData {
 }
 
 export class PayoutService {
+  private readonly repository = new PayoutRepository();
+
   /**
    * Calculate available balance for payout (merchant balance minus pending payouts)
    */
   async calculateAvailableBalance(merchantId: string): Promise<number> {
-    const merchant = await prisma.user.findUnique({
-      where: { id: merchantId },
-      select: { merchantBalance: true },
-    });
+    const merchant = await this.repository.getMerchantBalance(merchantId);
 
     if (!merchant) {
       throw new NotFoundError('Merchant not found');
     }
 
     // Get sum of pending and processing payouts
-    const pendingPayouts = await prisma.payout.aggregate({
-      where: {
-        merchantId,
-        status: {
-          in: [PayoutStatus.PENDING, PayoutStatus.PROCESSING],
-        },
-      },
-      _sum: {
-        amount: true,
-      },
-    });
+    const pendingPayouts = await this.repository.aggregatePendingPayouts(merchantId);
 
     const pendingAmount = Number(pendingPayouts._sum.amount || 0);
     const totalBalance = Number(merchant.merchantBalance);
@@ -66,14 +55,7 @@ export class PayoutService {
     const { merchantId, amount, method } = data;
 
     // Validate merchant
-    const merchant = await prisma.user.findUnique({
-      where: { id: merchantId },
-      select: {
-        id: true,
-        role: true,
-        merchantBalance: true,
-      },
-    });
+    const merchant = await this.repository.getMerchant(merchantId);
 
     if (!merchant) {
       throw new NotFoundError('Merchant not found');
@@ -134,25 +116,14 @@ export class PayoutService {
     }
 
     // Create payout record
-    const payout = await prisma.payout.create({
-      data: {
-        merchantId,
-        amount: new Decimal(amount),
-        currency: 'USD', // Default currency - can be made dynamic based on merchant settings in future
-        status: PayoutStatus.PENDING,
-        payoutMethod,
-        payoutAccountId,
-        netAmount: new Decimal(amount), // No commission on payouts (commission already deducted)
-      },
-      include: {
-        merchant: {
-          select: {
-            id: true,
-            email: true,
-            businessName: true,
-          },
-        },
-      },
+    const payout = await this.repository.createPayoutWithMerchant({
+      merchantId,
+      amount: new Decimal(amount),
+      currency: 'USD', // Default currency - can be made dynamic based on merchant settings in future
+      status: PayoutStatus.PENDING,
+      payoutMethod,
+      payoutAccountId,
+      netAmount: new Decimal(amount), // No commission on payouts (commission already deducted)
     });
 
     logger.info('Payout requested', {
@@ -184,17 +155,7 @@ export class PayoutService {
   async processPayout(data: ProcessPayoutData) {
     const { payoutId } = data;
 
-    const payout = await prisma.payout.findUnique({
-      where: { id: payoutId },
-      include: {
-        merchant: {
-          select: {
-            id: true,
-            email: true,
-          },
-        },
-      },
-    });
+    const payout = await this.repository.findPayoutWithMerchantEmail(payoutId);
 
     if (!payout) {
       throw new NotFoundError('Payout not found');
@@ -205,10 +166,7 @@ export class PayoutService {
     }
 
     // Update status to PROCESSING
-    await prisma.payout.update({
-      where: { id: payoutId },
-      data: { status: PayoutStatus.PROCESSING },
-    });
+    await this.repository.updatePayout(payoutId, { status: PayoutStatus.PROCESSING });
 
     try {
       const amount = Number(payout.amount);
@@ -255,44 +213,31 @@ export class PayoutService {
             amount,
           });
           // Keep status as PROCESSING - admin needs to manually complete
-          return await prisma.payout.findUnique({
-            where: { id: payoutId },
-          });
+          return await this.repository.findPayoutById(payoutId);
         default:
           throw new ValidationError(`Unsupported payout method: ${payout.payoutMethod}`);
       }
 
       if (success) {
         // Update payout status to COMPLETED
-        const updatedPayout = await prisma.payout.update({
-          where: { id: payoutId },
-          data: {
-            status: PayoutStatus.COMPLETED,
+        const updatedPayout = await this.repository.updatePayout(payoutId, {
+          status: PayoutStatus.COMPLETED,
+          transactionId,
+          processedAt: new Date(),
+          webhookData: {
+            processedAt: new Date().toISOString(),
             transactionId,
-            processedAt: new Date(),
-            webhookData: {
-              processedAt: new Date().toISOString(),
-              transactionId,
-            },
           },
         });
 
         // Deduct from merchant balance
-        const merchant = await prisma.user.findUnique({
-          where: { id: payout.merchantId },
-          select: { merchantBalance: true },
-        });
+        const merchant = await this.repository.getMerchantBalance(payout.merchantId);
 
         if (merchant) {
           const currentBalance = Number(merchant.merchantBalance);
           const newBalance = Math.max(0, currentBalance - amount);
 
-          await prisma.user.update({
-            where: { id: payout.merchantId },
-            data: {
-              merchantBalance: new Decimal(newBalance),
-            },
-          });
+          await this.repository.updateMerchantBalance(payout.merchantId, new Decimal(newBalance));
 
           logger.info('Merchant balance updated after payout', {
             merchantId: payout.merchantId,
@@ -314,12 +259,9 @@ export class PayoutService {
       }
     } catch (error: any) {
       // Update payout status to FAILED
-      await prisma.payout.update({
-        where: { id: payoutId },
-        data: {
-          status: PayoutStatus.FAILED,
-          failureReason: error.message,
-        },
+      await this.repository.updatePayout(payoutId, {
+        status: PayoutStatus.FAILED,
+        failureReason: error.message,
       });
 
       logger.error('Payout processing failed', {
@@ -343,15 +285,13 @@ export class PayoutService {
     }
 
     // Create payout with scheduled date
-    const payout = await prisma.payout.create({
-      data: {
-        merchantId,
-        amount: new Decimal(amount),
-        currency: 'USD', // Default currency - can be made dynamic based on merchant settings in future
-        status: PayoutStatus.PENDING,
-        payoutMethod: method || 'STRIPE_CONNECT',
-        scheduledFor: scheduleDate,
-      },
+    const payout = await this.repository.createPayout({
+      merchantId,
+      amount: new Decimal(amount),
+      currency: 'USD', // Default currency - can be made dynamic based on merchant settings in future
+      status: PayoutStatus.PENDING,
+      payoutMethod: method || 'STRIPE_CONNECT',
+      scheduledFor: scheduleDate,
     });
 
     logger.info('Payout scheduled', {
@@ -371,22 +311,7 @@ export class PayoutService {
     const now = new Date();
 
     // Find payouts scheduled for now or earlier
-    const scheduledPayouts = await prisma.payout.findMany({
-      where: {
-        status: PayoutStatus.PENDING,
-        scheduledFor: {
-          lte: now,
-        },
-      },
-      include: {
-        merchant: {
-          select: {
-            id: true,
-            email: true,
-          },
-        },
-      },
-    });
+    const scheduledPayouts = await this.repository.findScheduledPayouts();
 
     logger.info(`Processing ${scheduledPayouts.length} scheduled payouts`);
 
@@ -417,9 +342,7 @@ export class PayoutService {
    * Retry failed payout
    */
   async retryFailedPayout(payoutId: string) {
-    const payout = await prisma.payout.findUnique({
-      where: { id: payoutId },
-    });
+    const payout = await this.repository.findPayoutById(payoutId);
 
     if (!payout) {
       throw new NotFoundError('Payout not found');
@@ -430,13 +353,10 @@ export class PayoutService {
     }
 
     // Reset status to PENDING and increment retry count
-    await prisma.payout.update({
-      where: { id: payoutId },
-      data: {
-        status: PayoutStatus.PENDING,
-        retryCount: payout.retryCount + 1,
-        failureReason: null,
-      },
+    await this.repository.updatePayout(payoutId, {
+      status: PayoutStatus.PENDING,
+      retryCount: payout.retryCount + 1,
+      failureReason: null,
     });
 
     // Process the payout
@@ -447,18 +367,7 @@ export class PayoutService {
    * Get payout by ID
    */
   async getById(id: string) {
-    const payout = await prisma.payout.findUnique({
-      where: { id },
-      include: {
-        merchant: {
-          select: {
-            id: true,
-            email: true,
-            businessName: true,
-          },
-        },
-      },
-    });
+    const payout = await this.repository.findPayoutById(id);
 
     if (!payout) {
       throw new NotFoundError('Payout not found');
@@ -482,13 +391,8 @@ export class PayoutService {
     if (status) where.status = status;
 
     const [payouts, total] = await Promise.all([
-      prisma.payout.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-      }),
-      prisma.payout.count({ where }),
+      this.repository.findPayouts(where, skip, limit),
+      this.repository.countPayouts(where),
     ]);
 
     return {
@@ -519,22 +423,8 @@ export class PayoutService {
     if (status) where.status = status;
 
     const [payouts, total] = await Promise.all([
-      prisma.payout.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          merchant: {
-            select: {
-              id: true,
-              email: true,
-              businessName: true,
-            },
-          },
-        },
-      }),
-      prisma.payout.count({ where }),
+      this.repository.findPayouts(where, skip, limit),
+      this.repository.countPayouts(where),
     ]);
 
     return {

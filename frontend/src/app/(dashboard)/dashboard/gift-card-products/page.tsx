@@ -5,14 +5,14 @@ import { useSearchParams } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { FilterBar } from '@/components/dashboard/FilterBar';
-import api from '@/lib/api';
+import { fetchGiftCardProducts, deleteGiftCardProduct, updateGiftCardProduct } from '@/features/gift-cards';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
 import Link from 'next/link';
 import Image from 'next/image';
 import logger from '@/lib/logger';
 
-interface GiftCardProduct {
+interface GiftCardProductLocal {
   id: string;
   name: string;
   description?: string | null;
@@ -34,7 +34,7 @@ interface GiftCardProduct {
 export default function GiftCardProductsPage() {
   const { user } = useAuthStore();
   const searchParams = useSearchParams();
-  const [products, setProducts] = useState<GiftCardProduct[]>([]);
+  const [products, setProducts] = useState<GiftCardProductLocal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(searchParams?.get('search') || '');
   const [filters, setFilters] = useState({
@@ -76,8 +76,8 @@ export default function GiftCardProductsPage() {
         params.search = filters.search;
       }
 
-      const response = await api.get('/gift-card-products', { params });
-      setProducts(response.data.data || []);
+      const data = await fetchGiftCardProducts(params);
+      setProducts(data as unknown as GiftCardProductLocal[]);
     } catch (error) {
       logger.error('Failed to fetch products', { error });
     } finally {
@@ -89,7 +89,7 @@ export default function GiftCardProductsPage() {
     if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) return;
 
     try {
-      await api.delete(`/gift-card-products/${id}`);
+      await deleteGiftCardProduct(id);
       fetchProducts();
     } catch (error: unknown) {
       const errorMessage = 
@@ -102,9 +102,7 @@ export default function GiftCardProductsPage() {
 
   const toggleActive = async (id: string, currentStatus: boolean) => {
     try {
-      await api.put(`/gift-card-products/${id}`, {
-        isActive: !currentStatus,
-      });
+      await updateGiftCardProduct(id, { isActive: !currentStatus });
       fetchProducts();
     } catch (error) {
       logger.error('Failed to update product status', { error, productId: id, isActive: !currentStatus });

@@ -5,13 +5,13 @@ import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
+import { fetchGiftCardById, deleteGiftCard } from '@/features/gift-cards';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import Link from 'next/link';
 import QRCode from 'react-qr-code';
-import { GiftCardDisplay } from '@/components/GiftCardDisplay';
 import logger from '@/lib/logger';
 
-interface GiftCard {
+interface GiftCardDetail {
   id: string;
   code: string;
   value: number;
@@ -38,7 +38,7 @@ interface GiftCard {
 export default function GiftCardDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const [giftCard, setGiftCard] = useState<GiftCard | null>(null);
+  const [giftCard, setGiftCard] = useState<GiftCardDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [redemptions, setRedemptions] = useState<any[]>([]);
 
@@ -51,8 +51,8 @@ export default function GiftCardDetailsPage() {
 
   const fetchGiftCard = async () => {
     try {
-      const response = await api.get(`/gift-cards/${params.id}`);
-      setGiftCard(response.data.data);
+      const giftCard = await fetchGiftCardById(params.id as string);
+      setGiftCard(giftCard as unknown as GiftCardDetail);
     } catch (error) {
       logger.error('Failed to fetch gift card', { error });
     } finally {
@@ -83,7 +83,7 @@ export default function GiftCardDetailsPage() {
     if (!confirm('Are you sure you want to delete this gift card?')) return;
 
     try {
-      await api.delete(`/gift-cards/${params.id}`);
+      await deleteGiftCard(params.id as string);
       router.push('/dashboard/gift-cards');
     } catch (error) {
       logger.error('Failed to delete gift card', { error });

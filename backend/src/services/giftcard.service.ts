@@ -1,6 +1,5 @@
 import crypto from 'crypto';
 import { Decimal } from '@prisma/client/runtime/library';
-import prisma from '../config/database';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { generateGiftCardCode, isExpired } from '../utils/helpers';
 import qrCodeService from './qrcode.service';
@@ -8,6 +7,8 @@ import { GiftCardStatus, GiftCard, Prisma } from '@prisma/client';
 import cacheService, { CacheKeys } from './cache.service';
 import type { PaginationResult } from '../types';
 import giftCardTemplateService from './giftcard-template.service';
+import { GiftCardRepository } from '../modules/gift-cards/gift-card.repository';
+import logger from '../utils/logger';
 
 export interface CreateGiftCardData {
   merchantId: string;
@@ -45,6 +46,8 @@ type GiftCardWithRelations = GiftCard & {
 };
 
 export class GiftCardService {
+  private readonly repository = new GiftCardRepository();
+
   /**
    * Create a new gift card
    */
@@ -75,10 +78,8 @@ export class GiftCardService {
 
     // Ensure code is unique
     while (codeExists && attempts < maxAttempts) {
-      const existing = await prisma.giftCard.findUnique({
-        where: { code },
-      });
-      if (!existing) {
+      const exists = await this.repository.codeExists(code);
+      if (!exists) {
         codeExists = false;
       } else {
         code = generateGiftCardCode();
@@ -92,18 +93,15 @@ export class GiftCardService {
 
     // Get template ID - use provided, product's template, or merchant's default
     let finalTemplateId = templateId;
-    
+
     if (!finalTemplateId && productId) {
       // Get product's template if gift card is created from product
-      const product = await prisma.giftCardProduct.findUnique({
-        where: { id: productId },
-        select: { templateId: true },
-      });
+      const product = await this.repository.findProductById(productId);
       if (product?.templateId) {
         finalTemplateId = product.templateId;
       }
     }
-    
+
     if (!finalTemplateId) {
       // Get merchant's default template
       const defaultTemplate = await giftCardTemplateService.getDefaultTemplate(merchantId);
@@ -116,34 +114,22 @@ export class GiftCardService {
     const qrCodeDataURL = await qrCodeService.generateDataURL(qrCodeData);
 
     // Create gift card
-    const giftCard = await prisma.giftCard.create({
-      data: {
-        id: giftCardId,
-        merchantId,
-        code,
-        qrCodeUrl: qrCodeDataURL,
-        value: new Decimal(value),
-        currency,
-        balance: new Decimal(value),
-        expiryDate,
-        templateId: finalTemplateId,
-        productId,
-        customMessage,
-        recipientEmail,
-        recipientName,
-        allowPartialRedemption,
-        status: 'ACTIVE',
-      },
-      include: {
-        merchant: {
-          select: {
-            id: true,
-            email: true,
-            businessName: true,
-          },
-        },
-        template: true,
-      },
+    const giftCard = await this.repository.createWithId({
+      id: giftCardId,
+      merchantId,
+      code,
+      qrCodeUrl: qrCodeDataURL,
+      value: new Decimal(value),
+      currency,
+      balance: new Decimal(value),
+      expiryDate,
+      templateId: finalTemplateId,
+      productId,
+      customMessage,
+      recipientEmail,
+      recipientName,
+      allowPartialRedemption,
+      status: 'ACTIVE',
     });
 
     // Invalidate merchant gift cards cache
@@ -157,27 +143,14 @@ export class GiftCardService {
    */
   async getById(id: string, _userId?: string): Promise<GiftCardWithRelations> {
     const cacheKey = CacheKeys.giftCard(id);
-    
+
     // Try to get from cache
     const cached = await cacheService.get<GiftCardWithRelations>(cacheKey);
     if (cached) {
       return cached;
     }
 
-    const giftCard = await prisma.giftCard.findUnique({
-      where: { id },
-      include: {
-        merchant: {
-          select: {
-            id: true,
-            email: true,
-            businessName: true,
-            businessLogo: true,
-          },
-        },
-        template: true,
-      },
-    });
+    const giftCard = await this.repository.findById(id);
 
     if (!giftCard) {
       throw new NotFoundError('Gift card not found');
@@ -192,7 +165,7 @@ export class GiftCardService {
     // Cache for 5 minutes
     await cacheService.set(cacheKey, giftCard, 300);
 
-    return giftCard;
+    return giftCard as GiftCardWithRelations;
   }
 
   /**
@@ -200,27 +173,14 @@ export class GiftCardService {
    */
   async getByCode(code: string): Promise<GiftCardWithRelations> {
     const cacheKey = CacheKeys.giftCardByCode(code);
-    
+
     // Try to get from cache
     const cached = await cacheService.get<GiftCardWithRelations>(cacheKey);
     if (cached) {
       return cached;
     }
 
-    const giftCard = await prisma.giftCard.findUnique({
-      where: { code },
-      include: {
-        merchant: {
-          select: {
-            id: true,
-            email: true,
-            businessName: true,
-            businessLogo: true,
-          },
-        },
-        template: true,
-      },
-    });
+    const giftCard = await this.repository.findByCode(code);
 
     if (!giftCard) {
       throw new NotFoundError('Gift card not found');
@@ -237,7 +197,7 @@ export class GiftCardService {
     // Also cache by ID
     await cacheService.set(CacheKeys.giftCard(giftCard.id), giftCard, 300);
 
-    return giftCard;
+    return giftCard as GiftCardWithRelations;
   }
 
   /**
@@ -251,7 +211,7 @@ export class GiftCardService {
     limit?: number;
   }): Promise<{ giftCards: GiftCardWithRelations[]; pagination: PaginationResult }> {
     const { merchantId, status, search, page = 1, limit = 20 } = filters;
-    
+
     // Build cache key
     let cacheKey: string;
     if (merchantId) {
@@ -286,7 +246,7 @@ export class GiftCardService {
     const where: Prisma.GiftCardWhereInput = {};
     if (merchantId) where.merchantId = merchantId;
     if (status) where.status = status;
-    
+
     // Add search functionality
     if (search && search.trim()) {
       where.OR = [
@@ -302,28 +262,12 @@ export class GiftCardService {
     }
 
     const [giftCards, total] = await Promise.all([
-      prisma.giftCard.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          merchant: {
-            select: {
-              id: true,
-              email: true,
-              businessName: true,
-              businessLogo: true,
-            },
-          },
-          template: true,
-        },
-      }),
-      prisma.giftCard.count({ where }),
+      this.repository.findMany(where, skip, limit),
+      this.repository.count(where),
     ]);
 
     const result = {
-      giftCards,
+      giftCards: giftCards as GiftCardWithRelations[],
       pagination: {
         page,
         limit,
@@ -359,7 +303,7 @@ export class GiftCardService {
 
     const searchTerm = query.trim();
     const where: Prisma.GiftCardWhereInput = {};
-    
+
     if (merchantId) {
       where.merchantId = merchantId;
     }
@@ -376,18 +320,7 @@ export class GiftCardService {
       },
     ];
 
-    const giftCards = await prisma.giftCard.findMany({
-      where,
-      take: 10,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        merchant: {
-          select: {
-            businessName: true,
-          },
-        },
-      },
-    });
+    const giftCards = await this.repository.findForSearch(where);
 
     return giftCards.map((card) => ({
       id: card.id,
@@ -429,20 +362,7 @@ export class GiftCardService {
     if (data.allowPartialRedemption !== undefined) updateData.allowPartialRedemption = data.allowPartialRedemption;
     if (data.status !== undefined) updateData.status = data.status;
 
-    const updated = await prisma.giftCard.update({
-      where: { id },
-      data: updateData,
-      include: {
-        merchant: {
-          select: {
-            id: true,
-            email: true,
-            businessName: true,
-          },
-        },
-        template: true,
-      },
-    });
+    const updated = await this.repository.update(id, updateData);
 
     // Invalidate cache
     await cacheService.delete(CacheKeys.giftCard(id));
@@ -468,9 +388,7 @@ export class GiftCardService {
       throw new ValidationError('Cannot delete a redeemed gift card');
     }
 
-    await prisma.giftCard.delete({
-      where: { id },
-    });
+    await this.repository.delete(id);
 
     // Invalidate cache
     await cacheService.delete(CacheKeys.giftCard(id));
@@ -484,10 +402,7 @@ export class GiftCardService {
    * Update gift card status
    */
   async updateStatus(id: string, status: GiftCardStatus) {
-    return prisma.giftCard.update({
-      where: { id },
-      data: { status },
-    });
+    return this.repository.updateStatus(id, status);
   }
 
   /**
@@ -519,10 +434,8 @@ export class GiftCardService {
       let attempts = 0;
 
       while (codeExists && attempts < 10) {
-        const existing = await prisma.giftCard.findUnique({
-          where: { code },
-        });
-        if (!existing) {
+        const exists = await this.repository.codeExists(code);
+        if (!exists) {
           codeExists = false;
         } else {
           code = generateGiftCardCode();
@@ -554,9 +467,7 @@ export class GiftCardService {
     }
 
     // Use createMany for better performance
-    const result = await prisma.giftCard.createMany({
-      data: giftCards,
-    });
+    const result = await this.repository.createMany(giftCards);
 
     return {
       count: result.count,

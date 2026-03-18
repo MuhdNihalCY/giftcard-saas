@@ -42,7 +42,7 @@ export function GiftCardDisplay({
   const baseStyles = applyTemplateStyles(giftCard.template?.designData);
   const layoutStyles = getLayoutStyles(giftCard.template?.designData);
   const gradient = getBackgroundGradient(giftCard.template?.designData);
-  const contrastText = getContrastTextColor(design.colors.primary);
+  const contrastText = getContrastTextColor(design.colors.primary ?? '');
 
   // Determine background and text color based on layout
   let background: string;
@@ -55,18 +55,18 @@ export function GiftCardDisplay({
       textColor = contrastText;
       break;
     case 'bold':
-      background = design.colors.primary;
+      background = design.colors.primary ?? '';
       textColor = contrastText;
       break;
     case 'minimal':
-      background = design.colors.background;
-      textColor = design.colors.text;
+      background = design.colors.background ?? '';
+      textColor = design.colors.text ?? '';
       break;
     case 'classic':
     case 'elegant':
     default:
-      background = design.colors.background;
-      textColor = design.colors.text;
+      background = design.colors.background ?? '';
+      textColor = design.colors.text ?? '';
       break;
   }
 
@@ -211,7 +211,7 @@ export function GiftCardDisplay({
               fontSize: design.typography.bodySize,
             }}
           >
-            "{giftCard.customMessage}"
+            &quot;{giftCard.customMessage}&quot;
           </div>
         )}
 

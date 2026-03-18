@@ -8,7 +8,7 @@ import { FilterBar } from '@/components/dashboard/FilterBar';
 import { Badge, getStatusBadgeVariant } from '@/components/ui/Badge';
 import { useAuthStore } from '@/store/authStore';
 import { FeatureFlagGuard } from '@/components/FeatureFlagGuard';
-import api from '@/lib/api';
+import { fetchPayments as fetchPaymentsApi, refundPayment } from '@/features/payments';
 import logger from '@/lib/logger';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import { CreditCard, Download, RefreshCw } from 'lucide-react';
@@ -41,17 +41,6 @@ interface Payment {
 export default function PaymentsPage() {
   const { user } = useAuthStore();
   const searchParams = useSearchParams();
-  
-  // Redirect customers - they should never access payments page
-  useEffect(() => {
-    if (user?.role === 'CUSTOMER') {
-      window.location.href = '/dashboard';
-    }
-  }, [user]);
-  
-  if (user?.role === 'CUSTOMER') {
-    return null;
-  }
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(searchParams?.get('search') || '');
@@ -69,6 +58,13 @@ export default function PaymentsPage() {
   const [sortKey, setSortKey] = useState<string>('createdAt');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
+  // Redirect customers - they should never access payments page
+  useEffect(() => {
+    if (user?.role === 'CUSTOMER') {
+      window.location.href = '/dashboard';
+    }
+  }, [user]);
+
   // Initialize search from URL on mount
   useEffect(() => {
     const urlSearch = searchParams?.get('search') || '';
@@ -80,6 +76,10 @@ export default function PaymentsPage() {
   useEffect(() => {
     fetchPayments();
   }, [searchQuery, statusFilter, methodFilter, dateRange, pagination.page, pagination.limit, sortKey, sortDirection]);
+
+  if (user?.role === 'CUSTOMER') {
+    return null;
+  }
 
   const fetchPayments = async () => {
     try {
@@ -101,11 +101,11 @@ export default function PaymentsPage() {
         params.sortOrder = sortDirection;
       }
 
-      const response = await api.get('/payments', { params });
-      setPayments(response.data.data || []);
+      const result = await fetchPaymentsApi(params);
+      setPayments(result.data || []);
       setPagination((prev) => ({
         ...prev,
-        total: response.data.pagination?.total || response.data.data?.length || 0,
+        total: result.pagination?.total || result.data?.length || 0,
       }));
     } catch (error) {
       logger.error('Failed to fetch payments', { error });
@@ -120,7 +120,7 @@ export default function PaymentsPage() {
     }
 
     try {
-      await api.post(`/payments/${paymentId}/refund`, {
+      await refundPayment(paymentId, {
         amount: null, // Full refund
         reason: 'Merchant request',
       });
@@ -345,7 +345,7 @@ export default function PaymentsPage() {
             exportable
             onExport={handleExport}
             emptyMessage="No payments found"
-            onRowClick={(row) => {
+            onRowClick={(_row) => {
               // Could navigate to payment detail
             }}
           />

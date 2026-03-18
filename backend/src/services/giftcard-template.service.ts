@@ -1,17 +1,5 @@
-import prisma from '../config/database';
 import { NotFoundError, ValidationError } from '../utils/errors';
-import logger from '../utils/logger';
-
-// Verify Prisma is initialized at module load
-if (!prisma) {
-  logger.error('Prisma client is not initialized in giftcard-template.service');
-  throw new Error('Prisma client is not initialized');
-}
-
-if (!prisma.giftCardTemplate) {
-  logger.error('Prisma giftCardTemplate model is not available');
-  throw new Error('Prisma giftCardTemplate model is not available. Run: npx prisma generate');
-}
+import { GiftCardRepository } from '../modules/gift-cards/gift-card.repository';
 
 export interface TemplateDesignData {
   colors?: {
@@ -57,6 +45,8 @@ export interface UpdateTemplateData {
 }
 
 export class GiftCardTemplateService {
+  private readonly repository = new GiftCardRepository();
+
   /**
    * Create a new template
    */
@@ -91,23 +81,12 @@ export class GiftCardTemplateService {
       shadows: true,
     };
 
-    const template = await prisma.giftCardTemplate.create({
-      data: {
-        merchantId,
-        name,
-        description,
-        designData: (designData || defaultDesignData) as any,
-        isPublic,
-      },
-      include: {
-        merchant: {
-          select: {
-            id: true,
-            email: true,
-            businessName: true,
-          },
-        },
-      },
+    const template = await this.repository.createTemplate({
+      merchantId,
+      name,
+      description,
+      designData: (designData || defaultDesignData) as any,
+      isPublic,
     });
 
     return template;
@@ -117,18 +96,7 @@ export class GiftCardTemplateService {
    * Get template by ID
    */
   async getById(id: string) {
-    const template = await prisma.giftCardTemplate.findUnique({
-      where: { id },
-      include: {
-        merchant: {
-          select: {
-            id: true,
-            email: true,
-            businessName: true,
-          },
-        },
-      },
-    });
+    const template = await this.repository.findTemplateById(id);
 
     if (!template) {
       throw new NotFoundError('Template not found');
@@ -154,22 +122,8 @@ export class GiftCardTemplateService {
     if (isPublic !== undefined) where.isPublic = isPublic;
 
     const [templates, total] = await Promise.all([
-      prisma.giftCardTemplate.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          merchant: {
-            select: {
-              id: true,
-              email: true,
-              businessName: true,
-            },
-          },
-        },
-      }),
-      prisma.giftCardTemplate.count({ where }),
+      this.repository.findTemplates(where, skip, limit),
+      this.repository.countTemplates(where),
     ]);
 
     return {
@@ -200,19 +154,7 @@ export class GiftCardTemplateService {
     if (data.designData !== undefined) updateData.designData = data.designData as any;
     if (data.isPublic !== undefined) updateData.isPublic = data.isPublic;
 
-    const updated = await prisma.giftCardTemplate.update({
-      where: { id },
-      data: updateData,
-      include: {
-        merchant: {
-          select: {
-            id: true,
-            email: true,
-            businessName: true,
-          },
-        },
-      },
-    });
+    const updated = await this.repository.updateTemplate(id, updateData);
 
     return updated;
   }
@@ -229,9 +171,7 @@ export class GiftCardTemplateService {
     }
 
     // Check if template is being used
-    const giftCardsUsingTemplate = await prisma.giftCard.count({
-      where: { templateId: id },
-    });
+    const giftCardsUsingTemplate = await this.repository.countGiftCardsForTemplate(id);
 
     if (giftCardsUsingTemplate > 0) {
       throw new ValidationError(
@@ -239,9 +179,7 @@ export class GiftCardTemplateService {
       );
     }
 
-    await prisma.giftCardTemplate.delete({
-      where: { id },
-    });
+    await this.repository.deleteTemplate(id);
 
     return { message: 'Template deleted successfully' };
   }
@@ -251,20 +189,8 @@ export class GiftCardTemplateService {
    */
   async getDefaultTemplate(merchantId: string) {
     try {
-      if (!prisma) {
-        throw new Error('Prisma client is not initialized');
-      }
-      
-      if (!prisma.giftCardTemplate) {
-        throw new Error('Prisma giftCardTemplate model is not available. Run: npx prisma generate');
-      }
-
       // Try to find merchant's default template (first template or one marked as default)
-      const templates = await prisma.giftCardTemplate.findMany({
-        where: { merchantId },
-        orderBy: { createdAt: 'asc' },
-        take: 1,
-      });
+      const templates = await this.repository.findTemplatesByMerchant(merchantId);
 
       if (templates.length > 0) {
         return templates[0];
@@ -281,7 +207,7 @@ export class GiftCardTemplateService {
    * Create default template for merchant
    */
   async createDefaultTemplate(merchantId: string) {
-    const defaultDesignData = {
+    const defaultDesignData: TemplateDesignData = {
       colors: {
         primary: '#1a365d',      // Deep navy - professional and modern
         secondary: '#2d3748',    // Charcoal - sophisticated
@@ -333,12 +259,8 @@ export class GiftCardTemplateService {
    */
   async getUsageStats(templateId: string) {
     const [giftCardCount, productCount] = await Promise.all([
-      prisma.giftCard.count({
-        where: { templateId },
-      }),
-      prisma.giftCardProduct.count({
-        where: { templateId },
-      }),
+      this.repository.countGiftCardsForTemplate(templateId),
+      this.repository.countProductsForTemplate(templateId),
     ]);
 
     return {
@@ -365,4 +287,3 @@ export class GiftCardTemplateService {
 }
 
 export default new GiftCardTemplateService();
-

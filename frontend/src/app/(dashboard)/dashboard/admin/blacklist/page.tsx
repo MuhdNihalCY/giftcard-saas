@@ -1,7 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import api from '@/lib/api';
+import {
+  fetchBlacklist,
+  addToBlacklist,
+  updateBlacklistEntry,
+  removeFromBlacklist,
+} from '@/features/admin';
 import { DataTable } from '@/components/ui/DataTable';
 import { FilterBar } from '@/components/dashboard/FilterBar';
 import { Badge } from '@/components/ui/Badge';
@@ -67,14 +72,14 @@ export default function BlacklistPage() {
       if (filters.severity) params.severity = filters.severity;
       if (filters.activeOnly) params.activeOnly = 'true';
 
-      const response = await api.get('/admin/blacklist', { params });
-      setEntries(response.data.data || []);
-      if (response.data.pagination) {
+      const result = await fetchBlacklist(params);
+      setEntries((result.data as any) || []);
+      if (result.pagination) {
         setPagination({
-          page: response.data.pagination.page || filters.page,
-          limit: response.data.pagination.limit || filters.limit,
-          total: response.data.pagination.total || 0,
-          totalPages: response.data.pagination.totalPages || 0,
+          page: result.pagination.page || filters.page,
+          limit: result.pagination.limit || filters.limit,
+          total: result.pagination.total || 0,
+          totalPages: result.pagination.totalPages || 0,
         });
       }
     } catch (error: any) {
@@ -99,7 +104,7 @@ export default function BlacklistPage() {
         delete data.expiresAt;
       }
 
-      await api.post('/admin/blacklist', data);
+      await addToBlacklist(data);
       toast.success('Blacklist entry added successfully');
       setShowAddForm(false);
       setEditingId(null);
@@ -148,9 +153,9 @@ export default function BlacklistPage() {
       }
 
       // Don't send type and value in update (they shouldn't change)
-      const { type, value, ...updateData } = data;
+      const { type: _type, value: _value, ...updateData } = data;
 
-      await api.put(`/admin/blacklist/${editingId}`, updateData);
+      await updateBlacklistEntry(editingId, updateData);
       toast.success('Blacklist entry updated successfully');
       setEditingId(null);
       setFormData({
@@ -186,7 +191,7 @@ export default function BlacklistPage() {
     }
 
     try {
-      await api.delete(`/admin/blacklist/${id}`);
+      await removeFromBlacklist(id);
       toast.success('Blacklist entry deleted successfully');
       loadBlacklist();
     } catch (error: any) {

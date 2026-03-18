@@ -2,13 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Navigation } from '@/components/Navigation';
-import api from '@/lib/api';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { fetchGiftCardByShareToken } from '@/features/gift-cards';
 import { useAuthStore } from '@/store/authStore';
-import QRCode from 'react-qr-code';
 import { CardSkeleton } from '@/components/ui/Skeleton';
 import { GiftCardDisplay } from '@/components/GiftCardDisplay';
 
@@ -31,8 +29,8 @@ export default function GiftCardSharePage() {
     try {
       setIsLoading(true);
       setError('');
-      const response = await api.get(`/gift-card-share/token/${token}`);
-      setGiftCard(response.data.data.giftCard);
+      const giftCardData = await fetchGiftCardByShareToken(token);
+      setGiftCard(giftCardData);
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Invalid or expired share link');
     } finally {
@@ -90,6 +88,8 @@ export default function GiftCardSharePage() {
             showDetails={true}
           />
 
+          <Card className="mt-6">
+            <CardContent className="py-6">
               {/* Actions */}
               <div className="flex flex-col gap-3">
                 {isAuthenticated ? (

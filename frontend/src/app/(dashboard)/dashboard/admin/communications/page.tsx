@@ -6,7 +6,11 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Switch } from '@/components/ui/Switch';
 import { ChartContainer } from '@/components/dashboard/ChartContainer';
-import api from '@/lib/api';
+import {
+  fetchCommunicationSettings,
+  fetchCommunicationStats,
+  updateCommunicationSettings,
+} from '@/features/admin';
 import { useAuthStore } from '@/store/authStore';
 import logger from '@/lib/logger';
 import { MessageSquare, Mail, MessageCircle, Bell, Save } from 'lucide-react';
@@ -60,8 +64,8 @@ export default function AdminCommunicationsPage() {
   const fetchSettings = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/admin/communication-settings');
-      setSettings(response.data.data);
+      const data = await fetchCommunicationSettings();
+      setSettings(data);
       setError(null);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to load settings');
@@ -72,8 +76,8 @@ export default function AdminCommunicationsPage() {
 
   const fetchStatistics = async () => {
     try {
-      const response = await api.get('/admin/communication-logs/statistics');
-      setStats(response.data.data);
+      const data = await fetchCommunicationStats();
+      setStats(data);
     } catch (err: any) {
       logger.error('Failed to load statistics', { error: err });
     }
@@ -87,7 +91,7 @@ export default function AdminCommunicationsPage() {
       setError(null);
       setSuccess(null);
 
-      const response = await api.put('/admin/communication-settings', {
+      const updated = await updateCommunicationSettings({
         emailEnabled: settings.emailEnabled,
         smsEnabled: settings.smsEnabled,
         otpEnabled: settings.otpEnabled,
@@ -99,7 +103,7 @@ export default function AdminCommunicationsPage() {
         otpLength: settings.otpLength,
       });
 
-      setSettings(response.data.data);
+      setSettings(updated);
       setSuccess('Settings updated successfully!');
       setTimeout(() => setSuccess(null), 3000);
     } catch (err: any) {

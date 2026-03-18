@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import api from '@/lib/api';
+import { fetchDevices, revokeDevice, revokeAllDevices } from '@/features/auth';
 import logger from '@/lib/logger';
 
 interface Device {
@@ -24,15 +24,15 @@ export default function DeviceManagementPage() {
   const [revokingAll, setRevokingAll] = useState(false);
 
   useEffect(() => {
-    fetchDevices();
+    loadDevices();
   }, []);
 
-  const fetchDevices = async () => {
+  const loadDevices = async () => {
     try {
       setLoading(true);
       setError('');
-      const response = await api.get('/auth/devices');
-      setDevices(response.data.data.devices);
+      const result = await fetchDevices();
+      setDevices(result.devices);
     } catch (err: unknown) {
       const errorMessage = (err as { response?: { data?: { error?: { message?: string } } } }).response?.data?.error?.message || 'Failed to fetch devices';
       setError(errorMessage);
@@ -49,8 +49,8 @@ export default function DeviceManagementPage() {
 
     try {
       setRevokingDeviceId(deviceId);
-      await api.delete(`/auth/devices/${deviceId}`);
-      await fetchDevices();
+      await revokeDevice(deviceId);
+      await loadDevices();
     } catch (err: unknown) {
       const errorMessage = (err as { response?: { data?: { error?: { message?: string } } } }).response?.data?.error?.message || 'Failed to revoke device';
       setError(errorMessage);
@@ -67,8 +67,8 @@ export default function DeviceManagementPage() {
 
     try {
       setRevokingAll(true);
-      await api.delete('/auth/devices');
-      await fetchDevices();
+      await revokeAllDevices();
+      await loadDevices();
       // Optionally redirect to login
       window.location.href = '/login';
     } catch (err: unknown) {
@@ -197,7 +197,7 @@ export default function DeviceManagementPage() {
             <div className="mt-6 p-4 bg-blue-900/20 border border-blue-700 rounded-lg">
               <p className="text-sm text-blue-300">
                 <strong>Note:</strong> Revoking a device will immediately log you out from that device. 
-                You'll need to log in again to use that device. The current device cannot be revoked from this page.
+                You&apos;ll need to log in again to use that device. The current device cannot be revoked from this page.
               </p>
             </div>
           </div>

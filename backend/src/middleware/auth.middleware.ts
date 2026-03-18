@@ -1,8 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import authService from '../services/auth.service';
 import { UnauthorizedError } from '../utils/errors';
-import prisma from '../config/database';
+import { UserRepository } from '../modules/users/user.repository';
 import logger from '../utils/logger';
+
+const userRepository = new UserRepository();
 
 export interface AuthRequest extends Request {
   user?: {
@@ -34,15 +36,7 @@ export const authenticate = async (
     const payload = authService.verifyToken(token);
 
     // Verify user still exists and is active
-    const user = await prisma.user.findUnique({
-      where: { id: payload.userId },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        isActive: true,
-      },
-    });
+    const user = await userRepository.findActiveById(payload.userId);
 
     if (!user) {
       throw new UnauthorizedError('User not found');
@@ -75,7 +69,6 @@ export const authorize = (...roles: string[]) => {
       return next(new UnauthorizedError('Authentication required'));
     }
 
-    // Debug logging in development
     if (process.env.NODE_ENV === 'development') {
       logger.debug('Authorization check', {
         userRole: req.user.role,
@@ -109,15 +102,7 @@ export const optionalAuthenticate = async (
       const token = authHeader.substring(7);
       const payload = authService.verifyToken(token);
 
-      const user = await prisma.user.findUnique({
-        where: { id: payload.userId },
-        select: {
-          id: true,
-          email: true,
-          role: true,
-          isActive: true,
-        },
-      });
+      const user = await userRepository.findActiveById(payload.userId);
 
       if (user && user.isActive) {
         req.user = {
@@ -133,4 +118,3 @@ export const optionalAuthenticate = async (
 
   next();
 };
-

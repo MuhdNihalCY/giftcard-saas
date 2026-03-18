@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import api from '@/lib/api';
+import { checkGiftCardBalance, redeemGiftCardByCode } from '@/features/redemptions';
 import { formatCurrency } from '@/lib/utils';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -68,9 +68,9 @@ export default function RedeemPage() {
 
   const fetchGiftCard = async () => {
     try {
-      const response = await api.post('/redemptions/check-balance', { code });
-      setGiftCard(response.data.data);
-      setValue('amount', response.data.data.balance);
+      const giftCardData = await checkGiftCardBalance({ code }) as any;
+      setGiftCard(giftCardData);
+      setValue('amount', giftCardData.balance);
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Gift card not found');
     } finally {
@@ -84,7 +84,7 @@ export default function RedeemPage() {
       setError('');
 
       // Use the authenticated endpoint — merchantId comes from JWT on the server
-      await api.post('/redemptions/redeem', {
+      await redeemGiftCardByCode({
         code,
         amount: data.amount,
         location: data.location,

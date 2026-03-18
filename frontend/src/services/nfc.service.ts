@@ -128,7 +128,7 @@ export class NFCService {
                     // Fallback: extract token from URL
                     const decoder = new TextDecoder();
                     const url = decoder.decode(record.data);
-                    const tokenMatch = url.match(/\/share\/([^\/]+)/);
+                    const tokenMatch = url.match(/\/share\/([^/]+)/);
                     if (tokenMatch) {
                       nfcData = {
                         type: 'giftcard',

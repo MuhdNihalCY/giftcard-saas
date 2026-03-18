@@ -6,8 +6,8 @@
 import speakeasy from 'speakeasy';
 import QRCode from 'qrcode';
 import bcrypt from 'bcryptjs';
-import prisma from '../config/database';
 import { ValidationError } from '../utils/errors';
+import { UserRepository } from '../modules/users/user.repository';
 import logger from '../utils/logger';
 import { env } from '../config/env';
 
@@ -26,6 +26,7 @@ export class TwoFactorService {
   private readonly issuer = env.APP_NAME || 'Gift Card SaaS';
   private readonly backupCodeCount = 10;
   private readonly backupCodeLength = 8;
+  private readonly userRepository = new UserRepository();
 
   /**
    * Generate a new TOTP secret for a user
@@ -107,12 +108,7 @@ export class TwoFactorService {
    * Verify and consume a backup code
    */
   async verifyBackupCode(userId: string, code: string): Promise<BackupCodeVerificationResult> {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        twoFactorBackupCodes: true,
-      },
-    });
+    const user = await this.userRepository.findByIdSelect(userId, { twoFactorBackupCodes: true });
 
     if (!user || !user.twoFactorBackupCodes) {
       throw new ValidationError('No backup codes found');
@@ -134,11 +130,8 @@ export class TwoFactorService {
         remainingCodes = backupCodes.length;
 
         // Update user with remaining codes
-        await prisma.user.update({
-          where: { id: userId },
-          data: {
-            twoFactorBackupCodes: backupCodes.length > 0 ? backupCodes : undefined,
-          },
+        await this.userRepository.update(userId, {
+          twoFactorBackupCodes: backupCodes.length > 0 ? backupCodes : undefined,
         });
 
         break;
@@ -176,13 +169,10 @@ export class TwoFactorService {
   async enable2FA(userId: string, secret: string, backupCodes: string[]): Promise<void> {
     const hashedBackupCodes = await this.hashBackupCodes(backupCodes);
 
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        twoFactorEnabled: true,
-        twoFactorSecret: secret,
-        twoFactorBackupCodes: hashedBackupCodes,
-      },
+    await this.userRepository.update(userId, {
+      twoFactorEnabled: true,
+      twoFactorSecret: secret,
+      twoFactorBackupCodes: hashedBackupCodes,
     });
 
     logger.info('2FA enabled for user', { userId });
@@ -192,13 +182,10 @@ export class TwoFactorService {
    * Disable 2FA for a user
    */
   async disable2FA(userId: string): Promise<void> {
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        twoFactorEnabled: false,
-        twoFactorSecret: null,
-        twoFactorBackupCodes: undefined,
-      },
+    await this.userRepository.update(userId, {
+      twoFactorEnabled: false,
+      twoFactorSecret: null,
+      twoFactorBackupCodes: undefined,
     });
 
     logger.info('2FA disabled for user', { userId });
@@ -208,12 +195,7 @@ export class TwoFactorService {
    * Regenerate backup codes for a user
    */
   async regenerateBackupCodes(userId: string): Promise<string[]> {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        twoFactorEnabled: true,
-      },
-    });
+    const user = await this.userRepository.findByIdSelect(userId, { twoFactorEnabled: true });
 
     if (!user || !user.twoFactorEnabled) {
       throw new ValidationError('2FA is not enabled');
@@ -222,12 +204,7 @@ export class TwoFactorService {
     const backupCodes = this.generateBackupCodes();
     const hashedBackupCodes = await this.hashBackupCodes(backupCodes);
 
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        twoFactorBackupCodes: hashedBackupCodes,
-      },
-    });
+    await this.userRepository.update(userId, { twoFactorBackupCodes: hashedBackupCodes });
 
     logger.info('Backup codes regenerated for user', { userId });
 
@@ -238,12 +215,7 @@ export class TwoFactorService {
    * Get remaining backup codes count
    */
   async getRemainingBackupCodesCount(userId: string): Promise<number> {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        twoFactorBackupCodes: true,
-      },
-    });
+    const user = await this.userRepository.findByIdSelect(userId, { twoFactorBackupCodes: true });
 
     if (!user || !user.twoFactorBackupCodes) {
       return 0;

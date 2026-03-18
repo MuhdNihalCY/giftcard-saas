@@ -3,7 +3,7 @@
  * Tracks all sensitive operations for security and compliance
  */
 
-import prisma from '../config/database';
+import { AdminRepository } from '../modules/admin/admin.repository';
 import logger from '../utils/logger';
 import type { Prisma } from '@prisma/client';
 
@@ -19,22 +19,22 @@ export interface AuditLogData {
 }
 
 export class AuditLogService {
+  private readonly repository = new AdminRepository();
+
   /**
    * Create an audit log entry
    */
   async log(data: AuditLogData): Promise<void> {
     try {
-      await prisma.auditLog.create({
-        data: {
-          userId: data.userId,
-          userEmail: data.userEmail,
-          action: data.action,
-          resourceType: data.resourceType,
-          resourceId: data.resourceId,
-          ipAddress: data.ipAddress,
-          userAgent: data.userAgent,
-          metadata: (data.metadata || {}) as Prisma.InputJsonValue,
-        },
+      await this.repository.createAuditLog({
+        userId: data.userId,
+        userEmail: data.userEmail,
+        action: data.action,
+        resourceType: data.resourceType,
+        resourceId: data.resourceId,
+        ipAddress: data.ipAddress,
+        userAgent: data.userAgent,
+        metadata: data.metadata || {},
       });
     } catch (error: unknown) {
       // Don't throw - audit logging should never break the main flow
@@ -180,13 +180,8 @@ export class AuditLogService {
     }
 
     const [logs, total] = await Promise.all([
-      prisma.auditLog.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-      }),
-      prisma.auditLog.count({ where }),
+      this.repository.getAuditLogs(where, skip, limit),
+      this.repository.countAuditLogs(where),
     ]);
 
     return {
@@ -242,13 +237,8 @@ export class AuditLogService {
     }
 
     const [logs, total] = await Promise.all([
-      prisma.auditLog.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-      }),
-      prisma.auditLog.count({ where }),
+      this.repository.getAuditLogs(where, skip, limit),
+      this.repository.countAuditLogs(where),
     ]);
 
     return {
@@ -282,45 +272,34 @@ export class AuditLogService {
       byResourceType,
       recentActivity,
     ] = await Promise.all([
-      prisma.auditLog.count({ where }),
-      prisma.auditLog.groupBy({
-        by: ['action'],
-        where,
-        _count: { action: true },
-        orderBy: { _count: { action: 'desc' } },
+      this.repository.countAuditLogs(where),
+      this.repository.groupByAuditLogs(['action'], where, {
         take: 10,
+        orderBy: { _count: { action: 'desc' } },
       }),
-      prisma.auditLog.groupBy({
-        by: ['resourceType'],
-        where,
-        _count: { resourceType: true },
+      this.repository.groupByAuditLogs(['resourceType'], where, {
         orderBy: { _count: { resourceType: 'desc' } },
       }),
-      prisma.auditLog.findMany({
-        where,
-        take: 20,
-        orderBy: { createdAt: 'desc' },
-        select: {
-          id: true,
-          action: true,
-          resourceType: true,
-          userEmail: true,
-          createdAt: true,
-        },
-      }),
+      this.repository.getAuditLogs({ ...where }, 0, 20),
     ]);
 
     return {
       total,
-      byAction: byAction.map((item) => ({
+      byAction: byAction.map((item: any) => ({
         action: item.action,
-        count: item._count.action,
+        count: item._count,
       })),
-      byResourceType: byResourceType.map((item) => ({
+      byResourceType: byResourceType.map((item: any) => ({
         resourceType: item.resourceType,
-        count: item._count.resourceType,
+        count: item._count,
       })),
-      recentActivity,
+      recentActivity: recentActivity.map((log) => ({
+        id: log.id,
+        action: log.action,
+        resourceType: log.resourceType,
+        userEmail: log.userEmail,
+        createdAt: log.createdAt,
+      })),
     };
   }
 
@@ -350,10 +329,8 @@ export class AuditLogService {
       if (filters.endDate) where.createdAt.lte = filters.endDate;
     }
 
-    const logs = await prisma.auditLog.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-    });
+    // Fetch all matching logs (large take to export all; no repository unbounded method exists)
+    const logs = await this.repository.getAuditLogs(where, 0, 100000);
 
     if (filters.format === 'csv') {
       const headers = ['Timestamp', 'User Email', 'Action', 'Resource Type', 'Resource ID', 'IP Address', 'User Agent', 'Metadata'];
@@ -386,11 +363,9 @@ export class AuditLogService {
    * Get a specific audit log by ID
    */
   async getById(id: string) {
-    return prisma.auditLog.findUnique({
-      where: { id },
-    });
+    const logs = await this.repository.getAuditLogs({ id }, 0, 1);
+    return logs[0] ?? null;
   }
 }
 
 export default new AuditLogService();
-

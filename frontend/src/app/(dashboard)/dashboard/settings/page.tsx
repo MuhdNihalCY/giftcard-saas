@@ -8,7 +8,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import api from '@/lib/api';
+import { updateProfile, changePassword } from '@/features/auth';
 import { useAuthStore } from '@/store/authStore';
 import { useFeatureFlag } from '@/hooks/useFeatureFlag';
 import { useFeatureFlagStore } from '@/store/featureFlagStore';
@@ -89,8 +89,8 @@ export default function SettingsPage() {
     try {
       setIsLoading(true);
       setMessage(null);
-      const response = await api.put('/auth/profile', data);
-      setUser(response.data.data);
+      const updatedUser = await updateProfile(data);
+      setUser(updatedUser);
       setMessage({ type: 'success', text: 'Profile updated successfully' });
     } catch (error: any) {
       setMessage({
@@ -106,7 +106,7 @@ export default function SettingsPage() {
     try {
       setIsLoading(true);
       setMessage(null);
-      await api.put('/auth/password', {
+      await changePassword({
         currentPassword: data.currentPassword,
         newPassword: data.newPassword,
       });

@@ -1,6 +1,4 @@
-import { Decimal } from '@prisma/client/runtime/library';
-import prisma from '../config/database';
-import logger from '../utils/logger';
+import { AnalyticsRepository } from '../modules/analytics/analytics.repository';
 
 export interface BreakageCalculation {
   totalIssued: number;
@@ -35,13 +33,15 @@ export interface BreakageReport {
 const GRACE_PERIOD_DAYS = 30;
 
 export class BreakageService {
+  private readonly repository = new AnalyticsRepository();
+
   /**
    * Calculate breakage for a merchant or all merchants
    */
   async calculateBreakage(
     merchantId?: string,
-    startDate?: Date,
-    endDate?: Date
+    _startDate?: Date,
+    _endDate?: Date
   ): Promise<BreakageCalculation> {
     const now = new Date();
     const gracePeriodEndDate = new Date(now.getTime() - GRACE_PERIOD_DAYS * 24 * 60 * 60 * 1000);
@@ -52,17 +52,7 @@ export class BreakageService {
     }
 
     // Get all gift cards
-    const allGiftCards = await prisma.giftCard.findMany({
-      where,
-      select: {
-        id: true,
-        value: true,
-        balance: true,
-        status: true,
-        expiryDate: true,
-        createdAt: true,
-      },
-    });
+    const allGiftCards = await this.repository.getBreakageGiftCards(where);
 
     let totalIssued = 0;
     let totalRedeemed = 0;
@@ -116,7 +106,7 @@ export class BreakageService {
     merchantId?: string,
     startDate?: Date,
     endDate?: Date
-  ): Promise<BreakageReport> {
+  ): Promise<any> {
     const now = new Date();
     const gracePeriodEndDate = new Date(now.getTime() - GRACE_PERIOD_DAYS * 24 * 60 * 60 * 1000);
 
@@ -142,16 +132,7 @@ export class BreakageService {
     }
 
     // Get expired cards past grace period
-    const expiredCards = await prisma.giftCard.findMany({
-      where,
-      select: {
-        id: true,
-        code: true,
-        value: true,
-        balance: true,
-        expiryDate: true,
-      },
-    });
+    const expiredCards = await this.repository.getBreakageGiftCards(where);
 
     const expiredCardsDetails = expiredCards.map((card) => {
       const expiryDate = card.expiryDate || new Date();
@@ -204,15 +185,7 @@ export class BreakageService {
     if (merchantId) {
       previousPeriodWhere.merchantId = merchantId;
     }
-    const previousPeriodCards = await prisma.giftCard.findMany({
-      where: previousPeriodWhere,
-      select: {
-        value: true,
-        balance: true,
-        status: true,
-        expiryDate: true,
-      },
-    });
+    const previousPeriodCards = await this.repository.getBreakageMetricCards(previousPeriodWhere);
 
     let previousBreakage = 0;
     let previousIssued = 0;
@@ -276,26 +249,7 @@ export class BreakageService {
       };
     }
 
-    const expiredCards = await prisma.giftCard.findMany({
-      where,
-      select: {
-        id: true,
-        code: true,
-        value: true,
-        balance: true,
-        expiryDate: true,
-        createdAt: true,
-        merchant: {
-          select: {
-            id: true,
-            businessName: true,
-          },
-        },
-      },
-      orderBy: {
-        expiryDate: 'desc',
-      },
-    });
+    const expiredCards = await this.repository.getExpiredCardsReport(where);
 
     return expiredCards.map((card) => ({
       id: card.id,
@@ -316,16 +270,3 @@ export class BreakageService {
 }
 
 export default new BreakageService();
-
-
-
-
-
-
-
-
-
-
-
-
-

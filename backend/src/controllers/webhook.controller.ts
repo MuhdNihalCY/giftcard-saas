@@ -3,8 +3,12 @@ import crypto from 'crypto';
 import { Decimal } from '@prisma/client/runtime/library';
 import stripeService from '../services/payment/stripe.service';
 import { PaymentMethod, PaymentStatus, PayoutStatus } from '@prisma/client';
-import prisma from '../config/database';
 import { env } from '../config/env';
+import { PaymentRepository } from '../modules/payments/payment.repository';
+import { PayoutRepository } from '../modules/payouts/payout.repository';
+
+const paymentRepository = new PaymentRepository();
+const payoutRepository = new PayoutRepository();
 import logger from '../utils/logger';
 
 export class WebhookController {
@@ -56,40 +60,30 @@ export class WebhookController {
     if (!paymentIntentId) return;
 
     // Find payment by payment intent ID
-    const payment = await prisma.payment.findFirst({
-      where: {
-        paymentIntentId,
-        paymentMethod: PaymentMethod.STRIPE,
-      },
-    });
+    const payment = await paymentRepository.findPaymentByIntentIdAndMethod(paymentIntentId, PaymentMethod.STRIPE);
 
     if (!payment || payment.status === PaymentStatus.COMPLETED) {
       return;
     }
 
     // Update payment status
-    await prisma.payment.update({
-      where: { id: payment.id },
-      data: {
-        status: PaymentStatus.COMPLETED,
-        transactionId: (paymentIntent.latest_charge as string | undefined) || null,
-      },
+    await paymentRepository.updatePayment(payment.id, {
+      status: PaymentStatus.COMPLETED,
+      transactionId: (paymentIntent.latest_charge as string | undefined) || null,
     });
 
     // Create transaction record
-    await prisma.transaction.create({
-      data: {
-        giftCardId: payment.giftCardId,
-        type: 'PURCHASE',
-        amount: payment.amount,
-        balanceBefore: new Decimal(0),
-        balanceAfter: payment.amount,
-        userId: payment.customerId || null,
-        metadata: {
-          paymentId: payment.id,
-          paymentMethod: PaymentMethod.STRIPE,
-        } satisfies { paymentId: string; paymentMethod: PaymentMethod },
-      },
+    await paymentRepository.createTransaction({
+      giftCardId: payment.giftCardId,
+      type: 'PURCHASE',
+      amount: payment.amount,
+      balanceBefore: new Decimal(0),
+      balanceAfter: payment.amount,
+      userId: payment.customerId || null,
+      metadata: {
+        paymentId: payment.id,
+        paymentMethod: PaymentMethod.STRIPE,
+      } satisfies { paymentId: string; paymentMethod: PaymentMethod },
     });
   }
 
@@ -97,18 +91,10 @@ export class WebhookController {
     const paymentIntentId = paymentIntent.id as string | undefined;
     if (!paymentIntentId) return;
     
-    const payment = await prisma.payment.findFirst({
-      where: {
-        paymentIntentId,
-        paymentMethod: PaymentMethod.STRIPE,
-      },
-    });
+    const payment = await paymentRepository.findPaymentByIntentIdAndMethod(paymentIntentId, PaymentMethod.STRIPE);
 
     if (payment && payment.status !== PaymentStatus.FAILED) {
-      await prisma.payment.update({
-        where: { id: payment.id },
-        data: { status: PaymentStatus.FAILED },
-      });
+      await paymentRepository.updatePayment(payment.id, { status: PaymentStatus.FAILED });
     }
   }
 
@@ -161,38 +147,28 @@ export class WebhookController {
     const paymentId = payment.id as string | undefined;
     if (!paymentId) return;
     
-    const paymentRecord = await prisma.payment.findFirst({
-      where: {
-        paymentIntentId: paymentId,
-        paymentMethod: PaymentMethod.RAZORPAY,
-      },
-    });
+    const paymentRecord = await paymentRepository.findPaymentByIntentIdAndMethod(paymentId, PaymentMethod.RAZORPAY);
 
     if (!paymentRecord || paymentRecord.status === PaymentStatus.COMPLETED) {
       return;
     }
 
-    await prisma.payment.update({
-      where: { id: paymentRecord.id },
-      data: {
-        status: PaymentStatus.COMPLETED,
-        transactionId: paymentId,
-      },
+    await paymentRepository.updatePayment(paymentRecord.id, {
+      status: PaymentStatus.COMPLETED,
+      transactionId: paymentId,
     });
 
-    await prisma.transaction.create({
-      data: {
-        giftCardId: paymentRecord.giftCardId,
-        type: 'PURCHASE',
-        amount: paymentRecord.amount,
-        balanceBefore: new Decimal(0),
-        balanceAfter: paymentRecord.amount,
-        userId: paymentRecord.customerId || null,
-        metadata: {
-          paymentId: paymentRecord.id,
-          paymentMethod: PaymentMethod.RAZORPAY,
-        } satisfies { paymentId: string; paymentMethod: PaymentMethod },
-      },
+    await paymentRepository.createTransaction({
+      giftCardId: paymentRecord.giftCardId,
+      type: 'PURCHASE',
+      amount: paymentRecord.amount,
+      balanceBefore: new Decimal(0),
+      balanceAfter: paymentRecord.amount,
+      userId: paymentRecord.customerId || null,
+      metadata: {
+        paymentId: paymentRecord.id,
+        paymentMethod: PaymentMethod.RAZORPAY,
+      } satisfies { paymentId: string; paymentMethod: PaymentMethod },
     });
   }
 
@@ -200,18 +176,10 @@ export class WebhookController {
     const paymentId = payment.id as string | undefined;
     if (!paymentId) return;
     
-    const paymentRecord = await prisma.payment.findFirst({
-      where: {
-        paymentIntentId: paymentId,
-        paymentMethod: PaymentMethod.RAZORPAY,
-      },
-    });
+    const paymentRecord = await paymentRepository.findPaymentByIntentIdAndMethod(paymentId, PaymentMethod.RAZORPAY);
 
     if (paymentRecord && paymentRecord.status !== PaymentStatus.FAILED) {
-      await prisma.payment.update({
-        where: { id: paymentRecord.id },
-        data: { status: PaymentStatus.FAILED },
-      });
+      await paymentRepository.updatePayment(paymentRecord.id, { status: PaymentStatus.FAILED });
     }
   }
 
@@ -226,12 +194,7 @@ export class WebhookController {
     if (!payoutId) return;
 
     // Find payout by transaction ID (Stripe payout ID)
-    const payoutRecord = await prisma.payout.findFirst({
-      where: {
-        transactionId: payoutId,
-        payoutMethod: 'STRIPE_CONNECT',
-      },
-    });
+    const payoutRecord = await payoutRepository.findPayoutByTransactionId(payoutId, 'STRIPE_CONNECT');
 
     if (!payoutRecord) {
       logger.warn('Payout not found for Stripe webhook', { payoutId, eventType });
@@ -257,20 +220,17 @@ export class WebhookController {
         return;
     }
 
-    await prisma.payout.update({
-      where: { id: payoutRecord.id },
-      data: {
-        status,
-        failureReason,
-        processedAt: status === PayoutStatus.COMPLETED ? new Date() : payoutRecord.processedAt,
-        webhookData: {
-          eventType,
-          payoutId,
-          status: payout.status,
-          failureCode: payout.failure_code || null,
-          failureMessage: payout.failure_message || null,
-          updatedAt: new Date().toISOString(),
-        },
+    await payoutRepository.updatePayout(payoutRecord.id, {
+      status,
+      failureReason,
+      processedAt: status === PayoutStatus.COMPLETED ? new Date() : payoutRecord.processedAt,
+      webhookData: {
+        eventType,
+        payoutId,
+        status: payout.status,
+        failureCode: payout.failure_code || null,
+        failureMessage: payout.failure_message || null,
+        updatedAt: new Date().toISOString(),
       },
     });
 
@@ -291,12 +251,7 @@ export class WebhookController {
     if (!accountId) return;
 
     // Find gateway by connect account ID
-    const gateway = await prisma.merchantPaymentGateway.findFirst({
-      where: {
-        connectAccountId: accountId,
-        gatewayType: 'STRIPE',
-      },
-    });
+    const gateway = await paymentRepository.findMerchantGatewayByConnectAccountId(accountId, 'STRIPE');
 
     if (!gateway) {
       return;
@@ -314,18 +269,15 @@ export class WebhookController {
       verificationStatus = 'PENDING';
     }
 
-    await prisma.merchantPaymentGateway.update({
-      where: { id: gateway.id },
-      data: {
-        verificationStatus,
-        isActive: verificationStatus === 'VERIFIED' && gateway.isActive,
-        metadata: {
-          ...((gateway.metadata as Record<string, unknown>) || {}),
-          chargesEnabled,
-          payoutsEnabled,
-          detailsSubmitted,
-          updatedAt: new Date().toISOString(),
-        },
+    await paymentRepository.updateMerchantGateway(gateway.id, {
+      verificationStatus,
+      isActive: verificationStatus === 'VERIFIED' && gateway.isActive,
+      metadata: {
+        ...((gateway.metadata as Record<string, unknown>) || {}),
+        chargesEnabled,
+        payoutsEnabled,
+        detailsSubmitted,
+        updatedAt: new Date().toISOString(),
       },
     });
 
@@ -371,12 +323,7 @@ export class WebhookController {
     if (!batchId) return;
 
     // Find payouts by batch ID
-    const payouts = await prisma.payout.findMany({
-      where: {
-        transactionId: batchId,
-        payoutMethod: 'PAYPAL',
-      },
-    });
+    const payouts = await payoutRepository.findPayoutsByTransactionId(batchId, 'PAYPAL');
 
     const batchStatus = batch.batch_status as string | undefined;
 
@@ -391,17 +338,14 @@ export class WebhookController {
         failureReason = (batch.batch_status as string) || 'Payout batch failed';
       }
 
-      await prisma.payout.update({
-        where: { id: payout.id },
-        data: {
-          status,
-          failureReason,
-          processedAt: status === PayoutStatus.COMPLETED ? new Date() : payout.processedAt,
-          webhookData: {
-            batchId,
-            batchStatus,
-            updatedAt: new Date().toISOString(),
-          },
+      await payoutRepository.updatePayout(payout.id, {
+        status,
+        failureReason,
+        processedAt: status === PayoutStatus.COMPLETED ? new Date() : payout.processedAt,
+        webhookData: {
+          batchId,
+          batchStatus,
+          updatedAt: new Date().toISOString(),
         },
       });
     }
@@ -417,12 +361,7 @@ export class WebhookController {
     const transactionId = item.payout_item_id as string | undefined;
     if (!transactionId) return;
 
-    const payout = await prisma.payout.findFirst({
-      where: {
-        transactionId,
-        payoutMethod: 'PAYPAL',
-      },
-    });
+    const payout = await payoutRepository.findPayoutByTransactionId(transactionId, 'PAYPAL');
 
     if (!payout) {
       return;
@@ -448,17 +387,14 @@ export class WebhookController {
         return;
     }
 
-    await prisma.payout.update({
-      where: { id: payout.id },
-      data: {
-        status,
-        failureReason,
-        processedAt: status === PayoutStatus.COMPLETED ? new Date() : payout.processedAt,
-        webhookData: {
-          transactionId,
-          transactionStatus,
-          updatedAt: new Date().toISOString(),
-        },
+    await payoutRepository.updatePayout(payout.id, {
+      status,
+      failureReason,
+      processedAt: status === PayoutStatus.COMPLETED ? new Date() : payout.processedAt,
+      webhookData: {
+        transactionId,
+        transactionStatus,
+        updatedAt: new Date().toISOString(),
       },
     });
 

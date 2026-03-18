@@ -1,10 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import api from '@/lib/api';
+import {
+  fetchAllFeatureFlags,
+  fetchFeatureFlagStats,
+  createFeatureFlag,
+  updateAdminFeatureFlag,
+  deleteFeatureFlag,
+  toggleAdminFeatureFlag,
+} from '@/features/admin';
 import { DataTable } from '@/components/ui/DataTable';
 import { FilterBar } from '@/components/dashboard/FilterBar';
-import { Badge } from '@/components/ui/Badge';
+import { Badge, BadgeVariant } from '@/components/ui/Badge';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -80,8 +87,7 @@ export default function AdminFeatureFlagsPage() {
   const loadFeatureFlags = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/feature-flags/admin/all');
-      let allFlags: FeatureFlag[] = response.data.data || [];
+      let allFlags: FeatureFlag[] = await fetchAllFeatureFlags();
 
       // Apply filters
       if (filters.category) {
@@ -115,8 +121,8 @@ export default function AdminFeatureFlagsPage() {
 
   const loadStatistics = async () => {
     try {
-      const response = await api.get('/feature-flags/admin/statistics');
-      setStats(response.data.data);
+      const data = await fetchFeatureFlagStats();
+      setStats(data);
     } catch (error: any) {
       logger.error('Failed to load statistics', { error });
     }
@@ -124,7 +130,7 @@ export default function AdminFeatureFlagsPage() {
 
   const handleAdd = async () => {
     try {
-      await api.post('/feature-flags/admin', formData);
+      await createFeatureFlag(formData);
       toast.success('Feature flag created successfully');
       setShowAddForm(false);
       resetForm();
@@ -142,7 +148,7 @@ export default function AdminFeatureFlagsPage() {
     if (!editingFlag) return;
 
     try {
-      await api.put(`/feature-flags/admin/${editingFlag.id}`, formData);
+      await updateAdminFeatureFlag(editingFlag.id, formData);
       toast.success('Feature flag updated successfully');
       setEditingFlag(null);
       resetForm();
@@ -162,7 +168,7 @@ export default function AdminFeatureFlagsPage() {
     }
 
     try {
-      await api.delete(`/feature-flags/admin/${id}`);
+      await deleteFeatureFlag(id);
       toast.success('Feature flag deleted successfully');
       loadFeatureFlags();
       loadStatistics();
@@ -176,7 +182,7 @@ export default function AdminFeatureFlagsPage() {
 
   const handleToggle = async (id: string, currentState: boolean) => {
     try {
-      await api.post(`/feature-flags/admin/${id}/toggle`);
+      await toggleAdminFeatureFlag(id);
       toast.success(`Feature flag ${currentState ? 'disabled' : 'enabled'} successfully`);
       loadFeatureFlags();
       loadStatistics();
@@ -220,17 +226,17 @@ export default function AdminFeatureFlagsPage() {
 
   const getCategoryBadge = (category: string) => {
     return (
-      <Badge variant={category === 'PAGE' ? 'default' : 'secondary'}>
+      <Badge variant={(category === 'PAGE' ? 'default' : 'inactive') as BadgeVariant}>
         {category}
       </Badge>
     );
   };
 
   const getRoleBadge = (role: string) => {
-    const variants: Record<string, 'default' | 'secondary' | 'outline'> = {
+    const variants: Record<string, BadgeVariant> = {
       MERCHANT: 'default',
-      CUSTOMER: 'secondary',
-      ALL: 'outline',
+      CUSTOMER: 'inactive',
+      ALL: 'info',
     };
     return <Badge variant={variants[role] || 'default'}>{role}</Badge>;
   };
@@ -279,7 +285,7 @@ export default function AdminFeatureFlagsPage() {
             ) : (
               <ToggleLeft className="w-6 h-6 text-gray-400" />
             )}
-            <Badge variant={row.isEnabled ? 'default' : 'secondary'}>
+            <Badge variant={row.isEnabled ? 'active' : 'inactive'}>
               {row.isEnabled ? 'Enabled' : 'Disabled'}
             </Badge>
           </button>
@@ -391,19 +397,12 @@ export default function AdminFeatureFlagsPage() {
       <Card className="mb-6">
         <CardContent className="pt-6">
           <FilterBar
+            searchValue={filters.search}
+            onSearchChange={(value) => setFilters({ ...filters, search: value })}
             filters={[
-              {
-                key: 'search',
-                label: 'Search',
-                type: 'text',
-                value: filters.search,
-                onChange: (value) => setFilters({ ...filters, search: value as string }),
-                placeholder: 'Search by key, name, or description...',
-              },
               {
                 key: 'category',
                 label: 'Category',
-                type: 'select',
                 value: filters.category,
                 onChange: (value) => setFilters({ ...filters, category: value as string }),
                 options: [
@@ -415,7 +414,6 @@ export default function AdminFeatureFlagsPage() {
               {
                 key: 'targetRole',
                 label: 'Target Role',
-                type: 'select',
                 value: filters.targetRole,
                 onChange: (value) => setFilters({ ...filters, targetRole: value as string }),
                 options: [
@@ -428,7 +426,6 @@ export default function AdminFeatureFlagsPage() {
               {
                 key: 'isEnabled',
                 label: 'Status',
-                type: 'select',
                 value: filters.isEnabled,
                 onChange: (value) => setFilters({ ...filters, isEnabled: value as string }),
                 options: [
@@ -549,7 +546,7 @@ export default function AdminFeatureFlagsPage() {
           <DataTable
             data={flags}
             columns={columns}
-            loading={loading}
+            isLoading={loading}
             emptyMessage="No feature flags found"
           />
         </CardContent>

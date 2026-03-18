@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
 import { Input } from './ui/Input';
-import { Button } from './ui/Button';
 import { TemplatePreview } from './TemplatePreview';
 import type { TemplateDesignData } from '@/lib/template-design';
 import { COLOR_SCHEMES, applyColorScheme } from '@/lib/color-schemes';

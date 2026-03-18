@@ -8,8 +8,10 @@ import twoFactorService from '../services/two-factor.service';
 import authService from '../services/auth.service';
 import { ValidationError, UnauthorizedError } from '../utils/errors';
 import logger from '../utils/logger';
-import prisma from '../config/database';
 import bcrypt from 'bcryptjs';
+import { UserRepository } from '../modules/users/user.repository';
+
+const userRepository = new UserRepository();
 import deviceService from '../services/device.service';
 
 export class TwoFactorController {
@@ -21,12 +23,9 @@ export class TwoFactorController {
     try {
       const userId = req.user!.userId;
 
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          email: true,
-          twoFactorEnabled: true,
-        },
+      const user = await userRepository.findByIdSelect(userId, {
+        email: true,
+        twoFactorEnabled: true,
       });
 
       if (!user) {
@@ -172,12 +171,7 @@ export class TwoFactorController {
       const { password } = req.body;
 
       // Verify password
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          passwordHash: true,
-        },
-      });
+      const user = await userRepository.findByIdSelect(userId, { passwordHash: true });
 
       if (!user) {
         throw new UnauthorizedError('User not found');
@@ -270,12 +264,7 @@ export class TwoFactorController {
     try {
       const userId = req.user!.userId;
 
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          twoFactorEnabled: true,
-        },
-      });
+      const user = await userRepository.findByIdSelect(userId, { twoFactorEnabled: true });
 
       if (!user) {
         throw new UnauthorizedError('User not found');

@@ -14,7 +14,7 @@ export function TemplatePreview({ designData }: TemplatePreviewProps) {
   const baseStyles = applyTemplateStyles(designData);
   const layoutStyles = getLayoutStyles(designData);
   const gradient = getBackgroundGradient(designData);
-  const contrastText = getContrastTextColor(design.colors.primary);
+  const contrastText = getContrastTextColor(design.colors.primary ?? '');
 
   // Determine background and text color based on layout
   let background: string;
@@ -27,18 +27,18 @@ export function TemplatePreview({ designData }: TemplatePreviewProps) {
       textColor = contrastText;
       break;
     case 'bold':
-      background = design.colors.primary;
+      background = design.colors.primary ?? '';
       textColor = contrastText;
       break;
     case 'minimal':
-      background = design.colors.background;
-      textColor = design.colors.text;
+      background = design.colors.background ?? '';
+      textColor = design.colors.text ?? '';
       break;
     case 'classic':
     case 'elegant':
     default:
-      background = design.colors.background;
-      textColor = design.colors.text;
+      background = design.colors.background ?? '';
+      textColor = design.colors.text ?? '';
       break;
   }
 

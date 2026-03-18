@@ -3,22 +3,14 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import api from '@/lib/api';
+import { fetchGiftCardTemplates, deleteGiftCardTemplate } from '@/features/gift-cards';
+import type { GiftCardTemplate } from '@/features/gift-cards';
 import { formatDate } from '@/lib/utils';
 import Link from 'next/link';
 import logger from '@/lib/logger';
 
-interface Template {
-  id: string;
-  name: string;
-  description?: string;
-  design: any;
-  isDefault: boolean;
-  createdAt: string;
-}
-
 export default function TemplatesPage() {
-  const [templates, setTemplates] = useState<Template[]>([]);
+  const [templates, setTemplates] = useState<GiftCardTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -27,8 +19,8 @@ export default function TemplatesPage() {
 
   const fetchTemplates = async () => {
     try {
-      const response = await api.get('/gift-cards/templates');
-      setTemplates(response.data.data || []);
+      const data = await fetchGiftCardTemplates();
+      setTemplates(data);
     } catch (error) {
       logger.error('Failed to fetch templates', { error });
     } finally {
@@ -40,7 +32,7 @@ export default function TemplatesPage() {
     if (!confirm('Are you sure you want to delete this template?')) return;
 
     try {
-      await api.delete(`/gift-cards/templates/${id}`);
+      await deleteGiftCardTemplate(id);
       fetchTemplates();
     } catch (error) {
       logger.error('Failed to delete template', { error });

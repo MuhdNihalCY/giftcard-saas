@@ -1,5 +1,5 @@
-import prisma from '../config/database';
 import breakageService from './breakage.service';
+import { AnalyticsRepository } from '../modules/analytics/analytics.repository';
 
 export interface AnalyticsFilters {
   merchantId?: string;
@@ -9,6 +9,8 @@ export interface AnalyticsFilters {
 }
 
 export class AnalyticsService {
+  private readonly repository = new AnalyticsRepository();
+
   /**
    * Get sales analytics
    */
@@ -29,18 +31,7 @@ export class AnalyticsService {
       if (endDate) where.createdAt.lte = endDate;
     }
 
-    const payments = await prisma.payment.findMany({
-      where,
-      include: {
-        giftCard: {
-          select: {
-            id: true,
-            code: true,
-            merchantId: true,
-          },
-        },
-      },
-    });
+    const payments = await this.repository.getPayments(where);
 
     const totalRevenue = payments.reduce(
       (sum, p) => sum + Number(p.amount),
@@ -87,19 +78,7 @@ export class AnalyticsService {
       if (endDate) where.createdAt.lte = endDate;
     }
 
-    const redemptions = await prisma.redemption.findMany({
-      where,
-      include: {
-        giftCard: {
-          select: {
-            id: true,
-            code: true,
-            value: true,
-            currency: true,
-          },
-        },
-      },
-    });
+    const redemptions = await this.repository.getRedemptions(where, 0, 10000);
 
     const totalRedeemed = redemptions.reduce(
       (sum, r) => sum + Number(r.amount),
@@ -141,22 +120,10 @@ export class AnalyticsService {
       if (endDate) where.createdAt.lte = endDate;
     }
 
-    const payments = await prisma.payment.findMany({
-      where: {
-        ...where,
-        status: 'COMPLETED',
-        customerId: { not: null },
-      },
-      include: {
-        customer: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-      },
+    const payments = await this.repository.getCustomerPayments({
+      ...where,
+      status: 'COMPLETED',
+      customerId: { not: null },
     });
 
     const uniqueCustomers = new Set(payments.map((p) => p.customerId).filter(Boolean));
@@ -202,22 +169,14 @@ export class AnalyticsService {
     if (merchantId) where.merchantId = merchantId;
 
     const [total, active, redeemed, expired, cancelled] = await Promise.all([
-      prisma.giftCard.count({ where }),
-      prisma.giftCard.count({ where: { ...where, status: 'ACTIVE' } }),
-      prisma.giftCard.count({ where: { ...where, status: 'REDEEMED' } }),
-      prisma.giftCard.count({ where: { ...where, status: 'EXPIRED' } }),
-      prisma.giftCard.count({ where: { ...where, status: 'CANCELLED' } }),
+      this.repository.countGiftCards(where),
+      this.repository.countGiftCards({ ...where, status: 'ACTIVE' }),
+      this.repository.countGiftCards({ ...where, status: 'REDEEMED' }),
+      this.repository.countGiftCards({ ...where, status: 'EXPIRED' }),
+      this.repository.countGiftCards({ ...where, status: 'CANCELLED' }),
     ]);
 
-    const giftCards = await prisma.giftCard.findMany({
-      where,
-      select: {
-        value: true,
-        balance: true,
-        currency: true,
-        status: true,
-      },
-    });
+    const giftCards = await this.repository.getGiftCardsValueSelect(where);
 
     const totalValue = giftCards.reduce((sum, gc) => sum + Number(gc.value), 0);
     const totalOutstanding = giftCards.reduce((sum, gc) => sum + Number(gc.balance), 0);
@@ -253,4 +212,3 @@ export class AnalyticsService {
 }
 
 export default new AnalyticsService();
-

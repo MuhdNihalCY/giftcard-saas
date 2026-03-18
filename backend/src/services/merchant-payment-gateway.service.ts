@@ -1,8 +1,12 @@
-import prisma from '../config/database';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { GatewayType, VerificationStatus } from '@prisma/client';
 import logger from '../utils/logger';
 import { encryptSensitiveData, decryptSensitiveData } from '../utils/encryption';
+import { PaymentRepository } from '../modules/payments/payment.repository';
+import { UserRepository } from '../modules/users/user.repository';
+
+const paymentRepository = new PaymentRepository();
+const userRepository = new UserRepository();
 
 export interface GatewayCredentials {
   apiKey?: string;
@@ -38,9 +42,7 @@ export class MerchantPaymentGatewayService {
     const { merchantId, gatewayType, credentials, connectAccountId, metadata } = data;
 
     // Verify merchant exists and is a merchant
-    const merchant = await prisma.user.findUnique({
-      where: { id: merchantId },
-    });
+    const merchant = await userRepository.findById(merchantId);
 
     if (!merchant) {
       throw new NotFoundError('Merchant not found');
@@ -54,26 +56,16 @@ export class MerchantPaymentGatewayService {
     const encryptedCredentials = encryptSensitiveData(credentials);
 
     // Check if gateway already exists for this merchant
-    const existing = await prisma.merchantPaymentGateway.findUnique({
-      where: {
-        merchantId_gatewayType: {
-          merchantId,
-          gatewayType,
-        },
-      },
-    });
+    const existing = await paymentRepository.findMerchantGatewayByMerchantAndType(merchantId, gatewayType);
 
     if (existing) {
       // Update existing gateway
-      const updated = await prisma.merchantPaymentGateway.update({
-        where: { id: existing.id },
-        data: {
-          credentials: encryptedCredentials,
-          connectAccountId: connectAccountId || existing.connectAccountId,
-          verificationStatus: VerificationStatus.PENDING,
-          metadata: metadata || existing.metadata,
-          updatedAt: new Date(),
-        },
+      const updated = await paymentRepository.updateMerchantGateway(existing.id, {
+        credentials: encryptedCredentials,
+        connectAccountId: connectAccountId || existing.connectAccountId,
+        verificationStatus: VerificationStatus.PENDING,
+        metadata: metadata || existing.metadata,
+        updatedAt: new Date(),
       });
 
       logger.info('Payment gateway configuration updated', {
@@ -86,16 +78,14 @@ export class MerchantPaymentGatewayService {
     }
 
     // Create new gateway configuration
-    const gateway = await prisma.merchantPaymentGateway.create({
-      data: {
-        merchantId,
-        gatewayType,
-        credentials: encryptedCredentials,
-        connectAccountId: connectAccountId || null,
-        verificationStatus: VerificationStatus.PENDING,
-        isActive: false, // Must be verified before activation
-        metadata: metadata || {},
-      },
+    const gateway = await paymentRepository.createMerchantGateway({
+      merchantId,
+      gatewayType,
+      credentials: encryptedCredentials,
+      connectAccountId: connectAccountId || null,
+      verificationStatus: VerificationStatus.PENDING,
+      isActive: false, // Must be verified before activation
+      metadata: metadata || {},
     });
 
     logger.info('Payment gateway configuration created', {
@@ -111,9 +101,7 @@ export class MerchantPaymentGatewayService {
    * Update gateway configuration
    */
   async updateGatewayConfig(id: string, merchantId: string, data: UpdateGatewayConfigData) {
-    const gateway = await prisma.merchantPaymentGateway.findUnique({
-      where: { id },
-    });
+    const gateway = await paymentRepository.findMerchantGatewayById(id);
 
     if (!gateway) {
       throw new NotFoundError('Payment gateway configuration not found');
@@ -145,10 +133,7 @@ export class MerchantPaymentGatewayService {
       updateData.metadata = data.metadata;
     }
 
-    const updated = await prisma.merchantPaymentGateway.update({
-      where: { id },
-      data: updateData,
-    });
+    const updated = await paymentRepository.updateMerchantGateway(id, updateData);
 
     logger.info('Payment gateway configuration updated', {
       gatewayId: id,
@@ -162,64 +147,21 @@ export class MerchantPaymentGatewayService {
    * Get active payment gateways for a merchant
    */
   async getActiveGateways(merchantId: string) {
-    const gateways = await prisma.merchantPaymentGateway.findMany({
-      where: {
-        merchantId,
-        isActive: true,
-        verificationStatus: VerificationStatus.VERIFIED,
-      },
-      select: {
-        id: true,
-        gatewayType: true,
-        isActive: true,
-        connectAccountId: true,
-        verificationStatus: true,
-        metadata: true,
-        createdAt: true,
-        updatedAt: true,
-        // Do not return encrypted credentials
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-
-    return gateways;
+    return paymentRepository.findActiveMerchantGatewaysPublic(merchantId);
   }
 
   /**
    * Get all payment gateways for a merchant (including inactive)
    */
   async getAllGateways(merchantId: string) {
-    const gateways = await prisma.merchantPaymentGateway.findMany({
-      where: {
-        merchantId,
-      },
-      select: {
-        id: true,
-        gatewayType: true,
-        isActive: true,
-        connectAccountId: true,
-        verificationStatus: true,
-        metadata: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-
-    return gateways;
+    return paymentRepository.findAllMerchantGatewaysPublic(merchantId);
   }
 
   /**
    * Get gateway by ID (with credentials for internal use)
    */
   async getGatewayById(id: string, merchantId?: string) {
-    const gateway = await prisma.merchantPaymentGateway.findUnique({
-      where: { id },
-    });
+    const gateway = await paymentRepository.findMerchantGatewayById(id);
 
     if (!gateway) {
       throw new NotFoundError('Payment gateway configuration not found');
@@ -236,14 +178,7 @@ export class MerchantPaymentGatewayService {
    * Get gateway by merchant and type (with decrypted credentials for internal use)
    */
   async getGatewayForMerchant(merchantId: string, gatewayType: GatewayType) {
-    const gateway = await prisma.merchantPaymentGateway.findUnique({
-      where: {
-        merchantId_gatewayType: {
-          merchantId,
-          gatewayType,
-        },
-      },
-    });
+    const gateway = await paymentRepository.findMerchantGatewayByMerchantAndType(merchantId, gatewayType);
 
     if (!gateway) {
       return null;
@@ -276,9 +211,8 @@ export class MerchantPaymentGatewayService {
     }
 
     // Basic verification - check if credentials are present
-    // Actual verification should be done by the specific gateway service
     const credentials = gateway.credentials as GatewayCredentials;
-    
+
     let isValid = false;
     switch (gatewayType) {
       case GatewayType.STRIPE:
@@ -295,11 +229,8 @@ export class MerchantPaymentGatewayService {
     }
 
     // Update verification status
-    await prisma.merchantPaymentGateway.update({
-      where: { id: gateway.id },
-      data: {
-        verificationStatus: isValid ? VerificationStatus.VERIFIED : VerificationStatus.FAILED,
-      },
+    await paymentRepository.updateMerchantGateway(gateway.id, {
+      verificationStatus: isValid ? VerificationStatus.VERIFIED : VerificationStatus.FAILED,
     });
 
     return isValid;
@@ -309,14 +240,11 @@ export class MerchantPaymentGatewayService {
    * Mark gateway as verified
    */
   async markAsVerified(id: string, merchantId: string) {
-    const gateway = await this.getGatewayById(id, merchantId);
+    await this.getGatewayById(id, merchantId);
 
-    const updated = await prisma.merchantPaymentGateway.update({
-      where: { id },
-      data: {
-        verificationStatus: VerificationStatus.VERIFIED,
-        isActive: true, // Auto-activate when verified
-      },
+    const updated = await paymentRepository.updateMerchantGateway(id, {
+      verificationStatus: VerificationStatus.VERIFIED,
+      isActive: true, // Auto-activate when verified
     });
 
     logger.info('Payment gateway marked as verified', {
@@ -331,13 +259,10 @@ export class MerchantPaymentGatewayService {
    * Deactivate gateway
    */
   async deactivateGateway(id: string, merchantId: string) {
-    const gateway = await this.getGatewayById(id, merchantId);
+    await this.getGatewayById(id, merchantId);
 
-    const updated = await prisma.merchantPaymentGateway.update({
-      where: { id },
-      data: {
-        isActive: false,
-      },
+    const updated = await paymentRepository.updateMerchantGateway(id, {
+      isActive: false,
     });
 
     logger.info('Payment gateway deactivated', {
@@ -352,11 +277,9 @@ export class MerchantPaymentGatewayService {
    * Delete gateway configuration
    */
   async deleteGateway(id: string, merchantId: string) {
-    const gateway = await this.getGatewayById(id, merchantId);
+    await this.getGatewayById(id, merchantId);
 
-    await prisma.merchantPaymentGateway.delete({
-      where: { id },
-    });
+    await paymentRepository.deleteMerchantGateway(id);
 
     logger.info('Payment gateway configuration deleted', {
       gatewayId: id,
@@ -366,9 +289,3 @@ export class MerchantPaymentGatewayService {
 }
 
 export default new MerchantPaymentGatewayService();
-
-
-
-
-
-

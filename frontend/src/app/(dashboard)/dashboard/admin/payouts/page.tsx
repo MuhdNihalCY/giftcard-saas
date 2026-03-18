@@ -6,7 +6,12 @@ import { Button } from '@/components/ui/Button';
 import { Badge, getStatusBadgeVariant } from '@/components/ui/Badge';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { FilterBar } from '@/components/dashboard/FilterBar';
-import api from '@/lib/api';
+import {
+  fetchPayouts as fetchAdminPayouts,
+  fetchPayoutStats,
+  processPayout as processAdminPayout,
+  retryPayout as retryAdminPayout,
+} from '@/features/admin';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import { DollarSign, RefreshCw, Play, RotateCw } from 'lucide-react';
 import { useToast } from '@/components/ui/ToastContainer';
@@ -70,18 +75,18 @@ export default function AdminPayoutsPage() {
       if (statusFilter) params.status = statusFilter;
       if (merchantFilter) params.merchantId = merchantFilter;
 
-      const [payoutsRes, statsRes] = await Promise.all([
-        api.get('/admin/payouts', { params }),
-        api.get('/admin/payouts/stats'),
+      const [payoutsRes, statsData] = await Promise.all([
+        fetchAdminPayouts(params),
+        fetchPayoutStats(),
       ]);
 
-      setPayouts(payoutsRes.data.data || []);
-      setStats(statsRes.data.data);
+      setPayouts(payoutsRes.data || []);
+      setStats(statsData);
       setPagination((prev) => ({
         ...prev,
-        total: payoutsRes.data.pagination?.total || 0,
+        total: payoutsRes.pagination?.total || 0,
       }));
-    } catch (error: any) {
+    } catch {
       toast.error('Failed to load payouts');
     } finally {
       setIsLoading(false);
@@ -93,7 +98,7 @@ export default function AdminPayoutsPage() {
 
     try {
       setProcessingId(id);
-      await api.post(`/admin/payouts/${id}/process`);
+      await processAdminPayout(id);
       toast.success('Payout processed successfully');
       fetchData();
     } catch (error: any) {
@@ -108,7 +113,7 @@ export default function AdminPayoutsPage() {
 
     try {
       setRetryingId(id);
-      await api.post(`/admin/payouts/${id}/retry`);
+      await retryAdminPayout(id);
       toast.success('Payout retry initiated');
       fetchData();
     } catch (error: any) {
@@ -121,23 +126,23 @@ export default function AdminPayoutsPage() {
   const columns: Column<Payout>[] = [
     {
       key: 'merchant',
-      header: 'Merchant',
+      label: 'Merchant',
       render: (payout) =>
         payout.merchant?.businessName || payout.merchant?.email || payout.merchantId,
     },
     {
       key: 'amount',
-      header: 'Amount',
+      label: 'Amount',
       render: (payout) => formatCurrency(payout.amount, payout.currency),
     },
     {
       key: 'netAmount',
-      header: 'Net Amount',
+      label: 'Net Amount',
       render: (payout) => formatCurrency(payout.netAmount, payout.currency),
     },
     {
       key: 'status',
-      header: 'Status',
+      label: 'Status',
       render: (payout) => (
         <Badge variant={getStatusBadgeVariant(payout.status.toLowerCase())}>
           {payout.status}
@@ -146,17 +151,17 @@ export default function AdminPayoutsPage() {
     },
     {
       key: 'payoutMethod',
-      header: 'Method',
+      label: 'Method',
       render: (payout) => payout.payoutMethod.replace('_', ' '),
     },
     {
       key: 'createdAt',
-      header: 'Requested',
+      label: 'Requested',
       render: (payout) => formatDateTime(payout.createdAt),
     },
     {
       key: 'actions',
-      header: 'Actions',
+      label: 'Actions',
       render: (payout) => (
         <div className="flex items-center gap-2">
           {payout.status === 'PENDING' && (

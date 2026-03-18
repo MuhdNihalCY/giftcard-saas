@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import api from '@/lib/api';
+import { fetchBreakageMetrics, fetchBreakageReportDetail } from '@/features/analytics';
+import type { BreakageMetrics, BreakageReportDetail } from '@/features/analytics';
 import { MetricCard } from '@/components/dashboard/MetricCard';
 import { ChartContainer } from '@/components/dashboard/ChartContainer';
 import { FilterBar } from '@/components/dashboard/FilterBar';
@@ -20,56 +21,10 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-interface BreakageMetrics {
-  current: {
-    breakageAmount: number;
-    breakagePercentage: number;
-    totalIssued: number;
-    totalUnredeemed: number;
-  };
-  previous: {
-    breakageAmount: number;
-    breakagePercentage: number;
-    totalIssued: number;
-  };
-  trend: {
-    breakageAmountChange: number;
-    breakagePercentageChange: number;
-    trendDirection: 'increasing' | 'decreasing' | 'stable';
-  };
-}
-
-interface BreakageReport {
-  period: {
-    startDate: string;
-    endDate: string;
-  };
-  calculations: {
-    totalIssued: number;
-    totalRedeemed: number;
-    totalUnredeemed: number;
-    totalExpired: number;
-    totalExpiredUnredeemed: number;
-    breakageAmount: number;
-    breakagePercentage: number;
-    gracePeriodDays: number;
-  };
-  expiredCards: Array<{
-    id: string;
-    code: string;
-    value: number;
-    balance: number;
-    expiryDate: string;
-    expiredDate: string;
-    gracePeriodEndDate: string;
-    isBreakage: boolean;
-  }>;
-}
-
 export default function BreakagePage() {
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState<BreakageMetrics | null>(null);
-  const [report, setReport] = useState<BreakageReport | null>(null);
+  const [report, setReport] = useState<BreakageReportDetail | null>(null);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -88,12 +43,12 @@ export default function BreakagePage() {
       if (endDate) params.endDate = endDate.toISOString();
 
       const [metricsRes, reportRes] = await Promise.all([
-        api.get('/breakage/metrics', { params }),
-        api.get('/breakage/report', { params }),
+        fetchBreakageMetrics(params),
+        fetchBreakageReportDetail(params),
       ]);
 
-      setMetrics(metricsRes.data.data);
-      setReport(reportRes.data.data);
+      setMetrics(metricsRes);
+      setReport(reportRes);
     } catch (error: any) {
       logger.error('Failed to load breakage data', { error });
       setError(error?.response?.data?.error?.message || error?.response?.data?.message || error?.message || 'Failed to load breakage data');

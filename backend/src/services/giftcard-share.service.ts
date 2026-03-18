@@ -1,20 +1,22 @@
 import crypto from 'crypto';
-import prisma from '../config/database';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import giftCardService from './giftcard.service';
+import { GiftCardRepository } from '../modules/gift-cards/gift-card.repository';
 
 export class GiftCardShareService {
+  private readonly repository = new GiftCardRepository();
+
   /**
    * Generate a share token for a gift card
    */
   async generateShareToken(giftCardId: string, userId: string, userEmail?: string, expiryHours: number = 24) {
     const giftCard = await giftCardService.getById(giftCardId);
-    
+
     // Verify user owns the gift card (check if they're the recipient or merchant)
     const isMerchant = giftCard.merchantId === userId;
-    const isRecipient = userEmail && giftCard.recipientEmail && 
+    const isRecipient = userEmail && giftCard.recipientEmail &&
       giftCard.recipientEmail.toLowerCase() === userEmail.toLowerCase();
-    
+
     if (!isRecipient && !isMerchant) {
       throw new ValidationError('You do not have permission to share this gift card');
     }
@@ -29,13 +31,7 @@ export class GiftCardShareService {
     expiryDate.setHours(expiryDate.getHours() + expiryHours);
 
     // Update gift card with share token
-        await prisma.giftCard.update({
-      where: { id: giftCardId },
-      data: {
-        shareToken: token,
-        shareTokenExpiry: expiryDate,
-      },
-    });
+    await this.repository.updateShareToken(giftCardId, token, expiryDate);
 
     return {
       token,
@@ -48,27 +44,7 @@ export class GiftCardShareService {
    * Validate and get gift card by share token
    */
   async getGiftCardByToken(token: string) {
-    const giftCard = await prisma.giftCard.findUnique({
-      where: { shareToken: token },
-      include: {
-        merchant: {
-          select: {
-            id: true,
-            email: true,
-            businessName: true,
-            businessLogo: true,
-          },
-        },
-        template: true,
-        product: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          },
-        },
-      },
-    });
+    const giftCard = await this.repository.findByShareToken(token);
 
     if (!giftCard) {
       throw new NotFoundError('Invalid or expired share token');
@@ -92,23 +68,17 @@ export class GiftCardShareService {
    */
   async revokeShareToken(giftCardId: string, userId: string, userEmail?: string) {
     const giftCard = await giftCardService.getById(giftCardId);
-    
+
     // Verify user owns the gift card
     const isMerchant = giftCard.merchantId === userId;
-    const isRecipient = userEmail && giftCard.recipientEmail && 
+    const isRecipient = userEmail && giftCard.recipientEmail &&
       giftCard.recipientEmail.toLowerCase() === userEmail.toLowerCase();
-    
+
     if (!isRecipient && !isMerchant) {
       throw new ValidationError('You do not have permission to revoke sharing for this gift card');
     }
 
-    await prisma.giftCard.update({
-      where: { id: giftCardId },
-      data: {
-        shareToken: null,
-        shareTokenExpiry: null,
-      },
-    });
+    await this.repository.revokeShareToken(giftCardId);
 
     return { success: true };
   }
@@ -118,12 +88,12 @@ export class GiftCardShareService {
    */
   async getNFCData(giftCardId: string, userId: string, userEmail?: string) {
     const giftCard = await giftCardService.getById(giftCardId);
-    
+
     // Verify user owns the gift card
     const isMerchant = giftCard.merchantId === userId;
-    const isRecipient = userEmail && giftCard.recipientEmail && 
+    const isRecipient = userEmail && giftCard.recipientEmail &&
       giftCard.recipientEmail.toLowerCase() === userEmail.toLowerCase();
-    
+
     if (!isRecipient && !isMerchant) {
       throw new ValidationError('You do not have permission to access NFC data for this gift card');
     }
@@ -157,4 +127,3 @@ export class GiftCardShareService {
 }
 
 export default new GiftCardShareService();
-

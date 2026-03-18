@@ -1,14 +1,22 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
-import api from '@/lib/api';
+import {
+  fetchGateways,
+  createStripeConnect,
+  getStripeConnectLink,
+  connectPayPal as connectPayPalApi,
+  verifyGateway as verifyPaymentGateway,
+  deactivateGateway as deactivatePaymentGateway,
+  deleteGateway as deletePaymentGateway,
+} from '@/features/payments';
 import { useAuthStore } from '@/store/authStore';
-import { CreditCard, CheckCircle, XCircle, AlertCircle, ExternalLink, Trash2, X } from 'lucide-react';
+import { CreditCard, ExternalLink, Trash2, X } from 'lucide-react';
 import { useToast } from '@/components/ui/ToastContainer';
 import { FeatureFlagGuard } from '@/components/FeatureFlagGuard';
 
@@ -25,13 +33,12 @@ interface Gateway {
 
 export default function PaymentGatewaysPage() {
   const { user } = useAuthStore();
-  const router = useRouter();
   const toast = useToast();
   const [gateways, setGateways] = useState<Gateway[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const [connectingStripe, setConnectingStripe] = useState(false);
-  const [connectingPayPal, setConnectingPayPal] = useState(false);
+  const [connectingPayPal] = useState(false);
   const [showPayPalModal, setShowPayPalModal] = useState(false);
   const [payPalForm, setPayPalForm] = useState({
     clientId: '',
@@ -41,15 +48,15 @@ export default function PaymentGatewaysPage() {
   const [submittingPayPal, setSubmittingPayPal] = useState(false);
 
   useEffect(() => {
-    fetchGateways();
+    loadGateways();
   }, []);
 
-  const fetchGateways = async () => {
+  const loadGateways = async () => {
     try {
       setIsLoading(true);
-      const response = await api.get('/merchant/payment-gateways');
-      setGateways(response.data.data || []);
-    } catch (error: any) {
+      const data = await fetchGateways();
+      setGateways(data);
+    } catch {
       toast.error('Failed to load payment gateways');
     } finally {
       setIsLoading(false);
@@ -59,15 +66,14 @@ export default function PaymentGatewaysPage() {
   const createStripeConnectAccount = async () => {
     try {
       setConnectingStripe(true);
-      const response = await api.post('/merchant/payment-gateways/stripe/connect', {
+      await createStripeConnect({
         email: user?.email,
         country: 'US',
         type: 'express',
       });
 
       // Get account link
-      const linkResponse = await api.get('/merchant/payment-gateways/stripe/connect-link');
-      const { url } = linkResponse.data.data;
+      const { url } = await getStripeConnectLink();
 
       // Redirect to Stripe onboarding
       window.location.href = url;
@@ -98,7 +104,7 @@ export default function PaymentGatewaysPage() {
 
     try {
       setSubmittingPayPal(true);
-      const response = await api.post('/merchant/payment-gateways/paypal/connect', {
+      await connectPayPalApi({
         gatewayType: 'PAYPAL',
         credentials: {
           clientId: payPalForm.clientId,
@@ -110,7 +116,7 @@ export default function PaymentGatewaysPage() {
       toast.success('PayPal account connected successfully');
       setShowPayPalModal(false);
       setPayPalForm({ clientId: '', clientSecret: '', mode: 'sandbox' });
-      fetchGateways();
+      loadGateways();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to connect PayPal account');
     } finally {
@@ -118,12 +124,12 @@ export default function PaymentGatewaysPage() {
     }
   };
 
-  const verifyGateway = async (id: string) => {
+  const handleVerifyGateway = async (id: string) => {
     try {
       setVerifyingId(id);
-      await api.post(`/merchant/payment-gateways/${id}/verify`);
+      await verifyPaymentGateway(id);
       toast.success('Gateway verified successfully');
-      fetchGateways();
+      loadGateways();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Verification failed');
     } finally {
@@ -131,26 +137,26 @@ export default function PaymentGatewaysPage() {
     }
   };
 
-  const deactivateGateway = async (id: string) => {
+  const handleDeactivateGateway = async (id: string) => {
     if (!confirm('Are you sure you want to deactivate this gateway?')) return;
 
     try {
-      await api.post(`/merchant/payment-gateways/${id}/deactivate`);
+      await deactivatePaymentGateway(id);
       toast.success('Gateway deactivated');
-      fetchGateways();
-    } catch (error: any) {
+      loadGateways();
+    } catch {
       toast.error('Failed to deactivate gateway');
     }
   };
 
-  const deleteGateway = async (id: string) => {
+  const handleDeleteGateway = async (id: string) => {
     if (!confirm('Are you sure you want to delete this gateway? This action cannot be undone.')) return;
 
     try {
-      await api.delete(`/merchant/payment-gateways/${id}`);
+      await deletePaymentGateway(id);
       toast.success('Gateway deleted');
-      fetchGateways();
-    } catch (error: any) {
+      loadGateways();
+    } catch {
       toast.error('Failed to delete gateway');
     }
   };
@@ -314,7 +320,7 @@ export default function PaymentGatewaysPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => verifyGateway(gateway.id)}
+                        onClick={() => handleVerifyGateway(gateway.id)}
                         disabled={verifyingId === gateway.id}
                       >
                         {verifyingId === gateway.id ? 'Verifying...' : 'Verify'}
@@ -324,7 +330,7 @@ export default function PaymentGatewaysPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => deactivateGateway(gateway.id)}
+                        onClick={() => handleDeactivateGateway(gateway.id)}
                       >
                         Deactivate
                       </Button>
@@ -332,7 +338,7 @@ export default function PaymentGatewaysPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => deleteGateway(gateway.id)}
+                      onClick={() => handleDeleteGateway(gateway.id)}
                       className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
                     >
                       <Trash2 className="w-4 h-4" />

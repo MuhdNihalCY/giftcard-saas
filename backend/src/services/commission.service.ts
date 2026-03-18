@@ -1,8 +1,8 @@
-import prisma from '../config/database';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { PaymentMethod, CommissionType } from '@prisma/client';
 import logger from '../utils/logger';
 import { Decimal } from '@prisma/client/runtime/library';
+import { PaymentRepository } from '../modules/payments/payment.repository';
 
 export interface CommissionCalculationResult {
   originalAmount: number;
@@ -28,6 +28,8 @@ export interface CreateCommissionRecordData {
 }
 
 export class CommissionService {
+  private readonly repository = new PaymentRepository();
+
   /**
    * Get commission rate for a merchant and payment method
    * Returns merchant-specific rate if exists, otherwise global rate
@@ -40,18 +42,10 @@ export class CommissionService {
 
     // First, try to get merchant-specific commission rate
     if (merchantId) {
-      const merchantCommission = await prisma.commissionSettings.findFirst({
-        where: {
-          merchantId,
-          isActive: true,
-          appliesTo: {
-            array_contains: [paymentMethod],
-          },
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      });
+      const merchantCommission = await this.repository.findMerchantCommissionSettings(
+        merchantId,
+        paymentMethod
+      );
 
       if (merchantCommission) {
         return {
@@ -62,18 +56,7 @@ export class CommissionService {
     }
 
     // Fall back to global commission rate
-    const globalCommission = await prisma.commissionSettings.findFirst({
-      where: {
-        merchantId: null,
-        isActive: true,
-        appliesTo: {
-          array_contains: [paymentMethod],
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    const globalCommission = await this.repository.findGlobalCommissionSettings(paymentMethod);
 
     if (globalCommission) {
       return {
@@ -237,12 +220,7 @@ export class CommissionService {
       }
     }
 
-    const payments = await prisma.payment.findMany({
-      where,
-      select: {
-        commissionAmount: true,
-      },
-    });
+    const payments = await this.repository.findPaymentsForCommission(where);
 
     const totalCommission = payments.reduce((sum, payment) => {
       return sum + Number(payment.commissionAmount || 0);
@@ -262,43 +240,30 @@ export class CommissionService {
     isActive: boolean = true
   ) {
     // Check if settings already exist
-    const existing = merchantId
-      ? await prisma.commissionSettings.findFirst({
-          where: {
-            merchantId,
-            isActive: true,
-          },
-        })
-      : await prisma.commissionSettings.findFirst({
-          where: {
-            merchantId: null,
-            isActive: true,
-          },
-        });
+    const existingWhere = merchantId
+      ? { merchantId, isActive: true }
+      : { merchantId: null, isActive: true };
+
+    const existing = await this.repository.findCommissionSettingsFirst(existingWhere);
 
     if (existing) {
       // Update existing
-      return await prisma.commissionSettings.update({
-        where: { id: existing.id },
-        data: {
-          commissionRate: new Decimal(commissionRate),
-          commissionType,
-          appliesTo,
-          isActive,
-          updatedAt: new Date(),
-        },
-      });
-    }
-
-    // Create new
-    return await prisma.commissionSettings.create({
-      data: {
-        merchantId,
+      return await this.repository.updateCommissionSettings(existing.id, {
         commissionRate: new Decimal(commissionRate),
         commissionType,
         appliesTo,
         isActive,
-      },
+        updatedAt: new Date(),
+      });
+    }
+
+    // Create new
+    return await this.repository.createCommissionSettings({
+      merchantId,
+      commissionRate: new Decimal(commissionRate),
+      commissionType,
+      appliesTo,
+      isActive,
     });
   }
 
@@ -307,14 +272,9 @@ export class CommissionService {
    */
   async getCommissionSettings(merchantId?: string) {
     if (merchantId) {
-      const merchantSettings = await prisma.commissionSettings.findFirst({
-        where: {
-          merchantId,
-          isActive: true,
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
+      const merchantSettings = await this.repository.findCommissionSettingsFirst({
+        merchantId,
+        isActive: true,
       });
 
       if (merchantSettings) {
@@ -323,14 +283,9 @@ export class CommissionService {
     }
 
     // Return global settings
-    return await prisma.commissionSettings.findFirst({
-      where: {
-        merchantId: null,
-        isActive: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
+    return await this.repository.findCommissionSettingsFirst({
+      merchantId: null,
+      isActive: true,
     });
   }
 }

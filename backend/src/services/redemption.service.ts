@@ -1,5 +1,4 @@
 import { Decimal } from '@prisma/client/runtime/library';
-import prisma from '../config/database';
 import { NotFoundError, ValidationError, ForbiddenError } from '../utils/errors';
 import { RedemptionMethod, PaymentMethod } from '@prisma/client';
 import giftCardService from './giftcard.service';
@@ -8,6 +7,7 @@ import fraudPreventionService from './fraud-prevention.service';
 import commissionService from './commission.service';
 import { isExpired } from '../utils/helpers';
 import logger from '../utils/logger';
+import { RedemptionRepository } from '../modules/redemptions/redemption.repository';
 
 export interface RedeemGiftCardData {
   giftCardId?: string;
@@ -27,6 +27,8 @@ export interface ValidateGiftCardData {
 }
 
 export class RedemptionService {
+  private readonly repository = new RedemptionRepository();
+
   /**
    * Validate gift card code
    */
@@ -150,13 +152,11 @@ export class RedemptionService {
     const balanceAfter = new Decimal(newBalance);
 
     // Update gift card balance
-    await prisma.giftCard.update({
-      where: { id: giftCard.id },
-      data: {
-        balance: balanceAfter,
-        status: newBalance <= 0 ? 'REDEEMED' : 'ACTIVE',
-      },
-    });
+    await this.repository.updateGiftCardBalance(
+      giftCard.id,
+      balanceAfter,
+      newBalance <= 0 ? 'REDEEMED' : 'ACTIVE'
+    );
 
     // Track IP address for redemption
     if (data.ipAddress) {
@@ -171,51 +171,30 @@ export class RedemptionService {
     }
 
     // Create redemption record
-    const redemption = await prisma.redemption.create({
-      data: {
-        giftCardId: giftCard.id,
-        merchantId,
-        amount: new Decimal(amount),
-        balanceBefore,
-        balanceAfter,
-        redemptionMethod,
-        location,
-        notes,
-      },
-      include: {
-        giftCard: {
-          select: {
-            id: true,
-            code: true,
-            value: true,
-            currency: true,
-          },
-        },
-        merchant: {
-          select: {
-            id: true,
-            email: true,
-            businessName: true,
-          },
-        },
-      },
+    const redemption = await this.repository.createRedemption({
+      giftCardId: giftCard.id,
+      merchantId,
+      amount: new Decimal(amount),
+      balanceBefore,
+      balanceAfter,
+      redemptionMethod,
+      location,
+      notes,
     });
 
     // Create transaction record
-    await prisma.transaction.create({
-      data: {
-        giftCardId: giftCard.id,
-        type: 'REDEMPTION',
-        amount: new Decimal(amount),
-        balanceBefore,
-        balanceAfter,
-        userId: merchantId,
-        metadata: {
-          redemptionId: redemption.id,
-          redemptionMethod,
-          location,
-        } as any,
-      },
+    await this.repository.createTransaction({
+      giftCardId: giftCard.id,
+      type: 'REDEMPTION',
+      amount: new Decimal(amount),
+      balanceBefore,
+      balanceAfter,
+      userId: merchantId,
+      metadata: {
+        redemptionId: redemption.id,
+        redemptionMethod,
+        location,
+      } as any,
     });
 
     // Calculate commission and update merchant balance
@@ -229,21 +208,13 @@ export class RedemptionService {
     const netAmount = commissionResult.netAmount;
 
     // Update merchant balance with net amount (after commission)
-    const merchant = await prisma.user.findUnique({
-      where: { id: merchantId },
-      select: { merchantBalance: true },
-    });
+    const merchant = await this.repository.getMerchantBalance(merchantId);
 
     if (merchant) {
       const currentBalance = Number(merchant.merchantBalance);
       const newMerchantBalance = currentBalance + netAmount;
 
-      await prisma.user.update({
-        where: { id: merchantId },
-        data: {
-          merchantBalance: new Decimal(newMerchantBalance),
-        },
-      });
+      await this.repository.updateMerchantBalance(merchantId, new Decimal(newMerchantBalance));
 
       logger.info('Merchant balance updated after redemption', {
         merchantId,
@@ -276,29 +247,7 @@ export class RedemptionService {
    * Get redemption by ID
    */
   async getById(id: string) {
-    const redemption = await prisma.redemption.findUnique({
-      where: { id },
-      include: {
-        giftCard: {
-          include: {
-            merchant: {
-              select: {
-                id: true,
-                email: true,
-                businessName: true,
-              },
-            },
-          },
-        },
-        merchant: {
-          select: {
-            id: true,
-            email: true,
-            businessName: true,
-          },
-        },
-      },
-    });
+    const redemption = await this.repository.findById(id);
 
     if (!redemption) {
       throw new NotFoundError('Redemption not found');
@@ -347,30 +296,8 @@ export class RedemptionService {
     }
 
     const [redemptions, total] = await Promise.all([
-      prisma.redemption.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          giftCard: {
-            select: {
-              id: true,
-              code: true,
-              value: true,
-              currency: true,
-            },
-          },
-          merchant: {
-            select: {
-              id: true,
-              email: true,
-              businessName: true,
-            },
-          },
-        },
-      }),
-      prisma.redemption.count({ where }),
+      this.repository.findMany(where, skip, limit),
+      this.repository.count(where),
     ]);
 
     return {
@@ -410,18 +337,7 @@ export class RedemptionService {
       ],
     };
 
-    const redemptions = await prisma.redemption.findMany({
-      where,
-      take: 10,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        giftCard: {
-          select: {
-            code: true,
-          },
-        },
-      },
-    });
+    const redemptions = await this.repository.findForSearch(where);
 
     return redemptions.map((redemption) => ({
       id: redemption.id,
@@ -437,19 +353,7 @@ export class RedemptionService {
   async getGiftCardHistory(giftCardId: string) {
     const giftCard = await giftCardService.getById(giftCardId);
 
-    const redemptions = await prisma.redemption.findMany({
-      where: { giftCardId },
-      orderBy: { createdAt: 'desc' },
-      include: {
-        merchant: {
-          select: {
-            id: true,
-            email: true,
-            businessName: true,
-          },
-        },
-      },
-    });
+    const redemptions = await this.repository.findByGiftCard(giftCardId);
 
     return {
       giftCard: {
@@ -501,20 +405,7 @@ export class RedemptionService {
   async getTransactionHistory(giftCardId: string) {
     const giftCard = await giftCardService.getById(giftCardId);
 
-    const transactions = await prisma.transaction.findMany({
-      where: { giftCardId },
-      orderBy: { createdAt: 'desc' },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-      },
-    });
+    const transactions = await this.repository.getTransactions(giftCardId);
 
     return {
       giftCard: {

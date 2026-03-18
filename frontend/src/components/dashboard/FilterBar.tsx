@@ -83,7 +83,7 @@ export function FilterBar({
     isOpen: isSuggestionsOpen,
     selectedIndex,
     handleQueryChange,
-    selectSuggestion,
+    selectSuggestion: _selectSuggestion,
     handleKeyDown: handleAutocompleteKeyDown,
     close: closeSuggestions,
     setIsOpen: setSuggestionsOpen,
@@ -137,6 +137,7 @@ export function FilterBar({
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
+    return undefined;
   }, [isSuggestionsOpen, closeSuggestions]);
 
   const handleQuickDateRange = (days: number) => {

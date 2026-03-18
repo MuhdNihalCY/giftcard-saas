@@ -7,7 +7,7 @@ import { DataTable, Column } from '@/components/ui/DataTable';
 import { FilterBar } from '@/components/dashboard/FilterBar';
 import { Badge, getStatusBadgeVariant } from '@/components/ui/Badge';
 import { useAuthStore } from '@/store/authStore';
-import api from '@/lib/api';
+import { fetchDeliveryLogs, downloadGiftCardPDF } from '@/features/admin';
 import { formatDateTime } from '@/lib/utils';
 import logger from '@/lib/logger';
 import { Mail, Download, Send, FileDown } from 'lucide-react';
@@ -84,9 +84,9 @@ export default function DeliveryPage() {
       }
 
       // Using communication logs endpoint as delivery history
-      const response = await api.get('/admin/communication-logs/logs', { params });
-      const logs = response.data.data || [];
-      
+      const result = await fetchDeliveryLogs(params);
+      const logs = result.data || [];
+
       // Transform communication logs to delivery format
       const transformedDeliveries: Delivery[] = logs.map((log: any) => ({
         id: log.id,
@@ -103,7 +103,7 @@ export default function DeliveryPage() {
       setDeliveries(transformedDeliveries);
       setPagination((prev) => ({
         ...prev,
-        total: response.data.pagination?.total || transformedDeliveries.length,
+        total: result.pagination?.total || transformedDeliveries.length,
       }));
     } catch (error) {
       logger.error('Failed to fetch deliveries', { error });
@@ -119,10 +119,7 @@ export default function DeliveryPage() {
 
   const handleDownloadPDF = async (giftCardId: string) => {
     try {
-      const response = await api.get(`/delivery/pdf/${giftCardId}/download`, {
-        responseType: 'blob',
-      });
-      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const blob = await downloadGiftCardPDF(giftCardId);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -342,7 +339,7 @@ export default function DeliveryPage() {
             exportable
             onExport={handleExport}
             emptyMessage="No deliveries found"
-            onRowClick={(row) => {
+            onRowClick={(_row) => {
               // Could show delivery details
             }}
           />

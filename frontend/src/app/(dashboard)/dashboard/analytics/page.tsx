@@ -4,7 +4,12 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { useAuthStore } from '@/store/authStore';
 import { FeatureFlagGuard } from '@/components/FeatureFlagGuard';
-import api from '@/lib/api';
+import {
+  fetchSalesAnalytics,
+  fetchRedemptionAnalytics,
+  fetchCustomerAnalytics,
+  fetchGiftCardAnalytics,
+} from '@/features/analytics';
 import { formatCurrency } from '@/lib/utils';
 import logger from '@/lib/logger';
 import {
@@ -39,16 +44,16 @@ export default function AnalyticsPage() {
       const merchantId = user?.role === 'MERCHANT' ? user.id : undefined;
 
       const [sales, redemptions, customers, stats] = await Promise.all([
-        api.get('/analytics/sales', { params: { merchantId } }),
-        api.get('/analytics/redemptions', { params: { merchantId } }),
-        api.get('/analytics/customers', { params: { merchantId } }),
-        api.get('/analytics/gift-cards', { params: { merchantId } }),
+        fetchSalesAnalytics({ merchantId }),
+        fetchRedemptionAnalytics({ merchantId }),
+        fetchCustomerAnalytics({ merchantId }),
+        fetchGiftCardAnalytics({ merchantId }),
       ]);
 
-      setSalesData(sales.data.data);
-      setRedemptionData(redemptions.data.data);
-      setCustomerData(customers.data.data);
-      setGiftCardStats(stats.data.data);
+      setSalesData(sales);
+      setRedemptionData(redemptions);
+      setCustomerData(customers);
+      setGiftCardStats(stats);
     } catch (error) {
       logger.error('Failed to fetch analytics', { error });
     } finally {

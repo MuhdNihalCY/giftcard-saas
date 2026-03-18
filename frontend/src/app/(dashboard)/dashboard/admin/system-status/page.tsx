@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
-import api from '@/lib/api';
+import {
+  fetchSystemStatus as fetchSystemStatusApi,
+  fetchSystemMetrics,
+} from '@/features/admin';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -76,13 +79,13 @@ export default function SystemStatusPage() {
   const fetchSystemStatus = async () => {
     try {
       setError(null);
-      const [statusRes, metricsRes] = await Promise.all([
-        api.get('/health/status'),
-        api.get('/health/metrics'),
+      const [statusData, metricsData] = await Promise.all([
+        fetchSystemStatusApi(),
+        fetchSystemMetrics(),
       ]);
 
-      setStatus(statusRes.data.data);
-      setMetrics(metricsRes.data.data);
+      setStatus(statusData);
+      setMetrics(metricsData);
       setLastUpdated(new Date());
     } catch (error: any) {
       logger.error('Failed to fetch system status', { error });

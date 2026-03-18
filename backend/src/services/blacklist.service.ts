@@ -1,4 +1,4 @@
-import prisma from '../config/database';
+import { AdminRepository } from '../modules/admin/admin.repository';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import logger from '../utils/logger';
 
@@ -30,6 +30,8 @@ export interface BlacklistCheckResult {
 }
 
 export class BlacklistService {
+  private readonly repository = new AdminRepository();
+
   /**
    * Check if a value is blacklisted
    */
@@ -39,18 +41,13 @@ export class BlacklistService {
   ): Promise<BlacklistCheckResult> {
     const normalizedValue = this.normalizeValue(type, value);
 
-    const entry = await prisma.fraudBlacklist.findFirst({
-      where: {
-        type,
-        value: normalizedValue,
-        OR: [
-          { expiresAt: null },
-          { expiresAt: { gt: new Date() } },
-        ],
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
+    const entry = await this.repository.findBlacklistEntry({
+      type,
+      value: normalizedValue,
+      OR: [
+        { expiresAt: null },
+        { expiresAt: { gt: new Date() } },
+      ],
     });
 
     if (!entry) {
@@ -93,28 +90,24 @@ export class BlacklistService {
     const normalizedValue = this.normalizeValue(data.type, data.value);
 
     // Check if already exists
-    const existing = await prisma.fraudBlacklist.findFirst({
-      where: { 
-        type: data.type,
-        value: normalizedValue 
-      },
+    const existing = await this.repository.findBlacklistEntry({
+      type: data.type,
+      value: normalizedValue,
     });
 
     if (existing) {
       throw new ValidationError('Entry already exists in blacklist');
     }
 
-    const entry = await prisma.fraudBlacklist.create({
-      data: {
-        type: data.type,
-        value: normalizedValue,
-        reason: data.reason,
-        severity: data.severity || 'HIGH',
-        autoBlock: data.autoBlock !== false,
-        expiresAt: data.expiresAt,
-        createdBy: data.createdBy,
-        metadata: data.metadata || {},
-      },
+    const entry = await this.repository.createBlacklistEntry({
+      type: data.type,
+      value: normalizedValue,
+      reason: data.reason,
+      severity: data.severity || 'HIGH',
+      autoBlock: data.autoBlock !== false,
+      expiresAt: data.expiresAt,
+      createdBy: data.createdBy,
+      metadata: data.metadata || {},
     });
 
     logger.info('Entry added to blacklist', {
@@ -131,17 +124,13 @@ export class BlacklistService {
    * Remove entry from blacklist
    */
   async removeFromBlacklist(id: string) {
-    const entry = await prisma.fraudBlacklist.findUnique({
-      where: { id },
-    });
+    const entry = await this.repository.findBlacklistEntry({ id });
 
     if (!entry) {
       throw new NotFoundError('Blacklist entry not found');
     }
 
-    await prisma.fraudBlacklist.delete({
-      where: { id },
-    });
+    await this.repository.deleteBlacklistEntry(id);
 
     logger.info('Entry removed from blacklist', { id, type: entry.type, value: entry.value });
 
@@ -155,9 +144,7 @@ export class BlacklistService {
     id: string,
     data: Partial<CreateBlacklistEntryData>
   ) {
-    const entry = await prisma.fraudBlacklist.findUnique({
-      where: { id },
-    });
+    const entry = await this.repository.findBlacklistEntry({ id });
 
     if (!entry) {
       throw new NotFoundError('Blacklist entry not found');
@@ -170,10 +157,7 @@ export class BlacklistService {
     if (data.expiresAt !== undefined) updateData.expiresAt = data.expiresAt;
     if (data.metadata !== undefined) updateData.metadata = data.metadata;
 
-    return prisma.fraudBlacklist.update({
-      where: { id },
-      data: updateData,
-    });
+    return this.repository.updateBlacklistEntry(id, updateData);
   }
 
   /**
@@ -200,13 +184,8 @@ export class BlacklistService {
     }
 
     const [entries, total] = await Promise.all([
-      prisma.fraudBlacklist.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-      }),
-      prisma.fraudBlacklist.count({ where }),
+      this.repository.findBlacklistEntries(where, skip, limit),
+      this.repository.countBlacklistEntries(where),
     ]);
 
     return {
@@ -252,11 +231,9 @@ export class BlacklistService {
       const normalizedValue = this.normalizeValue(type, value);
 
       // Check if already exists
-      const existing = await prisma.fraudBlacklist.findFirst({
-        where: { 
-          type,
-          value: normalizedValue 
-        },
+      const existing = await this.repository.findBlacklistEntry({
+        type,
+        value: normalizedValue,
       });
 
       if (existing) {
@@ -266,12 +243,9 @@ export class BlacklistService {
         const newLevel = severityLevels[severity];
 
         if (newLevel > currentLevel) {
-          await prisma.fraudBlacklist.update({
-            where: { id: existing.id },
-            data: {
-              severity,
-              reason: `${existing.reason || ''}\n${reason}`.trim(),
-            },
+          await this.repository.updateBlacklistEntry(existing.id, {
+            severity,
+            reason: `${existing.reason || ''}\n${reason}`.trim(),
           });
         }
         return existing;
@@ -292,16 +266,3 @@ export class BlacklistService {
 }
 
 export default new BlacklistService();
-
-
-
-
-
-
-
-
-
-
-
-
-

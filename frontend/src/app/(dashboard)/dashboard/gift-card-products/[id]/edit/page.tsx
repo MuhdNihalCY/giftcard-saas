@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { CurrencySelector } from '@/components/CurrencySelector';
-import api from '@/lib/api';
+import { fetchGiftCardProductById, updateGiftCardProduct } from '@/features/gift-cards';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -74,8 +74,7 @@ export default function EditProductPage() {
 
   const fetchProduct = async () => {
     try {
-      const response = await api.get(`/gift-card-products/${productId}?includeInactive=true`);
-      const product = response.data.data;
+      const product = await fetchGiftCardProductById(productId, { includeInactive: true });
 
       setValue('name', product.name);
       setValue('description', product.description || '');
@@ -83,7 +82,7 @@ export default function EditProductPage() {
       setValue('currency', product.currency);
       setValue('expiryDays', product.expiryDays || undefined);
       setValue('category', product.category || '');
-      setValue('allowCustomAmount', product.allowCustomAmount);
+      setValue('allowCustomAmount', product.allowCustomAmount ?? false);
       setValue('isActive', product.isActive);
       setValue('isPublic', product.isPublic || false);
 
@@ -159,7 +158,7 @@ export default function EditProductPage() {
         payload.tags = data.tags.split(',').map(t => t.trim()).filter(Boolean);
       }
 
-      await api.put(`/gift-card-products/${productId}`, payload);
+      await updateGiftCardProduct(productId, payload as Record<string, unknown>);
 
       router.push('/dashboard/gift-card-products');
     } catch (err: any) {

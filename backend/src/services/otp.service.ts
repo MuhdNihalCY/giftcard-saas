@@ -1,5 +1,5 @@
 import { randomInt } from 'crypto';
-import prisma from '../config/database';
+import { NotificationRepository } from '../modules/notifications/notification.repository';
 import { ValidationError } from '../utils/errors';
 import logger from '../utils/logger';
 import communicationSettingsService from './communicationSettings.service';
@@ -23,6 +23,8 @@ export interface VerifyOTPOptions {
 }
 
 export class OTPService {
+  private readonly repository = new NotificationRepository();
+
   /**
    * Generate and send OTP
    */
@@ -39,16 +41,7 @@ export class OTPService {
     await this.checkRateLimit(identifier, type);
 
     // Delete any existing unused OTPs for this identifier and type
-    await prisma.oTP.deleteMany({
-      where: {
-        identifier,
-        type,
-        used: false,
-        expiresAt: {
-          gt: new Date(),
-        },
-      },
-    });
+    await this.repository.deleteExpiredOTPs(identifier, type);
 
     // Generate OTP code
     const code = this.generateOTPCode(otpConfig.length);
@@ -58,15 +51,13 @@ export class OTPService {
     expiresAt.setMinutes(expiresAt.getMinutes() + otpConfig.expiryMinutes);
 
     // Store OTP
-    await prisma.oTP.create({
-      data: {
-        userId,
-        identifier,
-        code,
-        type,
-        expiresAt,
-        metadata: metadata || {},
-      },
+    await this.repository.createOTP({
+      userId,
+      identifier,
+      code,
+      type,
+      expiresAt,
+      metadata: metadata || {},
     });
 
     // Send OTP via appropriate channel
@@ -98,54 +89,23 @@ export class OTPService {
     const { identifier, code, type, userId } = options;
 
     // Find OTP
-    const otp = await prisma.oTP.findFirst({
-      where: {
-        identifier,
-        code,
-        type,
-        used: false,
-        expiresAt: {
-          gt: new Date(),
-        },
-        ...(userId && { userId }),
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    const otp = await this.repository.findOTP(identifier, code, type, userId);
 
     if (!otp) {
       // Increment attempts for failed verification
-      await prisma.oTP.updateMany({
-        where: {
-          identifier,
-          type,
-          used: false,
-        },
-        data: {
-          attempts: {
-            increment: 1,
-          },
-        },
-      });
+      await this.repository.incrementOTPAttempts(identifier, type);
 
       throw new ValidationError('Invalid or expired OTP');
     }
 
     // Check max attempts (5 attempts)
     if (otp.attempts >= 5) {
-      await prisma.oTP.update({
-        where: { id: otp.id },
-        data: { used: true }, // Mark as used to prevent further attempts
-      });
+      await this.repository.markOTPUsed(otp.id);
       throw new ValidationError('OTP has exceeded maximum verification attempts');
     }
 
     // Mark OTP as used
-    await prisma.oTP.update({
-      where: { id: otp.id },
-      data: { used: true },
-    });
+    await this.repository.markOTPUsed(otp.id);
 
     logger.info('OTP verified successfully', { identifier, type, userId });
 
@@ -160,15 +120,7 @@ export class OTPService {
     const oneHourAgo = new Date();
     oneHourAgo.setHours(oneHourAgo.getHours() - 1);
 
-    const recentOTPs = await prisma.oTP.count({
-      where: {
-        identifier,
-        type,
-        createdAt: {
-          gte: oneHourAgo,
-        },
-      },
-    });
+    const recentOTPs = await this.repository.countRecentOTPs(identifier, type, oneHourAgo);
 
     if (recentOTPs >= otpConfig.rateLimit) {
       throw new ValidationError(
@@ -282,16 +234,16 @@ export class OTPService {
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
           <h1 style="color: white; margin: 0;">Your OTP Code</h1>
         </div>
-        
+
         <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
           <p style="font-size: 18px;">Your ${typeText} OTP code is:</p>
-          
+
           <div style="background: white; border: 2px dashed #667eea; border-radius: 10px; padding: 30px; margin: 20px 0; text-align: center;">
             <p style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #667eea; margin: 0;">${code}</p>
           </div>
-          
+
           <p style="color: #666; font-size: 14px;">This code will expire in <strong>${expiryMinutes} minutes</strong>.</p>
-          
+
           <p style="color: #999; font-size: 12px; margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px;">
             For security reasons, do not share this code with anyone. If you didn't request this code, please ignore this email.
           </p>
@@ -310,5 +262,3 @@ export class OTPService {
 }
 
 export default new OTPService();
-
-

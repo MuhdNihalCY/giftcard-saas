@@ -1,4 +1,4 @@
-import prisma from '../config/database';
+import { AdminRepository } from '../modules/admin/admin.repository';
 import { ValidationError } from '../utils/errors';
 import logger from '../utils/logger';
 
@@ -15,31 +15,26 @@ export interface CommunicationSettingsData {
 }
 
 export class CommunicationSettingsService {
-  private static SETTINGS_ID = 'global-settings'; // Single global settings record
+  private readonly repository = new AdminRepository();
 
   /**
    * Get current communication settings
    */
   async getSettings() {
-    let settings = await prisma.communicationSettings.findUnique({
-      where: { id: CommunicationSettingsService.SETTINGS_ID },
-    });
+    let settings = await this.repository.getCommunicationSettings();
 
     // Create default settings if they don't exist
     if (!settings) {
-      settings = await prisma.communicationSettings.create({
-        data: {
-          id: CommunicationSettingsService.SETTINGS_ID,
-          emailEnabled: true,
-          smsEnabled: true,
-          otpEnabled: true,
-          pushEnabled: false,
-          emailRateLimit: 100,
-          smsRateLimit: 50,
-          otpRateLimit: 10,
-          otpExpiryMinutes: 10,
-          otpLength: 6,
-        },
+      settings = await this.repository.upsertCommunicationSettings({
+        emailEnabled: true,
+        smsEnabled: true,
+        otpEnabled: true,
+        pushEnabled: false,
+        emailRateLimit: 100,
+        smsRateLimit: 50,
+        otpRateLimit: 10,
+        otpExpiryMinutes: 10,
+        otpLength: 6,
       });
       logger.info('Created default communication settings');
     }
@@ -68,15 +63,9 @@ export class CommunicationSettingsService {
       throw new ValidationError('OTP length must be between 4 and 8 digits');
     }
 
-    // Ensure settings exist before updating
-    await this.getSettings();
-
-    const updated = await prisma.communicationSettings.update({
-      where: { id: CommunicationSettingsService.SETTINGS_ID },
-      data: {
-        ...data,
-        updatedBy,
-      },
+    const updated = await this.repository.upsertCommunicationSettings({
+      ...data,
+      updatedBy,
     });
 
     logger.info('Communication settings updated', { updatedBy, changes: data });
@@ -148,5 +137,3 @@ export class CommunicationSettingsService {
 }
 
 export default new CommunicationSettingsService();
-
-

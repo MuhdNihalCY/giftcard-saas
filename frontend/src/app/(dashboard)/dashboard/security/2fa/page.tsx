@@ -5,14 +5,20 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import QRCode from 'react-qr-code';
-import api from '@/lib/api';
+import {
+  get2FAStatus,
+  setup2FA,
+  enable2FAWithToken,
+  disable2FAWithPassword,
+  regenerateBackupCodes,
+} from '@/features/auth';
 import { useAuthStore } from '@/store/authStore';
 import logger from '@/lib/logger';
 
 interface TwoFactorSetup {
   secret: string;
   qrCodeUrl: string;
-  backupCodes: string[];
+  backupCodes?: string[];
 }
 
 export default function TwoFactorSetupPage() {
@@ -32,9 +38,9 @@ export default function TwoFactorSetupPage() {
 
   const fetchStatus = async () => {
     try {
-      const response = await api.get('/auth/2fa/status');
-      setTwoFactorStatus(response.data.data);
-      if (response.data.data.enabled) {
+      const status = await get2FAStatus();
+      setTwoFactorStatus(status);
+      if (status.enabled) {
         setStep('enabled');
       }
     } catch (err: unknown) {
@@ -46,8 +52,8 @@ export default function TwoFactorSetupPage() {
     try {
       setLoading(true);
       setError('');
-      const response = await api.get('/auth/2fa/setup');
-      setSetup(response.data.data);
+      const setupData = await setup2FA();
+      setSetup(setupData);
       setStep('verify');
     } catch (err: unknown) {
       const errorMessage = (err as { response?: { data?: { error?: { message?: string } } } }).response?.data?.error?.message || 'Failed to setup 2FA';
@@ -67,11 +73,11 @@ export default function TwoFactorSetupPage() {
     try {
       setLoading(true);
       setError('');
-      const response = await api.post('/auth/2fa/enable', {
+      const result = await enable2FAWithToken({
         secret: setup.secret,
         token: verificationToken,
       });
-      setBackupCodes(response.data.data.backupCodes);
+      setBackupCodes(result.backupCodes);
       setStep('backup-codes');
       await fetchStatus();
     } catch (err: unknown) {
@@ -90,7 +96,7 @@ export default function TwoFactorSetupPage() {
     try {
       setLoading(true);
       setError('');
-      await api.post('/auth/2fa/disable', { password });
+      await disable2FAWithPassword(password);
       setStep('setup');
       setSetup(null);
       await fetchStatus();
@@ -107,8 +113,8 @@ export default function TwoFactorSetupPage() {
     try {
       setLoading(true);
       setError('');
-      const response = await api.post('/auth/2fa/backup-codes/regenerate');
-      setBackupCodes(response.data.data.backupCodes);
+      const result = await regenerateBackupCodes();
+      setBackupCodes(result.backupCodes);
       setStep('backup-codes');
       await fetchStatus();
     } catch (err: unknown) {
@@ -226,7 +232,7 @@ export default function TwoFactorSetupPage() {
                   Download Codes
                 </Button>
                 <Button onClick={() => { setStep('enabled'); fetchStatus(); }}>
-                  I've Saved My Codes
+                  I&apos;ve Saved My Codes
                 </Button>
               </div>
             </div>
@@ -253,7 +259,7 @@ export default function TwoFactorSetupPage() {
               </div>
 
               <div className="p-4 bg-navy-800 rounded-lg border border-navy-700">
-                <p className="text-sm text-plum-200 mb-2">Can't scan? Enter this code manually:</p>
+                <p className="text-sm text-plum-200 mb-2">Can&apos;t scan? Enter this code manually:</p>
                 <div className="flex items-center gap-2">
                   <code className="flex-1 p-2 bg-navy-900 rounded font-mono text-sm border border-navy-700">
                     {showSecret ? setup.secret : '••••••••••••••••'}
@@ -322,7 +328,7 @@ export default function TwoFactorSetupPage() {
               <h3 className="text-lg font-semibold text-blue-300 mb-2">What is Two-Factor Authentication?</h3>
               <p className="text-blue-200 text-sm">
                 Two-factor authentication adds an extra layer of security to your account. 
-                After enabling 2FA, you'll need to enter a code from your authenticator app 
+                After enabling 2FA, you&apos;ll need to enter a code from your authenticator app
                 (like Google Authenticator or Authy) in addition to your password when logging in.
               </p>
             </div>
@@ -331,7 +337,7 @@ export default function TwoFactorSetupPage() {
               <h4 className="font-semibold text-plum-300">To get started:</h4>
               <ol className="list-decimal list-inside space-y-2 text-plum-200">
                 <li>Install an authenticator app on your phone (Google Authenticator, Authy, Microsoft Authenticator, etc.)</li>
-                <li>Click "Setup 2FA" below to generate a QR code</li>
+                <li>Click &quot;Setup 2FA&quot; below to generate a QR code</li>
                 <li>Scan the QR code with your authenticator app</li>
                 <li>Enter the 6-digit code to verify and enable 2FA</li>
                 <li>Save your backup codes in a safe place</li>

@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import api from '@/lib/api';
+import { checkGiftCardBalance } from '@/features/redemptions';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { Navigation } from '@/components/Navigation';
 import { useToast } from '@/components/ui/ToastContainer';
@@ -41,8 +41,8 @@ export default function CheckBalancePage() {
       setError('');
       setBalance(null);
 
-      const response = await api.post('/redemptions/check-balance', data);
-      setBalance(response.data.data);
+      const balanceData = await checkGiftCardBalance(data);
+      setBalance(balanceData);
       setError('');
       toast.success('Balance retrieved successfully!');
     } catch (err: any) {

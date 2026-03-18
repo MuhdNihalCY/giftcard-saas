@@ -3,7 +3,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import api from '@/lib/api';
+import { fetchGiftCards } from '@/features/gift-cards';
+import { fetchGiftCardTransactions } from '@/features/redemptions';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
 import Link from 'next/link';
@@ -15,7 +16,7 @@ import { FeatureFlagGuard } from '@/components/FeatureFlagGuard';
 import logger from '@/lib/logger';
 import type { Transaction } from '@/types/transaction';
 
-interface GiftCard {
+interface WalletGiftCard {
   id: string;
   code: string;
   value: number;
@@ -32,9 +33,9 @@ interface GiftCard {
 
 export default function WalletPage() {
   const { isAuthenticated } = useAuthStore();
-  const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
+  const [giftCards, setGiftCards] = useState<WalletGiftCard[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedCard, setSelectedCard] = useState<GiftCard | null>(null);
+  const [selectedCard, setSelectedCard] = useState<WalletGiftCard | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [showTransactions, setShowTransactions] = useState(false);
   const [filter, setFilter] = useState<'all' | 'active' | 'expired' | 'redeemed'>('all');
@@ -43,15 +44,15 @@ export default function WalletPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      fetchGiftCards();
+      loadGiftCards();
     }
   }, [isAuthenticated]);
 
-  const fetchGiftCards = async () => {
+  const loadGiftCards = async () => {
     try {
       // Fetch gift cards where user is recipient or owner
-      const response = await api.get('/gift-cards');
-      setGiftCards(response.data.data || []);
+      const result = await fetchGiftCards();
+      setGiftCards((result.data || []) as unknown as WalletGiftCard[]);
     } catch (error) {
       logger.error('Failed to fetch gift cards', { error });
     } finally {
@@ -59,10 +60,10 @@ export default function WalletPage() {
     }
   };
 
-  const fetchTransactions = async (giftCardId: string) => {
+  const loadTransactions = async (giftCardId: string) => {
     try {
-      const response = await api.get(`/redemptions/gift-card/${giftCardId}/transactions`);
-      setTransactions(response.data.data.transactions || []);
+      const result = await fetchGiftCardTransactions(giftCardId);
+      setTransactions((result.transactions as Transaction[]) || []);
       setShowTransactions(true);
     } catch (error) {
       logger.error('Failed to fetch transactions', { error, giftCardId });
@@ -228,7 +229,7 @@ export default function WalletPage() {
                       variant="outline"
                       onClick={() => {
                         setSelectedCard(card);
-                        fetchTransactions(card.id);
+                        loadTransactions(card.id);
                       }}
                     >
                       View Details

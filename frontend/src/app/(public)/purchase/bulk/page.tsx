@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import api from '@/lib/api';
+import { fetchGiftCardProductById } from '@/features/gift-cards';
+import { createBulkPurchase } from '@/features/payments';
 import { formatCurrency } from '@/lib/utils';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -22,7 +23,7 @@ const bulkPurchaseSchema = z.object({
 
 type BulkPurchaseFormData = z.infer<typeof bulkPurchaseSchema>;
 
-export default function BulkPurchasePage() {
+function BulkPurchaseContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
@@ -91,8 +92,8 @@ export default function BulkPurchasePage() {
 
   const fetchProduct = async () => {
     try {
-      const response = await api.get(`/gift-card-products/${productId}`);
-      setProduct(response.data.data);
+      const productData = await fetchGiftCardProductById(productId!);
+      setProduct(productData);
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Product not found');
     } finally {
@@ -187,7 +188,7 @@ export default function BulkPurchasePage() {
       }
 
       // Create bulk purchase
-      const bulkPurchaseResponse = await api.post('/payments/bulk-purchase', {
+      const purchaseData = await createBulkPurchase({
         productId: product?.id,
         recipients: recipients.map(r => ({
           email: r.email,
@@ -199,9 +200,7 @@ export default function BulkPurchasePage() {
         paymentMethod: data.paymentMethod,
         returnUrl: `${window.location.origin}/purchase/bulk/success`,
         cancelUrl: `${window.location.origin}/purchase/bulk`,
-      });
-
-      const purchaseData = bulkPurchaseResponse.data.data;
+      }) as any;
 
       // Handle different payment methods
       if (data.paymentMethod === 'STRIPE' && purchaseData.clientSecret) {
@@ -391,6 +390,14 @@ export default function BulkPurchasePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function BulkPurchasePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-navy-900 flex items-center justify-center"><div className="text-white">Loading...</div></div>}>
+      <BulkPurchaseContent />
+    </Suspense>
   );
 }
 

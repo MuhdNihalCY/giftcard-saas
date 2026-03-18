@@ -2,12 +2,12 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { randomBytes } from 'crypto';
 import { env } from '../config/env';
-import prisma from '../config/database';
 import { UnauthorizedError, ValidationError } from '../utils/errors';
 import { UserRole } from '@prisma/client';
 import logger from '../utils/logger';
 import twoFactorService from './two-factor.service';
 import type { DeviceInfo } from './device.service';
+import { AuthRepository } from '../modules/auth/auth.repository';
 
 export interface RegisterData {
   email: string;
@@ -30,13 +30,13 @@ export interface TokenPayload {
 }
 
 export class AuthService {
+  private readonly repository = new AuthRepository();
+
   async register(data: RegisterData) {
     const { email, password, firstName, lastName, businessName, role } = data;
 
     // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
+    const existingUser = await this.repository.findUserByEmail(email);
 
     if (existingUser) {
       throw new ValidationError('User with this email already exists');
@@ -46,32 +46,20 @@ export class AuthService {
     const passwordHash = await bcrypt.hash(password, 10);
 
     // Create user
-    const user = await prisma.user.create({
-      data: {
-        email,
-        passwordHash,
-        firstName,
-        lastName,
-        businessName,
-        role: role || 'CUSTOMER',
-        isEmailVerified: false, // Require email verification
-      },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        role: true,
-        businessName: true,
-        isEmailVerified: true,
-        createdAt: true,
-      },
+    const user = await this.repository.createUser({
+      email,
+      passwordHash,
+      firstName,
+      lastName,
+      businessName,
+      role: role || 'CUSTOMER',
+      isEmailVerified: false, // Require email verification
     });
 
     // Send verification email (don't await to avoid blocking registration)
-    // Use dynamic import to avoid circular dependency if any
-    import('./emailVerification.service').then((module) => {
-      module.default.sendVerificationEmail(user.id, user.email).catch((error) => {
+    // Import from notifications module to break the circular dependency
+    import('../modules/notifications').then((module) => {
+      module.emailVerificationService.sendVerificationEmail(user.id, user.email).catch((error) => {
         logger.error('Failed to send verification email during registration', { userId: user.id, error });
       });
     });
@@ -93,16 +81,8 @@ export class AuthService {
   async login(data: LoginData) {
     const { email, password } = data;
 
-    // Verify prisma is initialized
-    if (!prisma || !prisma.user) {
-      logger.error('Prisma client is not initialized', { prisma: typeof prisma });
-      throw new Error('Database connection not available');
-    }
-
     // Find user
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    const user = await this.repository.findUserByEmail(email);
 
     if (!user) {
       throw new UnauthorizedError('Invalid email or password');
@@ -133,22 +113,13 @@ export class AuthService {
         const lockedUntil = new Date();
         lockedUntil.setMinutes(lockedUntil.getMinutes() + lockoutDuration);
 
-        await prisma.user.update({
-          where: { id: user.id },
-          data: {
-            failedLoginAttempts: failedAttempts,
-            lockedUntil,
-          },
-        });
+        await this.repository.updateUserLoginAttempts(user.id, failedAttempts, lockedUntil);
 
         logger.warn('Account locked due to failed login attempts', { userId: user.id, email });
         throw new UnauthorizedError(`Account locked due to ${maxAttempts} failed login attempts. Please try again in ${lockoutDuration} minutes.`);
       } else {
         // Update failed attempts
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { failedLoginAttempts: failedAttempts },
-        });
+        await this.repository.updateUserLoginAttempts(user.id, failedAttempts);
 
         logger.warn('Failed login attempt', { userId: user.id, email, attempts: failedAttempts });
         throw new UnauthorizedError(`Invalid email or password. ${maxAttempts - failedAttempts} attempt(s) remaining.`);
@@ -157,13 +128,7 @@ export class AuthService {
 
     // Reset failed login attempts on successful login
     if (user.failedLoginAttempts > 0 || user.lockedUntil) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          failedLoginAttempts: 0,
-          lockedUntil: null,
-        },
-      });
+      await this.repository.resetUserLoginAttempts(user.id);
     }
 
     // Check if 2FA is enabled
@@ -206,9 +171,7 @@ export class AuthService {
     };
   }> {
     // First verify password
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    const user = await this.repository.findUserByEmail(email);
 
     if (!user) {
       throw new UnauthorizedError('Invalid email or password');
@@ -261,9 +224,7 @@ export class AuthService {
     remainingBackupCodes: number;
   }> {
     // First verify password
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    const user = await this.repository.findUserByEmail(email);
 
     if (!user) {
       throw new UnauthorizedError('Invalid email or password');
@@ -319,17 +280,15 @@ export class AuthService {
     expiresAt.setDate(expiresAt.getDate() + refreshExpiresIn);
 
     // Create refresh token record in database
-    const refreshTokenRecord = await prisma.refreshToken.create({
-      data: {
-        userId: payload.userId,
-        token: refreshTokenValue,
-        deviceName: deviceInfo?.deviceName,
-        deviceType: deviceInfo?.deviceType,
-        userAgent: deviceInfo?.userAgent,
-        ipAddress: ipAddress,
-        lastUsedAt: new Date(),
-        expiresAt,
-      },
+    const refreshTokenRecord = await this.repository.createRefreshToken({
+      userId: payload.userId,
+      token: refreshTokenValue,
+      deviceName: deviceInfo?.deviceName,
+      deviceType: deviceInfo?.deviceType,
+      userAgent: deviceInfo?.userAgent,
+      ipAddress: ipAddress,
+      lastUsedAt: new Date(),
+      expiresAt,
     });
 
     // Sign the refresh token with the database ID
@@ -388,10 +347,7 @@ export class AuthService {
 
     if (refreshTokenId) {
       // New token rotation flow
-      const refreshTokenRecord = await prisma.refreshToken.findUnique({
-        where: { id: refreshTokenId },
-        include: { user: true },
-      });
+      const refreshTokenRecord = await this.repository.findRefreshToken(refreshTokenId);
 
       if (!refreshTokenRecord) {
         throw new UnauthorizedError('Refresh token not found');
@@ -411,10 +367,7 @@ export class AuthService {
       }
 
       // Revoke old token
-      await prisma.refreshToken.update({
-        where: { id: refreshTokenId },
-        data: { revokedAt: new Date() },
-      });
+      await this.repository.revokeRefreshToken(refreshTokenId);
 
       // Generate new tokens with device tracking
       const newTokens = await this.generateTokens(
@@ -431,20 +384,15 @@ export class AuthService {
         ipAddress || refreshTokenRecord.ipAddress || undefined
       );
 
-      // Update last used timestamp on old token (before revoking)
-      await prisma.refreshToken.update({
-        where: { id: refreshTokenId },
-        data: { lastUsedAt: new Date() },
-      });
+      // Update last used timestamp on old token (already revoked above)
+      await this.repository.updateRefreshTokenLastUsed(refreshTokenId);
 
       logger.info('Token refreshed with rotation', { userId: user.id, oldTokenId: refreshTokenId });
 
       return newTokens;
     } else {
       // Legacy flow - no token rotation, but verify user
-      const user = await prisma.user.findUnique({
-        where: { id: payload.userId },
-      });
+      const user = await this.repository.findUserById(payload.userId);
 
       if (!user || !user.isActive) {
         throw new UnauthorizedError('User not found or inactive');

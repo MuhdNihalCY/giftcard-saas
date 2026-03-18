@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import api from '@/lib/api';
+import { fetchChargebacks, fetchChargebackStatistics } from '@/features/admin';
 import { DataTable } from '@/components/ui/DataTable';
 import { FilterBar } from '@/components/dashboard/FilterBar';
 import { Badge } from '@/components/ui/Badge';
@@ -66,8 +66,8 @@ export default function ChargebacksPage() {
       };
       if (filters.status) params.status = filters.status;
 
-      const response = await api.get('/chargebacks', { params });
-      setChargebacks(response.data.data);
+      const data = await fetchChargebacks(params);
+      setChargebacks(data);
     } catch (error: any) {
       logger.error('Failed to load chargebacks', { error });
     } finally {
@@ -77,8 +77,8 @@ export default function ChargebacksPage() {
 
   const loadStatistics = async () => {
     try {
-      const response = await api.get('/chargebacks/statistics');
-      setStatistics(response.data.data);
+      const stats = await fetchChargebackStatistics();
+      setStatistics(stats);
     } catch (error: any) {
       logger.error('Failed to load statistics', { error });
     }

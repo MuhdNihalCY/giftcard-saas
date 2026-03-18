@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { CurrencySelector } from '@/components/CurrencySelector';
 import { TemplateSelector } from '@/components/TemplateSelector';
-import api from '@/lib/api';
+import { createGiftCardProduct } from '@/features/gift-cards';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -110,9 +110,9 @@ export default function CreateProductPage() {
         payload.tags = data.tags.split(',').map(t => t.trim()).filter(Boolean);
       }
 
-      const response = await api.post('/gift-card-products', payload);
+      const product = await createGiftCardProduct(payload as Record<string, unknown>);
 
-      router.push(`/dashboard/gift-card-products/${response.data.data.id}/edit`);
+      router.push(`/dashboard/gift-card-products/${product.id}/edit`);
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to create product');
     } finally {

@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import api from '@/lib/api';
+import { checkGiftCardBalance } from '@/features/redemptions';
 import { formatCurrency } from '@/lib/utils';
 import Link from 'next/link';
 import { Navigation } from '@/components/Navigation';
@@ -23,8 +23,8 @@ export default function RedeemSuccessPage() {
 
   const fetchGiftCard = async () => {
     try {
-      const response = await api.post('/redemptions/check-balance', { code });
-      setGiftCard(response.data.data);
+      const giftCardData = await checkGiftCardBalance({ code });
+      setGiftCard(giftCardData);
     } catch (error) {
       logger.error('Failed to fetch gift card', { error });
     }

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import api from '@/lib/api';
+import { fetchRedemptionAnalytics } from '@/features/analytics';
+import { fetchRedemptions } from '@/features/redemptions';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import logger from '@/lib/logger';
 import { useAuthStore } from '@/store/authStore';
@@ -41,12 +42,12 @@ export default function RedemptionReportsPage() {
       }
 
       const [redemptionResponse, redemptionsResponse] = await Promise.all([
-        api.get('/analytics/redemptions', { params }),
-        api.get('/redemptions', { params: { ...params, limit: 100 } }),
+        fetchRedemptionAnalytics(params),
+        fetchRedemptions({ ...params, limit: 100 }),
       ]);
 
-      setReportData(redemptionResponse.data.data);
-      setRedemptions(redemptionsResponse.data.data || []);
+      setReportData(redemptionResponse);
+      setRedemptions(redemptionsResponse.data || []);
     } catch (error) {
       logger.error('Failed to fetch redemption report', { error });
     } finally {

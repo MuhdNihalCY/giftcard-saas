@@ -1,19 +1,19 @@
 import { randomBytes } from 'crypto';
 import bcrypt from 'bcryptjs';
-import prisma from '../config/database';
+import { NotificationRepository } from '../modules/notifications/notification.repository';
 import { ValidationError } from '../utils/errors';
 import emailService from './delivery/email.service';
 import logger from '../utils/logger';
 import { env } from '../config/env';
 
 export class PasswordResetService {
+  private readonly repository = new NotificationRepository();
+
   /**
    * Request password reset
    */
   async requestPasswordReset(email: string) {
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    const user = await this.repository.findUserByEmail(email);
 
     // Don't reveal if user exists for security
     if (!user) {
@@ -21,9 +21,7 @@ export class PasswordResetService {
     }
 
     // Delete any existing reset tokens
-    await prisma.passwordResetToken.deleteMany({
-      where: { userId: user.id },
-    });
+    await this.repository.deletePasswordResetTokens(user.id);
 
     // Generate reset token
     const token = randomBytes(32).toString('hex');
@@ -31,13 +29,7 @@ export class PasswordResetService {
     expiresAt.setHours(expiresAt.getHours() + 1); // 1 hour expiry
 
     // Create reset token
-    await prisma.passwordResetToken.create({
-      data: {
-        userId: user.id,
-        token,
-        expiresAt,
-      },
-    });
+    await this.repository.createPasswordResetToken(user.id, token, expiresAt);
 
     // Generate reset URL
     const resetUrl = `${env.FRONTEND_URL}/reset-password?token=${token}`;
@@ -62,10 +54,7 @@ export class PasswordResetService {
    * Reset password with token
    */
   async resetPassword(token: string, newPassword: string) {
-    const resetToken = await prisma.passwordResetToken.findUnique({
-      where: { token },
-      include: { user: true },
-    });
+    const resetToken = await this.repository.findPasswordResetToken(token);
 
     if (!resetToken) {
       throw new ValidationError('Invalid reset token');
@@ -73,9 +62,7 @@ export class PasswordResetService {
 
     // Check if token is expired
     if (resetToken.expiresAt < new Date()) {
-      await prisma.passwordResetToken.delete({
-        where: { id: resetToken.id },
-      });
+      await this.repository.deletePasswordResetToken(resetToken.id);
       throw new ValidationError('Reset token has expired');
     }
 
@@ -90,26 +77,11 @@ export class PasswordResetService {
     // Hash new password
     const passwordHash = await bcrypt.hash(newPassword, 10);
 
-    // Update user password
-    await prisma.user.update({
-      where: { id: resetToken.userId },
-      data: { passwordHash },
-    });
+    // Update user password and clear failed login attempts
+    await this.repository.updateUserPassword(resetToken.userId, passwordHash);
 
     // Mark token as used
-    await prisma.passwordResetToken.update({
-      where: { id: resetToken.id },
-      data: { used: true },
-    });
-
-    // Clear failed login attempts
-    await prisma.user.update({
-      where: { id: resetToken.userId },
-      data: {
-        failedLoginAttempts: 0,
-        lockedUntil: null,
-      },
-    });
+    await this.repository.markPasswordResetTokenUsed(resetToken.id);
 
     logger.info('Password reset successfully', { userId: resetToken.userId });
 
@@ -159,19 +131,19 @@ export class PasswordResetService {
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
           <h1 style="color: white; margin: 0;">Reset Your Password</h1>
         </div>
-        
+
         <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
           <p style="font-size: 18px;">Hi ${firstName},</p>
-          
+
           <p>We received a request to reset your password. Click the button below to create a new password:</p>
-          
+
           <div style="text-align: center; margin: 30px 0;">
             <a href="${resetUrl}" style="background: #667eea; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">Reset Password</a>
           </div>
-          
+
           <p style="color: #666; font-size: 14px;">Or copy and paste this link into your browser:</p>
           <p style="color: #667eea; font-size: 12px; word-break: break-all;">${resetUrl}</p>
-          
+
           <p style="color: #999; font-size: 12px; margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px;">
             This link will expire in 1 hour. If you didn't request a password reset, you can safely ignore this email.
           </p>
@@ -183,5 +155,3 @@ export class PasswordResetService {
 }
 
 export default new PasswordResetService();
-
-

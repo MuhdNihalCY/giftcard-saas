@@ -1,8 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
 import authService from '../services/auth.service';
 import { ValidationError, UnauthorizedError } from '../utils/errors';
-import prisma from '../config/database';
 import auditLogService from '../services/audit-log.service';
+import { UserRepository } from '../modules/users/user.repository';
+
+const userRepository = new UserRepository();
 import { AuthRequest } from '../middleware/auth.middleware';
 import deviceService from '../services/device.service';
 
@@ -93,17 +95,9 @@ export class AuthController {
       
       // Also return user info for convenience
       const payload = authService.verifyToken(tokens.accessToken, false);
-      const user = await prisma.user.findUnique({
-        where: { id: payload.userId },
-        select: {
-          id: true,
-          email: true,
-          firstName: true,
-          lastName: true,
-          role: true,
-          businessName: true,
-          isEmailVerified: true,
-        },
+      const user = await userRepository.findByIdSelect(payload.userId, {
+        id: true, email: true, firstName: true, lastName: true,
+        role: true, businessName: true, isEmailVerified: true,
       });
 
       res.json({
@@ -128,19 +122,9 @@ export class AuthController {
         throw new UnauthorizedError('Authentication required');
       }
 
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          id: true,
-          email: true,
-          firstName: true,
-          lastName: true,
-          role: true,
-          businessName: true,
-          isEmailVerified: true,
-          isActive: true,
-          createdAt: true,
-        },
+      const user = await userRepository.findByIdSelect(userId, {
+        id: true, email: true, firstName: true, lastName: true,
+        role: true, businessName: true, isEmailVerified: true, isActive: true, createdAt: true,
       });
 
       if (!user) {

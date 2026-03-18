@@ -4,7 +4,11 @@ import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import api from '@/lib/api';
+import {
+  fetchCommunicationLogs,
+  fetchCommunicationStats,
+  fetchChannelStats,
+} from '@/features/admin';
 import { useAuthStore } from '@/store/authStore';
 import logger from '@/lib/logger';
 
@@ -72,16 +76,15 @@ export default function AdminCommunicationLogsPage() {
   const fetchLogs = async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams();
-      if (filters.channel) params.append('channel', filters.channel);
-      if (filters.status) params.append('status', filters.status);
-      if (filters.recipient) params.append('recipient', filters.recipient);
-      params.append('page', filters.page.toString());
-      params.append('limit', filters.limit.toString());
-
-      const response = await api.get(`/admin/communication-logs/logs?${params.toString()}`);
-      setLogs(response.data.data.logs);
-      setPagination(response.data.data.pagination);
+      const result = await fetchCommunicationLogs({
+        channel: filters.channel || undefined,
+        status: filters.status || undefined,
+        recipient: filters.recipient || undefined,
+        page: filters.page,
+        limit: filters.limit,
+      });
+      setLogs(result.logs);
+      setPagination(result.pagination);
     } catch (err: any) {
       logger.error('Failed to load logs', { error: err });
     } finally {
@@ -91,8 +94,8 @@ export default function AdminCommunicationLogsPage() {
 
   const fetchStatistics = async () => {
     try {
-      const response = await api.get('/admin/communication-logs/statistics');
-      setStats(response.data.data);
+      const data = await fetchCommunicationStats();
+      setStats(data);
     } catch (err: any) {
       logger.error('Failed to load statistics', { error: err });
     }
@@ -100,8 +103,8 @@ export default function AdminCommunicationLogsPage() {
 
   const fetchChannelStatistics = async () => {
     try {
-      const response = await api.get('/admin/communication-logs/statistics/channels');
-      setChannelStats(response.data.data);
+      const data = await fetchChannelStats();
+      setChannelStats(data);
     } catch (err: any) {
       logger.error('Failed to load channel statistics', { error: err });
     }

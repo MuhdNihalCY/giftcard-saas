@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/Badge';
 import { ChartContainer } from '@/components/dashboard/ChartContainer';
 import { MetricCard } from '@/components/dashboard/MetricCard';
 import api from '@/lib/api';
+import { fetchAuditLogs, fetchAuditLogStats } from '@/features/admin';
 import { useAuthStore } from '@/store/authStore';
 import logger from '@/lib/logger';
 import { Shield, Download, FileText, Activity } from 'lucide-react';
@@ -100,13 +101,15 @@ export default function AdminAuditLogsPage() {
         params.sortOrder = sortDirection;
       }
 
-      const response = await api.get('/admin/audit-logs', { params });
-      setLogs(response.data.data.logs || []);
+      const result = await fetchAuditLogs(params);
+      const resultData = result.data as any;
+      setLogs(resultData?.logs || []);
+      const pg = resultData?.pagination;
       setPagination({
-        page: response.data.data.pagination?.page || pagination.page,
-        limit: response.data.data.pagination?.limit || pagination.limit,
-        total: response.data.data.pagination?.total || 0,
-        totalPages: response.data.data.pagination?.totalPages || 0,
+        page: pg?.page || pagination.page,
+        limit: pg?.limit || pagination.limit,
+        total: pg?.total || 0,
+        totalPages: pg?.totalPages || 0,
       });
     } catch (err: unknown) {
       logger.error('Failed to load audit logs', { error: err });
@@ -121,8 +124,8 @@ export default function AdminAuditLogsPage() {
       if (dateRange.start) params.startDate = dateRange.start.toISOString();
       if (dateRange.end) params.endDate = dateRange.end.toISOString();
 
-      const response = await api.get('/admin/audit-logs/statistics', { params });
-      setStats(response.data.data);
+      const data = await fetchAuditLogStats(params);
+      setStats(data);
     } catch (err: unknown) {
       logger.error('Failed to load statistics', { error: err });
     }
@@ -402,7 +405,7 @@ export default function AdminAuditLogsPage() {
             exportable
             onExport={() => handleExport('csv')}
             emptyMessage="No audit logs found"
-            onRowClick={(row) => {
+            onRowClick={(_row) => {
               // Could show detailed view in a modal
             }}
           />

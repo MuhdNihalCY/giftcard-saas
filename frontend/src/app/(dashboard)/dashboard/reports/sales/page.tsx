@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import api from '@/lib/api';
+import { fetchSalesAnalytics, exportAnalyticsReport } from '@/features/analytics';
 import { formatCurrency } from '@/lib/utils';
 import { useAuthStore } from '@/store/authStore';
 import logger from '@/lib/logger';
@@ -45,8 +45,8 @@ export default function SalesReportsPage() {
         params.merchantId = user.id;
       }
 
-      const response = await api.get('/analytics/sales', { params });
-      setReportData(response.data.data);
+      const response = await fetchSalesAnalytics(params);
+      setReportData(response);
     } catch (error) {
       logger.error('Failed to fetch sales report', { error });
     } finally {
@@ -66,12 +66,9 @@ export default function SalesReportsPage() {
         params.merchantId = user.id;
       }
 
-      const response = await api.get('/analytics/export', {
-        params,
-        responseType: 'blob',
-      });
+      const blob = await exportAnalyticsReport(params);
 
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const url = window.URL.createObjectURL(new Blob([blob]));
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', `sales-report-${dateRange.startDate}-${dateRange.endDate}.csv`);

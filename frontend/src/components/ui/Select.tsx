@@ -66,7 +66,7 @@ export const SelectItem = ({ value, children, ...props }: { value: string; child
   );
 };
 
-export const SelectValue = ({ placeholder }: { placeholder?: string }) => {
+export const SelectValue = ({ placeholder: _placeholder }: { placeholder?: string }) => {
   // This is a no-op component for compatibility
   return null;
 };

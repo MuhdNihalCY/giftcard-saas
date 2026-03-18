@@ -146,7 +146,7 @@ export function QRCodeScanner({ onScanSuccess, onError }: QRCodeScannerProps) {
 
       {!isScanning && (
         <p className="text-xs text-plum-300 text-center">
-          Click "Start Scanner" to scan a QR code from a customer's gift card
+          Click &quot;Start Scanner&quot; to scan a QR code from a customer&apos;s gift card
         </p>
       )}
     </div>

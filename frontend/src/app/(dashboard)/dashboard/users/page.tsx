@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { FilterBar } from '@/components/dashboard/FilterBar';
 import { Badge } from '@/components/ui/Badge';
-import api from '@/lib/api';
+import { fetchAdminUsers, toggleUserActive } from '@/features/admin';
 import { formatDate } from '@/lib/utils';
 import logger from '@/lib/logger';
 import { useAuthStore } from '@/store/authStore';
@@ -72,11 +72,11 @@ export default function UsersPage() {
         params.sortOrder = sortDirection;
       }
 
-      const response = await api.get('/admin/users', { params });
-      setUsers(response.data.data || []);
+      const result = await fetchAdminUsers(params);
+      setUsers(result.data || []);
       setPagination((prev) => ({
         ...prev,
-        total: response.data.pagination?.total || response.data.data?.length || 0,
+        total: result.pagination?.total || result.data?.length || 0,
       }));
     } catch (error) {
       logger.error('Failed to fetch users', { error });
@@ -87,9 +87,7 @@ export default function UsersPage() {
 
   const handleToggleActive = async (userId: string, currentStatus: boolean) => {
     try {
-      await api.put(`/admin/users/${userId}/toggle-active`, {
-        isActive: !currentStatus,
-      });
+      await toggleUserActive(userId, !currentStatus);
       fetchUsers();
     } catch (error) {
       logger.error('Failed to toggle user status', { error });
@@ -280,7 +278,7 @@ export default function UsersPage() {
             exportable
             onExport={handleExport}
             emptyMessage="No users found"
-            onRowClick={(row) => {
+            onRowClick={(_row) => {
               // Could navigate to user detail page
             }}
           />

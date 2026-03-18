@@ -1,5 +1,4 @@
 import { Decimal } from '@prisma/client/runtime/library';
-import prisma from '../../config/database';
 import { NotFoundError, ValidationError } from '../../utils/errors';
 import { PaymentMethod, PaymentStatus, Prisma, GatewayType } from '@prisma/client';
 import logger from '../../utils/logger';
@@ -16,6 +15,13 @@ import paypalConnectService from './paypal-connect.service';
 import commissionService from '../commission.service';
 import crypto from 'crypto';
 import type { PaymentMetadata, TransactionMetadata, RefundResult, ProductPaymentData } from '../../types/payment';
+import { PaymentRepository } from '../../modules/payments/payment.repository';
+import { GiftCardRepository } from '../../modules/gift-cards/gift-card.repository';
+import { UserRepository } from '../../modules/users/user.repository';
+
+const paymentRepository = new PaymentRepository();
+const giftCardRepository = new GiftCardRepository();
+const userRepository = new UserRepository();
 
 export interface CreatePaymentData {
   giftCardId: string;
@@ -265,36 +271,25 @@ export class PaymentService {
     }
 
     // Create payment record
-    const payment = await prisma.payment.create({
-      data: {
-        giftCardId,
-        customerId,
-        amount: new Decimal(amount),
-        currency,
-        paymentMethod,
-        paymentIntentId: paymentIntentId || orderId || '',
-        status,
-        commissionAmount: new Decimal(commissionAmount),
-        netAmount: new Decimal(netAmount),
-        ipAddress: ipAddress || null,
-        userAgent: data.userAgent || null,
-        metadata: {
-          returnUrl,
-          cancelUrl,
-          useMerchantGateway,
-          commissionRate: commissionResult.commissionRate,
-          commissionType: commissionResult.commissionType,
-        } satisfies PaymentMetadata,
-      },
-      include: {
-        giftCard: true,
-        customer: {
-          select: {
-            id: true,
-            email: true,
-          },
-        },
-      },
+    const payment = await paymentRepository.createPaymentFull({
+      giftCardId,
+      customerId,
+      amount: new Decimal(amount),
+      currency,
+      paymentMethod,
+      paymentIntentId: paymentIntentId || orderId || '',
+      status,
+      commissionAmount: new Decimal(commissionAmount),
+      netAmount: new Decimal(netAmount),
+      ipAddress: ipAddress || null,
+      userAgent: data.userAgent || null,
+      metadata: {
+        returnUrl,
+        cancelUrl,
+        useMerchantGateway,
+        commissionRate: commissionResult.commissionRate,
+        commissionType: commissionResult.commissionType,
+      } satisfies PaymentMetadata,
     });
 
     return {
@@ -312,10 +307,7 @@ export class PaymentService {
     const { paymentId, paymentMethod, paymentIntentId, orderId, paymentMethodId, signature } = data;
 
     // Get payment record
-    const payment = await prisma.payment.findUnique({
-      where: { id: paymentId },
-      include: { giftCard: true },
-    });
+    const payment = await paymentRepository.findPaymentById(paymentId);
 
     if (!payment) {
       throw new NotFoundError('Payment not found');
@@ -438,40 +430,28 @@ export class PaymentService {
 
     if (!confirmed) {
       // Update payment status to failed
-      await prisma.payment.update({
-        where: { id: paymentId },
-        data: { status: PaymentStatus.FAILED },
-      });
+      await paymentRepository.updatePayment(paymentId, { status: PaymentStatus.FAILED });
       throw new ValidationError('Payment confirmation failed');
     }
 
     // Update payment status
-    const updatedPayment = await prisma.payment.update({
-      where: { id: paymentId },
-      data: {
-        status: PaymentStatus.COMPLETED,
-        transactionId,
-      },
-      include: {
-        giftCard: true,
-        customer: true,
-      },
+    const updatedPayment = await paymentRepository.updatePaymentWithIncludes(paymentId, {
+      status: PaymentStatus.COMPLETED,
+      transactionId,
     });
 
     // Create transaction record
-    await prisma.transaction.create({
-      data: {
-        giftCardId: payment.giftCardId,
-        type: 'PURCHASE',
-        amount: payment.amount,
-        balanceBefore: new Decimal(0),
-        balanceAfter: payment.amount,
-        userId: payment.customerId || null,
-        metadata: {
-          paymentId: payment.id,
-          paymentMethod: payment.paymentMethod,
-        } satisfies TransactionMetadata,
-      },
+    await paymentRepository.createTransaction({
+      giftCardId: payment.giftCardId,
+      type: 'PURCHASE',
+      amount: payment.amount,
+      balanceBefore: new Decimal(0),
+      balanceAfter: payment.amount,
+      userId: payment.customerId || null,
+      metadata: {
+        paymentId: payment.id,
+        paymentMethod: payment.paymentMethod,
+      } satisfies TransactionMetadata,
     });
 
     // If this is a bulk purchase, deliver all gift cards
@@ -519,30 +499,7 @@ export class PaymentService {
    * Get payment by ID
    */
   async getById(id: string) {
-    const payment = await prisma.payment.findUnique({
-      where: { id },
-      include: {
-        giftCard: {
-          include: {
-            merchant: {
-              select: {
-                id: true,
-                email: true,
-                businessName: true,
-              },
-            },
-          },
-        },
-        customer: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-      },
-    });
+    const payment = await paymentRepository.findPaymentById(id);
 
     if (!payment) {
       throw new NotFoundError('Payment not found');
@@ -590,28 +547,8 @@ export class PaymentService {
     }
 
     const [payments, total] = await Promise.all([
-      prisma.payment.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          giftCard: {
-            select: {
-              id: true,
-              code: true,
-              value: true,
-            },
-          },
-          customer: {
-            select: {
-              id: true,
-              email: true,
-            },
-          },
-        },
-      }),
-      prisma.payment.count({ where }),
+      paymentRepository.findPaymentsWithDetails(where, skip, limit),
+      paymentRepository.countPayments(where),
     ]);
 
     return {
@@ -656,23 +593,7 @@ export class PaymentService {
       ],
     };
 
-    const payments = await prisma.payment.findMany({
-      where,
-      take: 10,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        giftCard: {
-          select: {
-            code: true,
-          },
-        },
-        customer: {
-          select: {
-            email: true,
-          },
-        },
-      },
-    });
+    const payments = await paymentRepository.findPaymentSuggestions(where);
 
     return payments.map((payment) => ({
       id: payment.id,
@@ -754,55 +675,42 @@ export class PaymentService {
 
     // Update payment status
     const refundAmount = amount || Number(payment.amount);
-    await prisma.payment.update({
-      where: { id: paymentId },
-      data: { status: PaymentStatus.REFUNDED },
-    });
+    await paymentRepository.updatePayment(paymentId, { status: PaymentStatus.REFUNDED });
 
     // Update gift card balance if needed
     const giftCard = await giftCardService.getById(payment.giftCardId);
     const newBalance = Number(giftCard.balance) - refundAmount;
 
-    await prisma.giftCard.update({
-      where: { id: payment.giftCardId },
-      data: {
-        balance: new Decimal(Math.max(0, newBalance)),
-        status: newBalance <= 0 ? 'CANCELLED' : giftCard.status,
-      },
+    await giftCardRepository.update(payment.giftCardId, {
+      balance: new Decimal(Math.max(0, newBalance)),
+      status: newBalance <= 0 ? 'CANCELLED' : giftCard.status,
     });
 
     // Create transaction record
-    await prisma.transaction.create({
-      data: {
-        giftCardId: payment.giftCardId,
-        type: 'REFUND',
-        amount: new Decimal(refundAmount),
-        balanceBefore: giftCard.balance,
-        balanceAfter: new Decimal(Math.max(0, newBalance)),
-        userId: payment.customerId || null,
-        metadata: {
-          paymentId: payment.id,
-          refundId: refundResult.refundId,
-          reason,
-        } satisfies TransactionMetadata,
-      },
+    await paymentRepository.createTransaction({
+      giftCardId: payment.giftCardId,
+      type: 'REFUND',
+      amount: new Decimal(refundAmount),
+      balanceBefore: giftCard.balance,
+      balanceAfter: new Decimal(Math.max(0, newBalance)),
+      userId: payment.customerId || null,
+      metadata: {
+        paymentId: payment.id,
+        refundId: refundResult.refundId,
+        reason,
+      } satisfies TransactionMetadata,
     });
 
     // Adjust merchant balance (deduct refund amount if payout already made)
-    const merchant = await prisma.user.findUnique({
-      where: { id: giftCard.merchantId },
-    });
+    const merchant = await userRepository.findById(giftCard.merchantId);
 
     if (merchant) {
       const currentBalance = Number(merchant.merchantBalance);
       // Deduct refund amount from merchant balance
       const newMerchantBalance = Math.max(0, currentBalance - refundAmount);
 
-      await prisma.user.update({
-        where: { id: giftCard.merchantId },
-        data: {
-          merchantBalance: new Decimal(newMerchantBalance),
-        },
+      await userRepository.update(giftCard.merchantId, {
+        merchantBalance: new Decimal(newMerchantBalance),
       });
 
       logger.info('Merchant balance adjusted for refund', {
@@ -1215,44 +1123,33 @@ export class PaymentService {
     }
 
     // Create payment record with metadata containing all gift card IDs
-    const payment = await prisma.payment.create({
-      data: {
-        giftCardId: primaryGiftCard.id,
-        customerId,
-        amount: new Decimal(totalSalePrice), // Customer pays total sale price
-        currency: product?.currency || currency,
-        paymentMethod,
-        paymentIntentId: paymentIntentId || orderId || '',
-        status,
-        commissionAmount: new Decimal(commissionAmount),
-        netAmount: new Decimal(netAmount),
-        ipAddress: ipAddress || null,
-        userAgent: userAgent || null,
-        deviceFingerprint: userAgent && ipAddress
-          ? this.generateDeviceFingerprint(userAgent, ipAddress)
-          : null,
-        metadata: {
-          type: 'bulk_purchase',
-          giftCardIds: giftCards.map(gc => gc.id),
-          recipientCount: recipients.length,
-          totalGiftCardValue: recipients.reduce((sum, r) => sum + r.amount, 0), // Total actual gift card values
-          totalSalePrice, // Total what customer paid
-          returnUrl,
-          cancelUrl,
-          useMerchantGateway,
-          commissionRate: commissionResult.commissionRate,
-          commissionType: commissionResult.commissionType,
-        } as any,
-      },
-      include: {
-        giftCard: true,
-        customer: {
-          select: {
-            id: true,
-            email: true,
-          },
-        },
-      },
+    const payment = await paymentRepository.createPaymentFull({
+      giftCardId: primaryGiftCard.id,
+      customerId,
+      amount: new Decimal(totalSalePrice), // Customer pays total sale price
+      currency: product?.currency || currency,
+      paymentMethod,
+      paymentIntentId: paymentIntentId || orderId || '',
+      status,
+      commissionAmount: new Decimal(commissionAmount),
+      netAmount: new Decimal(netAmount),
+      ipAddress: ipAddress || null,
+      userAgent: userAgent || null,
+      deviceFingerprint: userAgent && ipAddress
+        ? this.generateDeviceFingerprint(userAgent, ipAddress)
+        : null,
+      metadata: {
+        type: 'bulk_purchase',
+        giftCardIds: giftCards.map(gc => gc.id),
+        recipientCount: recipients.length,
+        totalGiftCardValue: recipients.reduce((sum, r) => sum + r.amount, 0),
+        totalSalePrice,
+        returnUrl,
+        cancelUrl,
+        useMerchantGateway,
+        commissionRate: commissionResult.commissionRate,
+        commissionType: commissionResult.commissionType,
+      } as any,
     });
 
     // If payment is completed immediately, deliver all gift cards

@@ -1,4 +1,4 @@
-import prisma from '../config/database';
+import { AdminRepository } from '../modules/admin/admin.repository';
 import logger from '../utils/logger';
 
 export type CommunicationChannel = 'EMAIL' | 'SMS' | 'OTP' | 'PUSH';
@@ -16,22 +16,22 @@ export interface LogCommunicationOptions {
 }
 
 export class CommunicationLogService {
+  private readonly repository = new AdminRepository();
+
   /**
    * Log a communication attempt
    */
   async log(options: LogCommunicationOptions) {
     try {
-      await prisma.communicationLog.create({
-        data: {
-          channel: options.channel,
-          recipient: options.recipient,
-          subject: options.subject,
-          message: options.message,
-          status: options.status,
-          errorMessage: options.errorMessage,
-          userId: options.userId,
-          metadata: options.metadata || {},
-        },
+      await this.repository.createCommunicationLog({
+        channel: options.channel,
+        recipient: options.recipient,
+        subject: options.subject,
+        message: options.message,
+        status: options.status,
+        errorMessage: options.errorMessage,
+        userId: options.userId,
+        metadata: options.metadata || {},
       });
     } catch (error: any) {
       // Don't throw error if logging fails, just log it
@@ -77,13 +77,8 @@ export class CommunicationLogService {
     }
 
     const [logs, total] = await Promise.all([
-      prisma.communicationLog.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-      }),
-      prisma.communicationLog.count({ where }),
+      this.repository.getCommunicationLogs(where, skip, limit),
+      this.repository.countCommunicationLogs(where),
     ]);
 
     return {
@@ -116,10 +111,10 @@ export class CommunicationLogService {
     }
 
     const [total, sent, failed, blocked] = await Promise.all([
-      prisma.communicationLog.count({ where }),
-      prisma.communicationLog.count({ where: { ...where, status: 'SENT' } }),
-      prisma.communicationLog.count({ where: { ...where, status: 'FAILED' } }),
-      prisma.communicationLog.count({ where: { ...where, status: 'BLOCKED' } }),
+      this.repository.countCommunicationLogs(where),
+      this.repository.countCommunicationLogs({ ...where, status: 'SENT' }),
+      this.repository.countCommunicationLogs({ ...where, status: 'FAILED' }),
+      this.repository.countCommunicationLogs({ ...where, status: 'BLOCKED' }),
     ]);
 
     return {
@@ -148,9 +143,9 @@ export class CommunicationLogService {
       channels.map(async (channel) => {
         const channelWhere = { ...where, channel };
         const [total, sent, failed] = await Promise.all([
-          prisma.communicationLog.count({ where: channelWhere }),
-          prisma.communicationLog.count({ where: { ...channelWhere, status: 'SENT' } }),
-          prisma.communicationLog.count({ where: { ...channelWhere, status: 'FAILED' } }),
+          this.repository.countCommunicationLogs(channelWhere),
+          this.repository.countCommunicationLogs({ ...channelWhere, status: 'SENT' }),
+          this.repository.countCommunicationLogs({ ...channelWhere, status: 'FAILED' }),
         ]);
 
         return {
@@ -168,5 +163,3 @@ export class CommunicationLogService {
 }
 
 export default new CommunicationLogService();
-
-

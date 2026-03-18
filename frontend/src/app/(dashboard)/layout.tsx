@@ -14,7 +14,7 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const { isAuthenticated, checkAuth } = useAuthStore();
-  const { theme, setTheme } = useThemeStore();
+  const { theme } = useThemeStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Initialize theme on mount

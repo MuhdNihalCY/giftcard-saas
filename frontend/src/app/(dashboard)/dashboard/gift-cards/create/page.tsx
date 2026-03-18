@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { CurrencySelector } from '@/components/CurrencySelector';
 import { TemplateSelector } from '@/components/TemplateSelector';
-import api from '@/lib/api';
+import { createGiftCard } from '@/features/gift-cards';
 import { currencies } from '@/lib/currencies';
 
 const giftCardSchema = z.object({
@@ -81,9 +81,9 @@ export default function CreateGiftCardPage() {
         recipientEmail: data.recipientEmail || undefined,
       };
 
-      const response = await api.post('/gift-cards', payload);
+      const created = await createGiftCard(payload);
 
-      router.push(`/dashboard/gift-cards/${response.data.data.id}`);
+      router.push(`/dashboard/gift-cards/${(created as any).id}`);
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to create gift card');
     } finally {

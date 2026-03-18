@@ -1,19 +1,19 @@
 import { randomBytes } from 'crypto';
-import prisma from '../config/database';
+import { NotificationRepository } from '../modules/notifications/notification.repository';
 import { ValidationError } from '../utils/errors';
 import emailService from './delivery/email.service';
 import logger from '../utils/logger';
 import { env } from '../config/env';
 
 export class EmailVerificationService {
+  private readonly repository = new NotificationRepository();
+
   /**
    * Generate and send verification email
    */
   async sendVerificationEmail(userId: string, email: string) {
     // Delete any existing verification tokens
-    await prisma.emailVerificationToken.deleteMany({
-      where: { userId },
-    });
+    await this.repository.deleteEmailVerificationTokens(userId);
 
     // Generate verification token
     const token = randomBytes(32).toString('hex');
@@ -21,13 +21,7 @@ export class EmailVerificationService {
     expiresAt.setHours(expiresAt.getHours() + 24); // 24 hours expiry
 
     // Create verification token
-    await prisma.emailVerificationToken.create({
-      data: {
-        userId,
-        token,
-        expiresAt,
-      },
-    });
+    await this.repository.createEmailVerificationToken(userId, token, expiresAt);
 
     // Generate verification URL
     const verificationUrl = `${env.FRONTEND_URL}/verify-email?token=${token}`;
@@ -50,10 +44,7 @@ export class EmailVerificationService {
    * Verify email with token
    */
   async verifyEmail(token: string) {
-    const verificationToken = await prisma.emailVerificationToken.findUnique({
-      where: { token },
-      include: { user: true },
-    });
+    const verificationToken = await this.repository.findEmailVerificationToken(token);
 
     if (!verificationToken) {
       throw new ValidationError('Invalid verification token');
@@ -61,30 +52,21 @@ export class EmailVerificationService {
 
     // Check if token is expired
     if (verificationToken.expiresAt < new Date()) {
-      await prisma.emailVerificationToken.delete({
-        where: { id: verificationToken.id },
-      });
+      await this.repository.deleteEmailVerificationToken(verificationToken.id);
       throw new ValidationError('Verification token has expired');
     }
 
     // Check if email is already verified
     if (verificationToken.user.isEmailVerified) {
-      await prisma.emailVerificationToken.delete({
-        where: { id: verificationToken.id },
-      });
+      await this.repository.deleteEmailVerificationToken(verificationToken.id);
       throw new ValidationError('Email is already verified');
     }
 
     // Update user email verification status
-    await prisma.user.update({
-      where: { id: verificationToken.userId },
-      data: { isEmailVerified: true },
-    });
+    await this.repository.markUserEmailVerified(verificationToken.userId);
 
     // Delete verification token
-    await prisma.emailVerificationToken.delete({
-      where: { id: verificationToken.id },
-    });
+    await this.repository.deleteEmailVerificationToken(verificationToken.id);
 
     logger.info('Email verified successfully', { userId: verificationToken.userId });
 
@@ -97,9 +79,7 @@ export class EmailVerificationService {
    * Resend verification email
    */
   async resendVerificationEmail(email: string) {
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    const user = await this.repository.findUserByEmail(email);
 
     if (!user) {
       // Don't reveal if user exists for security
@@ -131,19 +111,19 @@ export class EmailVerificationService {
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
           <h1 style="color: white; margin: 0;">Verify Your Email Address</h1>
         </div>
-        
+
         <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
           <p style="font-size: 18px;">Thank you for signing up!</p>
-          
+
           <p>Please verify your email address by clicking the button below:</p>
-          
+
           <div style="text-align: center; margin: 30px 0;">
             <a href="${verificationUrl}" style="background: #667eea; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">Verify Email Address</a>
           </div>
-          
+
           <p style="color: #666; font-size: 14px;">Or copy and paste this link into your browser:</p>
           <p style="color: #667eea; font-size: 12px; word-break: break-all;">${verificationUrl}</p>
-          
+
           <p style="color: #999; font-size: 12px; margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px;">
             This link will expire in 24 hours. If you didn't create an account, you can safely ignore this email.
           </p>
@@ -155,5 +135,3 @@ export class EmailVerificationService {
 }
 
 export default new EmailVerificationService();
-
-

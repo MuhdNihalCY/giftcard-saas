@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge, getStatusBadgeVariant } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
 import { DataTable, Column } from '@/components/ui/DataTable';
-import api from '@/lib/api';
+import { fetchAvailableBalance, fetchPayouts, fetchPayoutSettings, requestPayout as requestPayoutApi } from '@/features/payouts';
 import { useAuthStore } from '@/store/authStore';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import { DollarSign, Calendar, Settings, RefreshCw } from 'lucide-react';
@@ -33,7 +33,7 @@ interface PayoutSettings {
 }
 
 export default function PayoutsPage() {
-  const { user } = useAuthStore();
+  useAuthStore();
   const toast = useToast();
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [availableBalance, setAvailableBalance] = useState(0);
@@ -50,16 +50,16 @@ export default function PayoutsPage() {
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      const [balanceRes, payoutsRes, settingsRes] = await Promise.all([
-        api.get('/payouts/available-balance'),
-        api.get('/payouts'),
-        api.get('/payouts/settings'),
+      const [balanceData, payoutsData, settingsData] = await Promise.all([
+        fetchAvailableBalance(),
+        fetchPayouts(),
+        fetchPayoutSettings(),
       ]);
 
-      setAvailableBalance(balanceRes.data.data.availableBalance || 0);
-      setPayouts(payoutsRes.data.data || []);
-      setSettings(settingsRes.data.data);
-    } catch (error: any) {
+      setAvailableBalance(balanceData.availableBalance || 0);
+      setPayouts(payoutsData.data || []);
+      setSettings(settingsData);
+    } catch {
       toast.error('Failed to load payout data');
     } finally {
       setIsLoading(false);
@@ -87,7 +87,7 @@ export default function PayoutsPage() {
 
     try {
       setIsRequesting(true);
-      await api.post('/payouts/request', { amount });
+      await requestPayoutApi({ amount });
       toast.success('Payout requested successfully');
       setPayoutAmount('');
       setShowRequestForm(false);
@@ -102,17 +102,17 @@ export default function PayoutsPage() {
   const columns: Column<Payout>[] = [
     {
       key: 'amount',
-      header: 'Amount',
+      label: 'Amount',
       render: (payout) => formatCurrency(payout.amount, payout.currency),
     },
     {
       key: 'netAmount',
-      header: 'Net Amount',
+      label: 'Net Amount',
       render: (payout) => formatCurrency(payout.netAmount, payout.currency),
     },
     {
       key: 'status',
-      header: 'Status',
+      label: 'Status',
       render: (payout) => (
         <Badge variant={getStatusBadgeVariant(payout.status.toLowerCase())}>
           {payout.status}
@@ -121,17 +121,17 @@ export default function PayoutsPage() {
     },
     {
       key: 'payoutMethod',
-      header: 'Method',
+      label: 'Method',
       render: (payout) => payout.payoutMethod.replace('_', ' '),
     },
     {
       key: 'createdAt',
-      header: 'Requested',
+      label: 'Requested',
       render: (payout) => formatDateTime(payout.createdAt),
     },
     {
       key: 'processedAt',
-      header: 'Processed',
+      label: 'Processed',
       render: (payout) =>
         payout.processedAt ? formatDateTime(payout.processedAt) : '-',
     },

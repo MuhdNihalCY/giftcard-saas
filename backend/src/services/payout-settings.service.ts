@@ -1,8 +1,8 @@
-import prisma from '../config/database';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { PayoutSchedule } from '@prisma/client';
 import logger from '../utils/logger';
 import { Decimal } from '@prisma/client/runtime/library';
+import { PayoutRepository } from '../modules/payouts/payout.repository';
 
 export interface UpdatePayoutSettingsData {
   payoutMethod?: string; // STRIPE_CONNECT, PAYPAL, BANK_TRANSFER
@@ -13,13 +13,13 @@ export interface UpdatePayoutSettingsData {
 }
 
 export class PayoutSettingsService {
+  private readonly repository = new PayoutRepository();
+
   /**
    * Get payout settings for a merchant
    */
   async getPayoutSettings(merchantId: string) {
-    const settings = await prisma.payoutSettings.findUnique({
-      where: { merchantId },
-    });
+    const settings = await this.repository.findPayoutSettings(merchantId);
 
     if (!settings) {
       // Return default settings
@@ -43,10 +43,7 @@ export class PayoutSettingsService {
     data: UpdatePayoutSettingsData
   ) {
     // Verify merchant exists
-    const merchant = await prisma.user.findUnique({
-      where: { id: merchantId },
-      select: { id: true, role: true },
-    });
+    const merchant = await this.repository.getMerchant(merchantId);
 
     if (!merchant) {
       throw new NotFoundError('Merchant not found');
@@ -61,13 +58,7 @@ export class PayoutSettingsService {
       throw new ValidationError('Minimum payout amount must be at least 1');
     }
 
-    // Check if settings exist
-    const existing = await prisma.payoutSettings.findUnique({
-      where: { merchantId },
-    });
-
     const updateData: any = {
-      merchantId,
       updatedAt: new Date(),
     };
 
@@ -87,28 +78,14 @@ export class PayoutSettingsService {
       updateData.isActive = data.isActive;
     }
 
-    let settings;
-    if (existing) {
-      // Update existing
-      settings = await prisma.payoutSettings.update({
-        where: { merchantId },
-        data: updateData,
-      });
-    } else {
-      // Create new
-      settings = await prisma.payoutSettings.create({
-        data: {
-          merchantId,
-          payoutMethod: data.payoutMethod || 'STRIPE_CONNECT',
-          payoutSchedule: data.payoutSchedule || PayoutSchedule.IMMEDIATE,
-          minimumPayoutAmount: new Decimal(
-            data.minimumPayoutAmount || 10
-          ),
-          payoutAccountId: data.payoutAccountId || null,
-          isActive: data.isActive !== undefined ? data.isActive : true,
-        },
-      });
-    }
+    const settings = await this.repository.upsertPayoutSettings(merchantId, {
+      ...updateData,
+      payoutMethod: data.payoutMethod || 'STRIPE_CONNECT',
+      payoutSchedule: data.payoutSchedule || PayoutSchedule.IMMEDIATE,
+      minimumPayoutAmount: new Decimal(data.minimumPayoutAmount || 10),
+      payoutAccountId: data.payoutAccountId || null,
+      isActive: data.isActive !== undefined ? data.isActive : true,
+    });
 
     logger.info('Payout settings updated', {
       merchantId,

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useFeatureFlag } from '../hooks/useFeatureFlag';
 import { useAuthStore } from '../store/authStore';
 import { Card, CardContent } from './ui/Card';
-import { Shield, AlertCircle } from 'lucide-react';
+import { Shield } from 'lucide-react';
 
 interface FeatureFlagGuardProps {
   feature: string;
